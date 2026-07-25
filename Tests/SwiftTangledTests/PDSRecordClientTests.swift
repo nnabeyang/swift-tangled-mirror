@@ -80,6 +80,84 @@ import Testing
     #expect(query(named: "rkey", request: requests[0]) == rkey)
   }
 
+  @Test func listsRepositoryRecordsWithPagination() async throws {
+    let transport = PDSRecordTransport([
+      .init(
+        statusCode: 200,
+        body: Data(
+          """
+          {"cursor":"next-page","records":[{"uri":"\(uri(collection: "sh.tangled.repo"))","cid":"bafkreidie4e7g2mr7u4rbvzuhzrgjxkvcc7qeac7uzidusdy74lvgb2r3a","value":{"$type":"sh.tangled.repo","name":"core","knot":"knot.example","repoDid":"\(repositoryDID)","createdAt":"2026-07-26T00:00:00Z"}}]}
+          """.utf8
+        )
+      )
+    ])
+    let client = makeClient(transport: transport)
+
+    let page = try await client.repositories(
+      ownerDID: ownerDID,
+      cursor: "previous-page",
+      limit: 25
+    )
+
+    #expect(page.items.count == 1)
+    #expect(page.items[0].value.name == "core")
+    #expect(page.cursor == "next-page")
+    let request = try #require(await transport.recordedRequests().first)
+    #expect(request.url?.path == "/base/xrpc/com.atproto.repo.listRecords")
+    #expect(query(named: "repo", request: request) == ownerDID)
+    #expect(query(named: "collection", request: request) == "sh.tangled.repo")
+    #expect(query(named: "cursor", request: request) == "previous-page")
+    #expect(query(named: "limit", request: request) == "25")
+  }
+
+  @Test func repositoryListingRejectsInvalidInputsBeforeResolution() async {
+    let transport = PDSRecordTransport([])
+    let resolver = PDSRecordResolver(document: nil)
+    let client = PDSRecordClient(resolver: resolver, transport: transport)
+
+    await #expect(throws: TangledError.self) {
+      _ = try await client.repositories(ownerDID: "invalid")
+    }
+    await #expect(throws: TangledError.self) {
+      _ = try await client.repositories(ownerDID: ownerDID, limit: 0)
+    }
+    await #expect(throws: TangledError.self) {
+      _ = try await client.repositories(ownerDID: ownerDID, limit: 101)
+    }
+    #expect(await resolver.resolutionCount() == 0)
+    #expect(await transport.recordedRequests().isEmpty)
+  }
+
+  @Test func repositoryListingRejectsMismatchedRecordMetadata() async {
+    let wrongOwner = PDSRecordTransport([
+      .init(
+        statusCode: 200,
+        body: Data(
+          """
+          {"records":[{"uri":"at://did:plc:other/sh.tangled.repo/\(rkey)","cid":"bafkreidie4e7g2mr7u4rbvzuhzrgjxkvcc7qeac7uzidusdy74lvgb2r3a","value":{"$type":"sh.tangled.repo","name":"core","knot":"knot.example","createdAt":"2026-07-26T00:00:00Z"}}]}
+          """.utf8
+        )
+      )
+    ])
+    let wrongType = PDSRecordTransport([
+      .init(
+        statusCode: 200,
+        body: Data(
+          """
+          {"records":[{"uri":"\(uri(collection: "sh.tangled.repo"))","cid":"bafkreidie4e7g2mr7u4rbvzuhzrgjxkvcc7qeac7uzidusdy74lvgb2r3a","value":{"$type":"sh.tangled.repo.issue","repo":"\(repositoryDID)","title":"Issue","createdAt":"2026-07-26T00:00:00Z"}}]}
+          """.utf8
+        )
+      )
+    ])
+
+    await #expect(throws: TangledError.self) {
+      _ = try await makeClient(transport: wrongOwner).repositories(ownerDID: ownerDID)
+    }
+    await #expect(throws: TangledError.self) {
+      _ = try await makeClient(transport: wrongType).repositories(ownerDID: ownerDID)
+    }
+  }
+
   @Test func rejectsInvalidRecordURIsBeforeResolutionOrTransport() async {
     let transport = PDSRecordTransport([])
     let resolver = PDSRecordResolver(document: nil)
