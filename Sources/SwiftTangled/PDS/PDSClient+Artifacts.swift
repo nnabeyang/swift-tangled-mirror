@@ -178,29 +178,18 @@ extension PDSClient {
     else {
       return nil
     }
-    guard artifact.tag.count == 20 else {
-      throw TangledError.decoding(
-        ArtifactPDSDecodeError.invalidTagLength(artifact.tag.count)
-      )
-    }
-    return TangledRecord(
+    return try TangledRecordDecoder.artifact(
       uri: record.uri.rawValue,
       cid: record.cid.rawValue,
-      value: Artifact(
-        repositoryDID: repositoryDID,
-        tagObjectHash: artifact.tag.hexString,
-        name: artifact.name,
-        blob: BlobReference(
-          cid: artifact.artifact.ref.toBaseEncodedString,
-          mimeType: artifact.artifact.mimeType,
-          size: Int(artifact.artifact.size)
-        ),
-        createdAt: artifact.createdAt
-      )
+      repositoryDID: repositoryDID,
+      tag: artifact.tag,
+      name: artifact.name,
+      blob: BlobReference(
+        cid: artifact.artifact.ref.toBaseEncodedString,
+        mimeType: artifact.artifact.mimeType,
+        size: Int(artifact.artifact.size)
+      ),
+      createdAt: artifact.createdAt
     )
   }
-}
-
-private enum ArtifactPDSDecodeError: Error {
-  case invalidTagLength(Int)
 }

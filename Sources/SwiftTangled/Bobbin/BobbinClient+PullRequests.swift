@@ -8,12 +8,11 @@ extension BobbinClient {
     let response = try await generatedQuery {
       try await RepoGetPull(pull: FormatString<ATURI>(rawValue: uri))
     }
-    let record: BobbinRecord<WirePullRequest> = try generatedRecord(
-      uri: response.uri,
-      cid: response.cid,
+    return try TangledRecordDecoder.pullRequest(
+      uri: response.uri.rawValue,
+      cid: response.cid?.rawValue,
       value: response.value
     )
-    return record.pullRequestRecord
   }
 
   public func pullRequests(uris: [String]) async throws -> [TangledRecord<PullRequest>] {
@@ -23,12 +22,11 @@ extension BobbinClient {
       try await RepoGetPulls(pulls: uris.map { FormatString<ATURI>(rawValue: $0) })
     }
     return try response.items.map {
-      let record: BobbinRecord<WirePullRequest> = try generatedRecord(
-        uri: $0.uri,
-        cid: $0.cid,
+      try TangledRecordDecoder.pullRequest(
+        uri: $0.uri.rawValue,
+        cid: $0.cid?.rawValue,
         value: $0.value
       )
-      return record.pullRequestRecord
     }
   }
 
@@ -208,13 +206,13 @@ extension BobbinClient {
     stateUpdatedAt: FormatString<Date>?,
     commentCount: Int
   ) throws -> PullRequestListItem {
-    let record: BobbinRecord<WirePullRequest> = try generatedRecord(
-      uri: uri,
-      cid: cid,
+    let record = try TangledRecordDecoder.pullRequest(
+      uri: uri.rawValue,
+      cid: cid?.rawValue,
       value: value
     )
     return PullRequestListItem(
-      record: record.pullRequestRecord,
+      record: record,
       status: PullRequestStatus(wireValue: state),
       statusUpdatedAt: stateUpdatedAt,
       commentCount: commentCount
@@ -222,49 +220,10 @@ extension BobbinClient {
   }
 }
 
-private struct WirePullRequest: Decodable, Sendable {
-  let title: String
-  let body: String?
-  let rounds: [WirePullRequestRound]
-  let source: WirePullRequestSource?
-  let target: WirePullRequestTarget
-  let createdAt: FormatString<Date>
-  let mentions: [String]?
-  let references: [String]?
-  let dependentOn: String?
-}
-
-private struct WirePullRequestSource: Decodable, Sendable {
-  let branch: String
-  let repo: String?
-}
-
-private struct WirePullRequestTarget: Decodable, Sendable {
-  let branch: String
-  let repo: String
-}
-
-private struct WirePullRequestRound: Decodable, Sendable {
-  let createdAt: FormatString<Date>
-  let patchBlob: WirePullRequestBlob
-}
-
-private struct WirePullRequestBlob: Decodable, Sendable {
-  let ref: BobbinWireLink
-  let mimeType: String
-  let size: Int
-}
-
 private struct WirePullRequestStatus: Decodable, Sendable {
   let pull: String
   let status: String
   let createdAt: FormatString<Date>
-}
-
-extension BobbinRecord where Value == WirePullRequest {
-  fileprivate var pullRequestRecord: TangledRecord<PullRequest> {
-    TangledRecord(uri: uri, cid: cid, value: value.pullRequest)
-  }
 }
 
 extension BobbinRecord where Value == WirePullRequestStatus {
@@ -276,37 +235,6 @@ extension BobbinRecord where Value == WirePullRequestStatus {
         pullRequestURI: value.pull,
         status: PullRequestStatus(wireValue: value.status),
         createdAt: value.createdAt
-      )
-    )
-  }
-}
-
-extension WirePullRequest {
-  fileprivate var pullRequest: PullRequest {
-    PullRequest(
-      title: title,
-      body: body,
-      rounds: rounds.map(\.pullRequestRound),
-      source: source.map {
-        PullRequestSource(branch: $0.branch, repositoryDID: $0.repo)
-      },
-      target: PullRequestTarget(branch: target.branch, repositoryDID: target.repo),
-      createdAt: createdAt,
-      mentions: mentions ?? [],
-      references: references ?? [],
-      dependentOn: dependentOn
-    )
-  }
-}
-
-extension WirePullRequestRound {
-  fileprivate var pullRequestRound: PullRequestRound {
-    PullRequestRound(
-      createdAt: createdAt,
-      patchBlob: BlobReference(
-        cid: patchBlob.ref.cid,
-        mimeType: patchBlob.mimeType,
-        size: patchBlob.size
       )
     )
   }

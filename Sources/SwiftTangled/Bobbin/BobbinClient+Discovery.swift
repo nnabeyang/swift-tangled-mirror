@@ -37,12 +37,11 @@ extension BobbinClient {
     let response = try await generatedQuery {
       try await RepoGetRepo(repo: FormatString<ATURI>(rawValue: uri))
     }
-    let record: BobbinRecord<WireRepository> = try generatedRecord(
-      uri: response.uri,
-      cid: response.cid,
+    return try TangledRecordDecoder.repository(
+      uri: response.uri.rawValue,
+      cid: response.cid?.rawValue,
       value: response.value
     )
-    return record.repositoryRecord
   }
 
   public func repositories(uris: [String]) async throws -> [TangledRecord<Repository>] {
@@ -52,12 +51,11 @@ extension BobbinClient {
       try await RepoGetRepos(repos: uris.map { FormatString<ATURI>(rawValue: $0) })
     }
     return try response.items.map {
-      let record: BobbinRecord<WireRepository> = try generatedRecord(
-        uri: $0.uri,
-        cid: $0.cid,
+      try TangledRecordDecoder.repository(
+        uri: $0.uri.rawValue,
+        cid: $0.cid?.rawValue,
         value: $0.value
       )
-      return record.repositoryRecord
     }
   }
 
@@ -66,12 +64,11 @@ extension BobbinClient {
     let response = try await generatedQuery {
       try await RepoGetRepoByRepoDid(repoDid: FormatString<DID>(rawValue: repoDID))
     }
-    let record: BobbinRecord<WireRepository> = try generatedRecord(
-      uri: response.uri,
-      cid: response.cid,
+    return try TangledRecordDecoder.repository(
+      uri: response.uri.rawValue,
+      cid: response.cid?.rawValue,
       value: response.value
     )
-    return record.repositoryRecord
   }
 
   public func repositories(
@@ -91,12 +88,11 @@ extension BobbinClient {
       )
     }
     let items = try response.items.map {
-      let record: BobbinRecord<WireRepository> = try generatedRecord(
-        uri: $0.uri,
-        cid: $0.cid,
+      try TangledRecordDecoder.repository(
+        uri: $0.uri.rawValue,
+        cid: $0.cid?.rawValue,
         value: $0.value
       )
-      return record.repositoryRecord
     }
     return Page(items: items, cursor: response.cursor)
   }
@@ -170,19 +166,6 @@ private struct WireProfile: Decodable, Sendable {
   let stats: [String]?
 }
 
-private struct WireRepository: Decodable, Sendable {
-  let name: String?
-  let knot: String
-  let spindle: String?
-  let description: String?
-  let website: String?
-  let topics: [String]?
-  let source: String?
-  let labels: [String]?
-  let repoDid: String?
-  let createdAt: FormatString<Date>
-}
-
 extension BobbinRecord where Value == WireProfile {
   fileprivate var profileRecord: TangledRecord<Profile> {
     TangledRecord(
@@ -200,27 +183,6 @@ extension BobbinRecord where Value == WireProfile {
         preferredHandle: value.preferredHandle,
         pronouns: value.pronouns,
         stats: value.stats ?? []
-      )
-    )
-  }
-}
-
-extension BobbinRecord where Value == WireRepository {
-  fileprivate var repositoryRecord: TangledRecord<Repository> {
-    TangledRecord(
-      uri: uri,
-      cid: cid,
-      value: Repository(
-        name: value.name,
-        knot: value.knot,
-        spindle: value.spindle,
-        description: value.description,
-        website: value.website,
-        topics: value.topics ?? [],
-        source: value.source,
-        labels: value.labels ?? [],
-        repoDID: value.repoDid,
-        createdAt: value.createdAt
       )
     )
   }

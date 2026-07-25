@@ -8,12 +8,11 @@ extension BobbinClient {
     let response = try await generatedQuery {
       try await RepoGetIssue(issue: FormatString<ATURI>(rawValue: uri))
     }
-    let record: BobbinRecord<WireIssue> = try generatedRecord(
-      uri: response.uri,
-      cid: response.cid,
+    return try TangledRecordDecoder.issue(
+      uri: response.uri.rawValue,
+      cid: response.cid?.rawValue,
       value: response.value
     )
-    return record.issueRecord
   }
 
   public func issues(uris: [String]) async throws -> [TangledRecord<Issue>] {
@@ -23,12 +22,11 @@ extension BobbinClient {
       try await RepoGetIssues(issues: uris.map { FormatString<ATURI>(rawValue: $0) })
     }
     return try response.items.map {
-      let record: BobbinRecord<WireIssue> = try generatedRecord(
-        uri: $0.uri,
-        cid: $0.cid,
+      try TangledRecordDecoder.issue(
+        uri: $0.uri.rawValue,
+        cid: $0.cid?.rawValue,
         value: $0.value
       )
-      return record.issueRecord
     }
   }
 
@@ -208,13 +206,13 @@ extension BobbinClient {
     stateUpdatedAt: FormatString<Date>?,
     commentCount: Int
   ) throws -> IssueListItem {
-    let record: BobbinRecord<WireIssue> = try generatedRecord(
-      uri: uri,
-      cid: cid,
+    let record = try TangledRecordDecoder.issue(
+      uri: uri.rawValue,
+      cid: cid?.rawValue,
       value: value
     )
     return IssueListItem(
-      record: record.issueRecord,
+      record: record,
       state: IssueStatus(wireValue: state),
       stateUpdatedAt: stateUpdatedAt,
       commentCount: commentCount
@@ -222,25 +220,10 @@ extension BobbinClient {
   }
 }
 
-private struct WireIssue: Decodable, Sendable {
-  let repo: String
-  let title: String
-  let body: String?
-  let createdAt: FormatString<Date>
-  let mentions: [String]?
-  let references: [String]?
-}
-
 private struct WireIssueState: Decodable, Sendable {
   let issue: String
   let state: String
   let createdAt: FormatString<Date>
-}
-
-extension BobbinRecord where Value == WireIssue {
-  fileprivate var issueRecord: TangledRecord<Issue> {
-    TangledRecord(uri: uri, cid: cid, value: value.issue)
-  }
 }
 
 extension BobbinRecord where Value == WireIssueState {
@@ -253,19 +236,6 @@ extension BobbinRecord where Value == WireIssueState {
         state: IssueStatus(wireValue: value.state),
         createdAt: value.createdAt
       )
-    )
-  }
-}
-
-extension WireIssue {
-  fileprivate var issue: Issue {
-    Issue(
-      repositoryDID: repo,
-      title: title,
-      body: body,
-      createdAt: createdAt,
-      mentions: mentions ?? [],
-      references: references ?? []
     )
   }
 }
