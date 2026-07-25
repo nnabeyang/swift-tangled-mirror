@@ -13,7 +13,16 @@ command-line tool for Tangled.
 
 ## Install `tng`
 
-From the repository root, run:
+On an Apple Silicon Mac running macOS 15 or later, install the prebuilt binary
+from the Tangled-hosted Homebrew tap:
+
+```sh
+brew tap nnabeyang/tap \
+  https://tangled.org/nnabeyang.tngl.sh/homebrew-tap
+brew install nnabeyang/tap/tng
+```
+
+To build and install from source instead, run this from the repository root:
 
 ```sh
 ./install.sh
