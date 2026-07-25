@@ -201,7 +201,7 @@ extension PDSRecordClient {
         message: message
       )
     case 502:
-      return .upstreamFailed(message)
+      return .serviceUnavailable(message)
     case 503:
       return .serviceUnavailable(message)
     default:
