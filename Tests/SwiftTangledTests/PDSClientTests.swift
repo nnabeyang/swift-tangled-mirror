@@ -433,6 +433,89 @@ import Testing
     #expect(patchBlob["mimeType"] as? String == "application/gzip")
   }
 
+  @Test func setPullRequestStatusWritesOpenClosedAndMergedRecords() async throws {
+    let mock = try PDSXRPCMock(listPages: [])
+    let client = PDSClient(
+      client: mock,
+      repoDID: sessionDID,
+      authorizedScopes: ["atproto", "repo:sh.tangled.repo.pull.status"],
+      now: { createdAt.typed! },
+      nextRecordKey: { recordKey }
+    )
+    let pullRequestURI = "at://did:plc:author/sh.tangled.repo.pull/3pull"
+
+    let closed = try await client.setPullRequestStatus(pullRequestURI, status: .closed)
+    let open = try await client.setPullRequestStatus(pullRequestURI, status: .open)
+    let merged = try await client.markPullRequestsMerged([pullRequestURI])
+
+    #expect(closed.value.status == .closed)
+    #expect(open.value.status == .open)
+    #expect(merged.first?.value.status == .merged)
+    #expect(closed.value.pullRequestURI == pullRequestURI)
+    #expect(closed.value.createdAt == createdAt)
+
+    let requests = await mock.recordedRequests()
+    #expect(requests.map(\.nsID) == Array(repeating: "com.atproto.repo.applyWrites", count: 3))
+    let expectedStatuses = [
+      "sh.tangled.repo.pull.status.closed",
+      "sh.tangled.repo.pull.status.open",
+      "sh.tangled.repo.pull.status.merged",
+    ]
+    for (request, expectedStatus) in zip(requests, expectedStatuses) {
+      let input = try JSONDecoder().decode(
+        Com.Atproto.RepoApplyWrites_Input.self,
+        from: #require(request.body)
+      )
+      #expect(input.repo.rawValue == sessionDID)
+      #expect(input.validate == nil)
+      guard case .repoApplyWritesCreate(let write) = input.writes.first,
+        case .record(let value) = write.value,
+        let status = value as? Sh.Tangled.Repo.PullStatus
+      else {
+        Issue.record("Expected a generated pull status record")
+        continue
+      }
+      #expect(write.collection.rawValue == "sh.tangled.repo.pull.status")
+      #expect(status.pull.rawValue == pullRequestURI)
+      #expect(status.status.rawValue == expectedStatus)
+    }
+  }
+
+  @Test func setPullRequestStatusValidatesStatusURIAndScopeBeforeWriting() async throws {
+    let mock = try PDSXRPCMock(listPages: [])
+    let client = PDSClient(
+      client: mock,
+      repoDID: sessionDID,
+      authorizedScopes: ["atproto", "repo:sh.tangled.repo.pull.status"]
+    )
+
+    await #expect(throws: TangledError.self) {
+      _ = try await client.setPullRequestStatus(
+        "at://did:plc:author/sh.tangled.repo.issue/3issue",
+        status: .closed
+      )
+    }
+    await #expect(throws: TangledError.self) {
+      _ = try await client.setPullRequestStatus(
+        "at://did:plc:author/sh.tangled.repo.pull/3pull",
+        status: PullRequestStatus(rawValue: "draft")
+      )
+    }
+
+    let missingScope = PDSClient(
+      client: mock,
+      repoDID: sessionDID,
+      authorizedScopes: ["atproto"]
+    )
+    await #expect(throws: TangledError.self) {
+      _ = try await missingScope.setPullRequestStatus(
+        "at://did:plc:author/sh.tangled.repo.pull/3pull",
+        status: .closed
+      )
+    }
+    #expect(await mock.recordedRequests().isEmpty)
+  }
+
   @Test func createForkPullRequestWritesSourceRepositoryAndAllowsMatchingBranchNames() async throws {
     let sourceRepositoryDID = "did:plc:fork"
     let mock = try PDSXRPCMock(
@@ -887,6 +970,21 @@ private actor PDSXRPCMock: XRPCCallable {
       return putOutput
     case "com.atproto.repo.deleteRecord":
       return deleteOutput
+    case "com.atproto.repo.applyWrites":
+      let input = try JSONDecoder().decode(
+        Com.Atproto.RepoApplyWrites_Input.self,
+        from: components.body ?? Data()
+      )
+      let results = input.writes.compactMap { write -> [String: String]? in
+        guard case .repoApplyWritesCreate(let create) = write else { return nil }
+        return [
+          "$type": "com.atproto.repo.applyWrites#createResult",
+          "uri":
+            "at://did:plc:session/\(create.collection.rawValue)/\(create.rkey?.rawValue ?? "missing")",
+          "cid": "bafystatus",
+        ]
+      }
+      return try JSONSerialization.data(withJSONObject: ["results": results])
     default:
       throw URLError(.unsupportedURL)
     }

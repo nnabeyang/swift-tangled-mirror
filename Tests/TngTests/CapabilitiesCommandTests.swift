@@ -20,9 +20,11 @@ import Testing
 
     #expect(document.schemaVersion == 1)
     #expect(document.cliVersion == SwiftTangled.version)
-    #expect(paths.count == 41)
+    #expect(paths.count == 43)
     #expect(paths.contains("capabilities"))
     #expect(paths.contains("pr create"))
+    #expect(paths.contains("pr close"))
+    #expect(paths.contains("pr reopen"))
     #expect(paths.contains("issue create"))
     #expect(paths.contains("issue comment"))
     #expect(paths.contains("issue edit"))
@@ -42,6 +44,9 @@ import Testing
     let document = try CapabilityCatalog.document()
     let pullCreate = try #require(
       document.commands.first { $0.path == ["pr", "create"] }
+    )
+    let pullClose = try #require(
+      document.commands.first { $0.path == ["pr", "close"] }
     )
     let repoArchive = try #require(
       document.commands.first { $0.path == ["repo", "archive"] }
@@ -68,6 +73,12 @@ import Testing
     #expect(pullCreate.access == .write)
     #expect(pullCreate.authenticationRequired)
     #expect(pullCreate.options.contains { $0.names.contains("--body-file") })
+    #expect(pullClose.access == .write)
+    #expect(pullClose.authenticationRequired)
+    #expect(
+      pullClose.arguments == [
+        CapabilityArgument(name: "pull-request-uri", required: true, repeating: false)
+      ])
     #expect(repoArchive.access == .write)
     #expect(!repoArchive.authenticationRequired)
     #expect(repoList.access == .read)

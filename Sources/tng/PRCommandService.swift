@@ -19,6 +19,7 @@ struct PRCommandDependencies: Sendable {
   let createComment: @Sendable (RecordReference, String, Int) async throws -> TangledRecord<Comment>
   let mergeCheck: @Sendable (String) async throws -> PullRequestMergeCheck
   let merge: @Sendable (String, Bool) async throws -> PullRequestMergeResult
+  let setStatus: @Sendable (String, PullRequestStatus) async throws -> TangledRecord<PullRequestStatusChange>
 
   static let live: PRCommandDependencies = {
     let client = BobbinClient()
@@ -77,6 +78,12 @@ struct PRCommandDependencies: Sendable {
           pullRequestURI: uri,
           allowStack: allowStack,
           pdsClient: try PDSClient.restore(from: CLISessionStore.make().store)
+        )
+      },
+      setStatus: { uri, status in
+        try await PDSClient.restore(from: CLISessionStore.make().store).setPullRequestStatus(
+          uri,
+          status: status
         )
       }
     )
@@ -206,6 +213,15 @@ struct PRCommandService: Sendable {
     return CLICommandOutput(stdout: try json ? formatter.json(result) : format(result))
   }
 
+  func setStatus(
+    pullRequestURI: String,
+    status: PullRequestStatus,
+    json: Bool
+  ) async throws -> CLICommandOutput {
+    let record = try await dependencies.setStatus(pullRequestURI, status)
+    return CLICommandOutput(stdout: try json ? formatter.json(record) : format(record))
+  }
+
   func create(
     repository: String?,
     base: String?,
@@ -304,6 +320,16 @@ extension PRCommandService {
       ("Merged", result.check.pullRequestURIs.joined(separator: ", ")),
       ("Target", "\(result.check.repositoryDID):\(result.check.targetBranch)"),
       ("Status records", String(result.statusRecords.count)),
+    ])
+  }
+
+  fileprivate func format(_ record: TangledRecord<PullRequestStatusChange>) -> String {
+    formatter.details([
+      ("URI", record.uri),
+      ("CID", record.cid),
+      ("Pull request", record.value.pullRequestURI),
+      ("Status", record.value.status.rawValue),
+      ("Created", record.value.createdAt.rawValue),
     ])
   }
 

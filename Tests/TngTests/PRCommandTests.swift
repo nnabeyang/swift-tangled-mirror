@@ -83,6 +83,13 @@ import Testing
     #expect(merge.check)
     #expect(merge.stack)
     #expect(merge.json)
+
+    let close = try PRCloseCommand.parse([samplePullRequestURI, "--json"])
+    #expect(close.pullRequestURI == samplePullRequestURI)
+    #expect(close.json)
+    let reopen = try PRReopenCommand.parse([samplePullRequestURI])
+    #expect(reopen.pullRequestURI == samplePullRequestURI)
+    #expect(!reopen.json)
   }
 
   @Test func mergeCheckAndMergeFormatResults() async throws {
@@ -106,6 +113,38 @@ import Testing
     )
     #expect(merged.stdout.contains("\"pullRequestURIs\""))
     #expect(merged.stdout.contains(samplePullRequestURI))
+  }
+
+  @Test func closeAndReopenFormatStatusRecords() async throws {
+    let recorder = PRCommandRecorder()
+    let service = PRCommandService(dependencies: dependencies(recorder: recorder))
+
+    let closed = try await service.setStatus(
+      pullRequestURI: samplePullRequestURI,
+      status: .closed,
+      json: true
+    )
+    let closedRecord = try JSONDecoder().decode(
+      TangledRecord<PullRequestStatusChange>.self,
+      from: Data(closed.stdout.utf8)
+    )
+    #expect(closedRecord.value.status == .closed)
+    #expect(closedRecord.value.pullRequestURI == samplePullRequestURI)
+
+    let reopened = try await service.setStatus(
+      pullRequestURI: samplePullRequestURI,
+      status: .open,
+      json: false
+    )
+    #expect(reopened.stdout.contains("Pull request\t\(samplePullRequestURI)"))
+    #expect(reopened.stdout.contains("Status\topen"))
+    #expect(
+      await recorder.statusCalls()
+        == [
+          .init(uri: samplePullRequestURI, status: .closed),
+          .init(uri: samplePullRequestURI, status: .open),
+        ]
+    )
   }
 
   @Test func listResolvesRepositoryAndAuthorAndFormatsPage() async throws {
@@ -622,6 +661,18 @@ extension PRCommandTests {
           ),
           statusRecords: []
         )
+      },
+      setStatus: { uri, status in
+        await recorder.record(statusURI: uri, status: status)
+        return TangledRecord(
+          uri: "at://did:plc:author/sh.tangled.repo.pull.status/3status",
+          cid: "bafystatus",
+          value: PullRequestStatusChange(
+            pullRequestURI: uri,
+            status: status,
+            createdAt: FormatString<Date>(rawValue: "2026-07-24T10:00:00Z")
+          )
+        )
       }
     )
   }
@@ -732,12 +783,18 @@ private actor PRCommandRecorder {
     let patch: Data
   }
 
+  struct StatusCall: Equatable, Sendable {
+    let uri: String
+    let status: PullRequestStatus
+  }
+
   private var recordedReferences: [String] = []
   private var recordedOwners: [String] = []
   private var recordedListCalls: [ListCall] = []
   private var recordedPullRequestURIs: [String] = []
   private var recordedPatchCalls: [PatchCall] = []
   private var recordedCreateCalls: [CreateCall] = []
+  private var recordedStatusCalls: [StatusCall] = []
 
   func record(reference: String) {
     recordedReferences.append(reference)
@@ -763,6 +820,10 @@ private actor PRCommandRecorder {
     recordedCreateCalls.append(create)
   }
 
+  func record(statusURI: String, status: PullRequestStatus) {
+    recordedStatusCalls.append(.init(uri: statusURI, status: status))
+  }
+
   func references() -> [String] {
     recordedReferences
   }
@@ -785,5 +846,9 @@ private actor PRCommandRecorder {
 
   func createCalls() -> [CreateCall] {
     recordedCreateCalls
+  }
+
+  func statusCalls() -> [StatusCall] {
+    recordedStatusCalls
   }
 }

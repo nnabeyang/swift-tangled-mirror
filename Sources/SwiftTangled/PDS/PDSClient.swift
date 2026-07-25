@@ -405,13 +405,44 @@ public struct PDSClient: Sendable {
   public func markPullRequestsMerged(
     _ pullRequestURIs: [String]
   ) async throws -> [TangledRecord<PullRequestStatusChange>] {
+    try await setPullRequestStatuses(pullRequestURIs, status: .merged)
+  }
+
+  public func setPullRequestStatus(
+    _ pullRequestURI: String,
+    status: PullRequestStatus
+  ) async throws -> TangledRecord<PullRequestStatusChange> {
+    guard let record = try await setPullRequestStatuses([pullRequestURI], status: status).first else {
+      throw TangledError.decoding(PDSClientError.invalidApplyWritesResult)
+    }
+    return record
+  }
+
+  public func setPullRequestStatuses(
+    _ pullRequestURIs: [String],
+    status: PullRequestStatus
+  ) async throws -> [TangledRecord<PullRequestStatusChange>] {
     guard !pullRequestURIs.isEmpty else { return [] }
     guard grantedScopes.allowsRepo(collection: Self.pullStatusCollection, action: .update) else {
       throw TangledError.insufficientScope("repo:\(Self.pullStatusCollection)")
     }
+    let wireStatus: Sh.Tangled.Repo.PullStatus_Status
+    switch status {
+    case .open:
+      wireStatus = .shTangledRepoPullStatusOpen
+    case .closed:
+      wireStatus = .shTangledRepoPullStatusClosed
+    case .merged:
+      wireStatus = .shTangledRepoPullStatusMerged
+    default:
+      throw TangledError.invalidRequest("invalid pull request status: \(status.rawValue)")
+    }
     let createdAt = FormatString(now())
     let records = try pullRequestURIs.map { uri -> (String, Sh.Tangled.Repo.PullStatus) in
-      guard FormatString<ATURI>(rawValue: uri).typed != nil else {
+      guard let parsed = FormatString<ATURI>(rawValue: uri).typed,
+        parsed.collection?.rawValue == Self.pullCollection,
+        parsed.rkey != nil
+      else {
         throw TangledError.invalidRequest("invalid pull request AT URI: \(uri)")
       }
       return (
@@ -419,7 +450,7 @@ public struct PDSClient: Sendable {
         Sh.Tangled.Repo.PullStatus(
           createdAt: createdAt,
           pull: FormatString(rawValue: uri),
-          status: .shTangledRepoPullStatusMerged
+          status: wireStatus
         )
       )
     }
@@ -453,7 +484,7 @@ public struct PDSClient: Sendable {
         cid: created.cid.rawValue,
         value: PullRequestStatusChange(
           pullRequestURI: uri,
-          status: .merged,
+          status: status,
           createdAt: createdAt
         )
       )

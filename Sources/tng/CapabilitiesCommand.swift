@@ -104,6 +104,8 @@ enum CapabilityCatalog {
     "pr diff": Metadata(access: .read, authenticationRequired: false),
     "pr create": Metadata(access: .write, authenticationRequired: true),
     "pr comment": Metadata(access: .write, authenticationRequired: true),
+    "pr close": Metadata(access: .write, authenticationRequired: true),
+    "pr reopen": Metadata(access: .write, authenticationRequired: true),
     "pr merge": Metadata(access: .write, authenticationRequired: true),
     "pipeline list": Metadata(access: .read, authenticationRequired: false),
     "pipeline view": Metadata(access: .read, authenticationRequired: false),
