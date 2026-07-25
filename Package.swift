@@ -12,7 +12,7 @@ let package = Package(
   ],
   dependencies: [
     .package(url: "https://github.com/nnabeyang/swift-atproto.git", exact: "0.42.1"),
-    .package(url: "https://github.com/nnabeyang/soyokaze-oauth.git", exact: "0.6.1"),
+    .package(url: "https://github.com/nnabeyang/oauth4swift.git", exact: "0.6.0-soyokaze.1"),
     .package(url: "https://github.com/apple/swift-argument-parser.git", "1.8.2" ..< "2.0.0"),
     .package(url: "https://github.com/apple/swift-crypto.git", from: "4.0.0"),
     .package(url: "https://github.com/germ-network/GermConvenience.git", from: "0.2.4"),
@@ -48,7 +48,7 @@ let package = Package(
         .product(name: "SwiftAtproto", package: "swift-atproto"),
         .product(name: "ATProtoCrypto", package: "swift-atproto"),
         .product(name: "Crypto", package: "swift-crypto"),
-        .product(name: "OAuth4Swift", package: "soyokaze-oauth"),
+        .product(name: "OAuth4Swift", package: "oauth4swift"),
         .product(name: "GermConvenience", package: "GermConvenience"),
         .product(name: "Logging", package: "swift-log"),
         .product(name: "HTTPTypes", package: "swift-http-types"),

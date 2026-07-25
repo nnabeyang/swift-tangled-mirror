@@ -1,5 +1,5 @@
 {
-  "originHash" : "56fcd79fb6dca6168d74f529124053a2d7c6aad33d74b3816ffffd63b19aae42",
+  "originHash" : "e695e8b5999cf421ab873afcb2e065916c6eb22949d72b8b01325fe5b1306b23",
   "pins" : [
     {
       "identity" : "compress-nio",
@@ -29,12 +29,12 @@
       }
     },
     {
-      "identity" : "soyokaze-oauth",
+      "identity" : "oauth4swift",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/nnabeyang/soyokaze-oauth.git",
+      "location" : "https://github.com/nnabeyang/oauth4swift.git",
       "state" : {
-        "revision" : "83b68d369b1be2b4af2162874a57d3fb5602c6ac",
-        "version" : "0.6.1"
+        "revision" : "0fc07691935f640379c223ce9d8900cf78b7073e",
+        "version" : "0.6.0-soyokaze.1"
       }
     },
     {
