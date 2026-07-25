@@ -1,0 +1,14 @@
+{
+  "items": [
+    {
+      "cid": "bafyreirepository",
+      "uri": "at://did:plc:owner/sh.tangled.repo/3mibd5tthdb22",
+      "value": {
+        "$type": "sh.tangled.repo",
+        "createdAt": "2026-03-30T18:14:36+09:00",
+        "knot": "knot1.tangled.sh",
+        "name": "core"
+      }
+    }
+  ]
+}

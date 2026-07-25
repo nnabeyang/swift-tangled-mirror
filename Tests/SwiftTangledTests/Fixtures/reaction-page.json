@@ -1,0 +1,15 @@
+{
+  "items": [
+    {
+      "cid": "bafyrereaction",
+      "uri": "at://did:plc:reactor/sh.tangled.feed.reaction/3mrreaction",
+      "value": {
+        "$type": "sh.tangled.feed.reaction",
+        "subject": "at://did:plc:commenter/sh.tangled.feed.comment/3mrcomment",
+        "reaction": "👍",
+        "createdAt": "2026-07-20T18:10:00Z"
+      }
+    }
+  ],
+  "cursor": "next-reaction-page"
+}

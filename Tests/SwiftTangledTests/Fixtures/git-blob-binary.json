@@ -1,0 +1,10 @@
+{
+  "ref": "main",
+  "path": "icon.bin",
+  "content": "AP8K",
+  "encoding": "base64",
+  "size": 3,
+  "isBinary": true,
+  "mimeType": "application/octet-stream",
+  "fileTooLarge": false
+}

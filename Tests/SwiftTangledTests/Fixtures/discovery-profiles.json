@@ -1,0 +1,16 @@
+{
+  "items": [
+    {
+      "cid": "bafyreiprofile",
+      "uri": "at://did:web:debugman.example/sh.tangled.actor.profile/self",
+      "value": {
+        "$type": "sh.tangled.actor.profile",
+        "bluesky": false,
+        "description": "Legacy profile",
+        "links": [],
+        "pinnedRepositories": ["did:plc:repo"],
+        "stats": []
+      }
+    }
+  ]
+}

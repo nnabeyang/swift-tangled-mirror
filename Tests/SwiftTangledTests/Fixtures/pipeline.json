@@ -1,0 +1,21 @@
+{
+  "id": "3mr7m2f6ger22",
+  "repo": "did:plc:repository",
+  "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "createdAt": "2026-07-22T08:35:09+03:00",
+  "trigger": {
+    "$type": "sh.tangled.ci.trigger#push",
+    "ref": "refs/heads/main",
+    "newSha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "oldSha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "workflows": [
+    {
+      "id": "build.yml",
+      "name": "build.yml",
+      "status": "success",
+      "startedAt": "2026-07-22T08:35:10+03:00",
+      "finishedAt": "2026-07-22T08:36:10+03:00"
+    }
+  ]
+}

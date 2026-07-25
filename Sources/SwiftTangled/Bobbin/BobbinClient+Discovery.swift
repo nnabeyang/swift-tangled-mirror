@@ -1,0 +1,227 @@
+import Foundation
+import SwiftAtproto
+import TangledLexicons
+
+extension BobbinClient {
+  public func profile(uri: String) async throws -> TangledRecord<Profile> {
+    try requireNonempty(uri, name: "profile URI")
+    let response = try await generatedQuery {
+      try await ActorGetProfile(actor: FormatString<ATURI>(rawValue: uri))
+    }
+    let record: BobbinRecord<WireProfile> = try generatedRecord(
+      uri: response.uri,
+      cid: response.cid,
+      value: response.value
+    )
+    return record.profileRecord
+  }
+
+  public func profiles(uris: [String]) async throws -> [TangledRecord<Profile>] {
+    guard !uris.isEmpty else { return [] }
+    try validateBatch(uris, name: "profile URIs")
+    let response = try await generatedQuery {
+      try await ActorGetProfiles(actors: uris.map { FormatString<ATURI>(rawValue: $0) })
+    }
+    return try response.items.map {
+      let record: BobbinRecord<WireProfile> = try generatedRecord(
+        uri: $0.uri,
+        cid: $0.cid,
+        value: $0.value
+      )
+      return record.profileRecord
+    }
+  }
+
+  public func repository(uri: String) async throws -> TangledRecord<Repository> {
+    try requireNonempty(uri, name: "repository URI")
+    let response = try await generatedQuery {
+      try await RepoGetRepo(repo: FormatString<ATURI>(rawValue: uri))
+    }
+    let record: BobbinRecord<WireRepository> = try generatedRecord(
+      uri: response.uri,
+      cid: response.cid,
+      value: response.value
+    )
+    return record.repositoryRecord
+  }
+
+  public func repositories(uris: [String]) async throws -> [TangledRecord<Repository>] {
+    guard !uris.isEmpty else { return [] }
+    try validateBatch(uris, name: "repository URIs")
+    let response = try await generatedQuery {
+      try await RepoGetRepos(repos: uris.map { FormatString<ATURI>(rawValue: $0) })
+    }
+    return try response.items.map {
+      let record: BobbinRecord<WireRepository> = try generatedRecord(
+        uri: $0.uri,
+        cid: $0.cid,
+        value: $0.value
+      )
+      return record.repositoryRecord
+    }
+  }
+
+  public func repository(repoDID: String) async throws -> TangledRecord<Repository> {
+    try requireNonempty(repoDID, name: "repository DID")
+    let response = try await generatedQuery {
+      try await RepoGetRepoByRepoDid(repoDid: FormatString<DID>(rawValue: repoDID))
+    }
+    let record: BobbinRecord<WireRepository> = try generatedRecord(
+      uri: response.uri,
+      cid: response.cid,
+      value: response.value
+    )
+    return record.repositoryRecord
+  }
+
+  public func repositories(
+    ownerDID: String,
+    cursor: String? = nil,
+    limit: Int? = nil,
+    order: BobbinSortOrder = .descending
+  ) async throws -> Page<TangledRecord<Repository>> {
+    try requireNonempty(ownerDID, name: "owner DID")
+    try validateLimit(limit)
+    let response = try await generatedQuery {
+      try await RepoListRepos(
+        cursor: cursor,
+        limit: limit,
+        order: Sh.Tangled.RepoListRepos_Order(rawValue: order.rawValue),
+        subject: FormatString<DID>(rawValue: ownerDID)
+      )
+    }
+    let items = try response.items.map {
+      let record: BobbinRecord<WireRepository> = try generatedRecord(
+        uri: $0.uri,
+        cid: $0.cid,
+        value: $0.value
+      )
+      return record.repositoryRecord
+    }
+    return Page(items: items, cursor: response.cursor)
+  }
+
+  public func repositoryCount(ownerDID: String) async throws -> CountSummary {
+    try requireNonempty(ownerDID, name: "owner DID")
+    let response = try await generatedQuery {
+      try await RepoCountRepos(subject: FormatString<DID>(rawValue: ownerDID))
+    }
+    return CountSummary(count: response.count, distinctAuthors: response.distinctAuthors)
+  }
+
+  public func search(
+    _ query: String,
+    options: SearchOptions = SearchOptions()
+  ) async throws -> Page<SearchHit> {
+    try requireNonempty(query, name: "search query")
+    try validateLimit(options.limit)
+    try options.validateDates()
+
+    let response = try await generatedQuery {
+      try await SearchQuery(
+        author: options.authorDID.map { FormatString<DID>(rawValue: $0) },
+        cursor: options.cursor,
+        limit: options.limit,
+        nsid: options.nsid.map { FormatString<NSID>(rawValue: $0) },
+        q: query,
+        repo: options.repoDID.map { FormatString<DID>(rawValue: $0) },
+        since: options.since,
+        until: options.until
+      )
+    }
+    return Page(
+      items: try response.hits.map {
+        SearchHit(
+          uri: $0.uri.rawValue,
+          cid: $0.cid?.rawValue,
+          nsid: $0.nsid.rawValue,
+          score: try decodeGenerated($0.score, as: Double.self),
+          value: try decodeGenerated($0.value, as: JSONValue.self)
+        )
+      },
+      cursor: response.cursor
+    )
+  }
+}
+
+private struct WireLink: Decodable, Sendable {
+  let cid: String
+
+  enum CodingKeys: String, CodingKey {
+    case cid = "$link"
+  }
+}
+
+private struct WireBlob: Decodable, Sendable {
+  let ref: WireLink
+  let mimeType: String
+  let size: Int
+}
+
+private struct WireProfile: Decodable, Sendable {
+  let avatar: WireBlob?
+  let bluesky: Bool
+  let description: String?
+  let links: [String]?
+  let location: String?
+  let pinnedRepositories: [String]?
+  let preferredHandle: String?
+  let pronouns: String?
+  let stats: [String]?
+}
+
+private struct WireRepository: Decodable, Sendable {
+  let name: String?
+  let knot: String
+  let spindle: String?
+  let description: String?
+  let website: String?
+  let topics: [String]?
+  let source: String?
+  let labels: [String]?
+  let repoDid: String?
+  let createdAt: FormatString<Date>
+}
+
+extension BobbinRecord where Value == WireProfile {
+  fileprivate var profileRecord: TangledRecord<Profile> {
+    TangledRecord(
+      uri: uri,
+      cid: cid,
+      value: Profile(
+        avatar: value.avatar.map {
+          BlobReference(cid: $0.ref.cid, mimeType: $0.mimeType, size: $0.size)
+        },
+        bluesky: value.bluesky,
+        description: value.description,
+        links: value.links ?? [],
+        location: value.location,
+        pinnedRepositories: value.pinnedRepositories ?? [],
+        preferredHandle: value.preferredHandle,
+        pronouns: value.pronouns,
+        stats: value.stats ?? []
+      )
+    )
+  }
+}
+
+extension BobbinRecord where Value == WireRepository {
+  fileprivate var repositoryRecord: TangledRecord<Repository> {
+    TangledRecord(
+      uri: uri,
+      cid: cid,
+      value: Repository(
+        name: value.name,
+        knot: value.knot,
+        spindle: value.spindle,
+        description: value.description,
+        website: value.website,
+        topics: value.topics ?? [],
+        source: value.source,
+        labels: value.labels ?? [],
+        repoDID: value.repoDid,
+        createdAt: value.createdAt
+      )
+    )
+  }
+}

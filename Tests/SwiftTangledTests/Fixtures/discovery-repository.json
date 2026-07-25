@@ -1,0 +1,17 @@
+{
+  "cid": "bafyreirepository",
+  "uri": "at://did:plc:owner/sh.tangled.repo/3mibd5tthdb22",
+  "value": {
+    "$type": "sh.tangled.repo",
+    "createdAt": "2026-03-30T18:14:36+09:00",
+    "description": "Tangled core repository",
+    "knot": "knot1.tangled.sh",
+    "labels": ["at://did:plc:labels/sh.tangled.label.definition/documentation"],
+    "name": "core",
+    "repoDid": "did:plc:repository",
+    "source": "https://example.com/source",
+    "spindle": "spindle.example",
+    "topics": ["atproto", "git"],
+    "website": "https://example.com/core"
+  }
+}

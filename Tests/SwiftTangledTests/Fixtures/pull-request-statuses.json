@@ -1,0 +1,25 @@
+{
+  "items": [
+    {
+      "cid": "bafyrepullstatusmerged",
+      "uri": "at://did:plc:author/sh.tangled.repo.pull.status/3mr5djtxslx22",
+      "value": {
+        "$type": "sh.tangled.repo.pull.status",
+        "pull": "at://did:plc:author/sh.tangled.repo.pull/3mr3itrannf22",
+        "status": "sh.tangled.repo.pull.status.merged",
+        "createdAt": "2026-07-21T07:57:25.278Z"
+      }
+    },
+    {
+      "cid": "bafyrepullstatusapproved",
+      "uri": "at://did:plc:author/sh.tangled.repo.pull.status/3mr6000000022",
+      "value": {
+        "$type": "sh.tangled.repo.pull.status",
+        "pull": "at://did:plc:author/sh.tangled.repo.pull/3mr3itrannf22",
+        "status": "sh.tangled.repo.pull.status.approved",
+        "createdAt": "2026-07-21T08:00:00Z"
+      }
+    }
+  ],
+  "cursor": "next-status-page"
+}

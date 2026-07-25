@@ -1,0 +1,14 @@
+{
+  "items": [
+    {
+      "cid": "bafyrefollow",
+      "uri": "at://did:plc:follower/sh.tangled.graph.follow/3mrfollow",
+      "value": {
+        "$type": "sh.tangled.graph.follow",
+        "subject": "did:plc:followed",
+        "createdAt": "2026-07-20T18:30:00Z"
+      }
+    }
+  ],
+  "cursor": "next-follow-page"
+}

@@ -1,0 +1,47 @@
+{
+  "ref": "feature",
+  "diff": {
+    "commit": {
+      "hash": [170,170,170,170,170,170,170,170,170,170,170,170,170,170,170,170,170,170,170,170],
+      "author": {"Name":"Alice","Email":"alice@example.com","When":"2026-07-22T12:00:00Z"},
+      "committer": {"Name":"Tangled","Email":"noreply@tangled.org","When":"2026-07-22T12:01:00Z"},
+      "message": "Update greeting\n",
+      "tree": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "parent_hashes": [[204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204,204]],
+      "change_id": "change-one"
+    },
+    "stat": {"insertions":1,"deletions":1,"files_changed":2},
+    "diff": [{
+      "name": {"old":"hello.txt","new":"hello.txt"},
+      "text_fragments": [{
+        "Comment": "greeting",
+        "OldPosition": 1,
+        "OldLines": 1,
+        "NewPosition": 1,
+        "NewLines": 1,
+        "LinesAdded": 1,
+        "LinesDeleted": 1,
+        "LeadingContext": 0,
+        "TrailingContext": 0,
+        "Lines": [
+          {"Op":1,"Line":"hello\n"},
+          {"Op":2,"Line":"hello, world\n"},
+          {"Op":9,"Line":"future operation\n"}
+        ]
+      }],
+      "is_binary": false,
+      "is_new": false,
+      "is_delete": false,
+      "is_copy": false,
+      "is_rename": false
+    },{
+      "name": {"old":"icon.bin","new":"icon.bin"},
+      "text_fragments": null,
+      "is_binary": true,
+      "is_new": false,
+      "is_delete": false,
+      "is_copy": false,
+      "is_rename": false
+    }]
+  }
+}

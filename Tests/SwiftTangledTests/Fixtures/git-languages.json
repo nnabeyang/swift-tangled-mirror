@@ -1,0 +1,20 @@
+{
+  "ref": "main",
+  "languages": [
+    {
+      "name": "Swift",
+      "size": 8192,
+      "percentage": 80,
+      "fileCount": 12,
+      "color": "#F05138",
+      "extensions": [".swift"]
+    },
+    {
+      "name": "Shell",
+      "size": 2048,
+      "percentage": 20
+    }
+  ],
+  "totalFiles": 14,
+  "totalSize": 10240
+}

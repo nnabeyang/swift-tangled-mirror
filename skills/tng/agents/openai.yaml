@@ -1,0 +1,4 @@
+interface:
+  display_name: "tng Agent Workflows"
+  short_description: "Use Tangled safely through the tng CLI"
+  default_prompt: "Use $tng to inspect this Tangled pull request and its pipeline."

@@ -1,0 +1,15 @@
+{
+  "cid": "bafyreissue",
+  "uri": "at://did:plc:author/sh.tangled.repo.issue/3mqmjxilmrz22",
+  "value": {
+    "$type": "sh.tangled.repo.issue",
+    "repo": "did:plc:repository",
+    "title": "Support issue reads",
+    "body": "Expose Bobbin issue data through SwiftTangled.",
+    "createdAt": "2026-07-14T15:37:10Z",
+    "mentions": ["did:plc:mentioned"],
+    "references": [
+      "at://did:plc:author/sh.tangled.repo.issue/3maae23igov22"
+    ]
+  }
+}

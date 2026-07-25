@@ -1,0 +1,29 @@
+{
+  "items": [
+    {
+      "cid": "bafyrestarrepo",
+      "uri": "at://did:plc:starrer/sh.tangled.feed.star/3mrstarrepo",
+      "value": {
+        "$type": "sh.tangled.feed.star",
+        "subject": {
+          "$type": "sh.tangled.feed.star#repo",
+          "did": "did:plc:repository"
+        },
+        "createdAt": "2026-07-20T18:20:00Z"
+      }
+    },
+    {
+      "cid": "bafyrestarstring",
+      "uri": "at://did:plc:starrer/sh.tangled.feed.star/3mrstarstring",
+      "value": {
+        "$type": "sh.tangled.feed.star",
+        "subject": {
+          "$type": "sh.tangled.feed.star#string",
+          "uri": "at://did:plc:author/sh.tangled.string/3mrstring"
+        },
+        "createdAt": "2026-07-20T18:21:00Z"
+      }
+    }
+  ],
+  "cursor": "next-star-page"
+}

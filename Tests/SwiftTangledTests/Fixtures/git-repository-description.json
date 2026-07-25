@@ -1,0 +1,5 @@
+{
+  "ownerDid": "did:plc:owner",
+  "repoDid": "did:plc:repository",
+  "rkey": "core"
+}

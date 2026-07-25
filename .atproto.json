@@ -1,0 +1,122 @@
+{
+  "dependencies": [
+    {
+      "location": "https://github.com/bluesky-social/atproto.git",
+      "lexicons": [
+        {
+          "prefix": "com.atproto",
+          "path": "lexicons/com/atproto",
+          "nsIds": [
+            "com.atproto.identity.resolveHandle",
+            "com.atproto.repo.defs",
+            "com.atproto.repo.applyWrites",
+            "com.atproto.repo.getRecord",
+            "com.atproto.repo.listRecords",
+            "com.atproto.repo.strongRef",
+            "com.atproto.repo.putRecord",
+            "com.atproto.repo.deleteRecord",
+            "com.atproto.server.getServiceAuth",
+            "com.atproto.repo.uploadBlob"
+          ]
+        }
+      ],
+      "state": {
+        "tag": "@atproto/api@0.20.12"
+      }
+    },
+    {
+      "location": "https://tangled.org/tangled.org/core",
+      "lexicons": [
+        {
+          "path": "lexicons",
+          "nsIds": [
+            "sh.tangled.actor.getProfile",
+            "sh.tangled.actor.getProfiles",
+            "sh.tangled.feed.countComments",
+            "sh.tangled.feed.countCommentsBy",
+            "sh.tangled.feed.countReactions",
+            "sh.tangled.feed.countReactionsBy",
+            "sh.tangled.feed.countStars",
+            "sh.tangled.feed.countStarsBy",
+            "sh.tangled.feed.comment",
+            "sh.tangled.feed.star",
+            "sh.tangled.feed.listComments",
+            "sh.tangled.feed.listCommentsBy",
+            "sh.tangled.feed.listReactions",
+            "sh.tangled.feed.listReactionsBy",
+            "sh.tangled.feed.listStars",
+            "sh.tangled.feed.listStarsBy",
+            "sh.tangled.graph.countFollows",
+            "sh.tangled.graph.countFollowsBy",
+            "sh.tangled.graph.listFollows",
+            "sh.tangled.graph.listFollowsBy",
+            "sh.tangled.label.countDefinitions",
+            "sh.tangled.label.countOps",
+            "sh.tangled.label.countOpsBy",
+            "sh.tangled.label.listDefinitions",
+            "sh.tangled.label.listOps",
+            "sh.tangled.label.listOpsBy",
+            "sh.tangled.markup.markdown",
+            "sh.tangled.ci.getPipeline",
+            "sh.tangled.ci.pipeline",
+            "sh.tangled.ci.queryPipelines",
+            "sh.tangled.ci.trigger",
+            "sh.tangled.repo.archive",
+            "sh.tangled.repo.artifact",
+            "sh.tangled.repo.blob",
+            "sh.tangled.repo.branch",
+            "sh.tangled.repo.branches",
+            "sh.tangled.repo.compare",
+            "sh.tangled.repo.countArtifacts",
+            "sh.tangled.repo.countIssues",
+            "sh.tangled.repo.countIssuesBy",
+            "sh.tangled.repo.countPulls",
+            "sh.tangled.repo.countPullsBy",
+            "sh.tangled.repo.countRepos",
+            "sh.tangled.repo.describeRepo",
+            "sh.tangled.repo.diff",
+            "sh.tangled.repo.getDefaultBranch",
+            "sh.tangled.repo.getIssue",
+            "sh.tangled.repo.getIssues",
+            "sh.tangled.repo.getPull",
+            "sh.tangled.repo.getPulls",
+            "sh.tangled.repo.getRepo",
+            "sh.tangled.repo.getRepoByRepoDid",
+            "sh.tangled.repo.getRepos",
+            "sh.tangled.repo.issue",
+            "sh.tangled.repo.issue.countStates",
+            "sh.tangled.repo.issue.countStatesBy",
+            "sh.tangled.repo.issue.listStates",
+            "sh.tangled.repo.issue.listStatesBy",
+            "sh.tangled.repo.issue.state",
+            "sh.tangled.repo.languages",
+            "sh.tangled.repo.listArtifacts",
+            "sh.tangled.repo.listIssues",
+            "sh.tangled.repo.listIssuesBy",
+            "sh.tangled.repo.listPulls",
+            "sh.tangled.repo.listPullsBy",
+            "sh.tangled.repo.listRepos",
+            "sh.tangled.repo.log",
+            "sh.tangled.repo.pull",
+            "sh.tangled.repo.pull.status",
+            "sh.tangled.repo.pull.countStatuses",
+            "sh.tangled.repo.pull.countStatusesBy",
+            "sh.tangled.repo.pull.listStatuses",
+            "sh.tangled.repo.pull.listStatusesBy",
+            "sh.tangled.repo.merge",
+            "sh.tangled.repo.mergeCheck",
+            "sh.tangled.repo.tag",
+            "sh.tangled.repo.tags",
+            "sh.tangled.repo.tree",
+            "sh.tangled.search.query"
+          ]
+        }
+      ],
+      "state": {
+        "revision": "da1953b92c920d3beb2cbd4914387ec3189728ae"
+      }
+    }
+  ],
+  "generate": "client",
+  "module": "Sources/TangledLexicons"
+}

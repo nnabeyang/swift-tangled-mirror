@@ -1,0 +1,8 @@
+{
+  "ref": "main",
+  "path": "large.bin",
+  "size": 10485760,
+  "isBinary": true,
+  "mimeType": "application/octet-stream",
+  "fileTooLarge": true
+}

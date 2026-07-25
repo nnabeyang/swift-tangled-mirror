@@ -1,0 +1,32 @@
+{
+  "items": [
+    {
+      "cid": "bafyrepullrequest",
+      "uri": "at://did:plc:author/sh.tangled.repo.pull/3mr3itrannf22",
+      "value": {
+        "$type": "sh.tangled.repo.pull",
+        "title": "Preserve Tangled rounds",
+        "rounds": [
+          {
+            "createdAt": "2026-07-20T17:27:07Z",
+            "patchBlob": {
+              "$type": "blob",
+              "ref": { "$link": "bafkreiroundone" },
+              "mimeType": "application/gzip",
+              "size": 1751
+            }
+          }
+        ],
+        "source": {
+          "branch": "feature/rounds",
+          "repo": "did:plc:source"
+        },
+        "target": {
+          "branch": "main",
+          "repo": "did:plc:repository"
+        },
+        "createdAt": "2026-07-20T17:27:07+03:00"
+      }
+    }
+  ]
+}

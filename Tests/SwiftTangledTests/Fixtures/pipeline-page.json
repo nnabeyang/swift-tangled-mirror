@@ -1,0 +1,76 @@
+{
+  "cursor": "1784698509603192451",
+  "pipelines": [
+    {
+      "id": "3mr7m2f6ger22",
+      "repo": "did:plc:repository",
+      "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "createdAt": "2026-07-22T08:35:09+03:00",
+      "trigger": {
+        "$type": "sh.tangled.ci.trigger#push",
+        "ref": "refs/heads/main",
+        "newSha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "oldSha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "workflows": [
+        {
+          "id": "build.yml",
+          "name": "build.yml",
+          "status": "success",
+          "startedAt": "2026-07-22T08:35:10+03:00",
+          "finishedAt": "2026-07-22T08:36:10+03:00"
+        },
+        {
+          "id": "test.yml",
+          "name": "test.yml",
+          "status": "failed",
+          "startedAt": "2026-07-22T08:35:10+03:00",
+          "finishedAt": "2026-07-22T08:36:20+03:00",
+          "error": "User step error: exited with code 1"
+        }
+      ]
+    },
+    {
+      "id": "3mr7m2f6ger23",
+      "repo": "did:plc:repository",
+      "sourceRepo": "did:plc:fork",
+      "commit": "cccccccccccccccccccccccccccccccccccccccc",
+      "trigger": {
+        "$type": "sh.tangled.ci.trigger#pullRequest",
+        "targetBranch": "main",
+        "sourceSha": "cccccccccccccccccccccccccccccccccccccccc",
+        "sourceRepo": "did:plc:fork",
+        "sourceBranch": "feature/pipelines",
+        "pull": "at://did:plc:author/sh.tangled.repo.pull/3mr7m2f6ger25"
+      },
+      "workflows": [
+        {
+          "id": "review.yml",
+          "name": "review.yml",
+          "status": "running"
+        }
+      ]
+    },
+    {
+      "id": "3mr7m2f6ger24",
+      "repo": "did:plc:repository",
+      "commit": "dddddddddddddddddddddddddddddddddddddddd",
+      "trigger": {
+        "$type": "sh.tangled.ci.trigger#manual",
+        "sha": "dddddddddddddddddddddddddddddddddddddddd",
+        "ref": "refs/heads/main",
+        "inputs": [
+          { "key": "configuration", "value": "release" }
+        ]
+      },
+      "workflows": [
+        {
+          "id": "release.yml",
+          "name": "release.yml",
+          "status": "cancelled"
+        }
+      ]
+    }
+  ],
+  "total": 4879
+}

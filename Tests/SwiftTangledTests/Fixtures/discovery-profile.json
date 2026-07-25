@@ -1,0 +1,21 @@
+{
+  "cid": "bafyreiprofile",
+  "uri": "at://did:web:debugman.example/sh.tangled.actor.profile/self",
+  "value": {
+    "$type": "sh.tangled.actor.profile",
+    "avatar": {
+      "$type": "blob",
+      "ref": { "$link": "bafkreiavatar" },
+      "mimeType": "image/png",
+      "size": 198519
+    },
+    "bluesky": false,
+    "description": "",
+    "links": ["", "https://example.com"],
+    "location": "",
+    "preferredHandle": "debugman.example",
+    "pronouns": "",
+    "stats": ["", "repository-count"],
+    "createdAt": "2026-04-20T09:40:15.726032Z"
+  }
+}

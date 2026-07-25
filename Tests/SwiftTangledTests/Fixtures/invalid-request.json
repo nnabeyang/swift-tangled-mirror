@@ -1,0 +1,4 @@
+{
+  "error": "InvalidRequest",
+  "message": "invalid request: subject must be a bare did"
+}

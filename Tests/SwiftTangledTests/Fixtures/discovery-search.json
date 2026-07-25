@@ -1,0 +1,30 @@
+{
+  "hits": [
+    {
+      "uri": "at://did:plc:owner/sh.tangled.repo/3mibd5tthdb22",
+      "cid": "bafyreirepository",
+      "nsid": "sh.tangled.repo",
+      "score": 32.904587,
+      "value": {
+        "$type": "sh.tangled.repo",
+        "createdAt": "2026-03-30T18:14:36+09:00",
+        "knot": "knot1.tangled.sh",
+        "name": "core"
+      }
+    },
+    {
+      "uri": "at://did:plc:author/sh.tangled.example/item",
+      "nsid": "sh.tangled.example",
+      "score": 4,
+      "value": {
+        "$type": "sh.tangled.example",
+        "enabled": true,
+        "count": 3,
+        "ratio": 0.5,
+        "nullable": null,
+        "tags": ["one", "two"]
+      }
+    }
+  ],
+  "cursor": "00000002"
+}

@@ -1,0 +1,41 @@
+{
+  "cid": "bafyrepullrequest",
+  "uri": "at://did:plc:author/sh.tangled.repo.pull/3mr3itrannf22",
+  "value": {
+    "$type": "sh.tangled.repo.pull",
+    "title": "Preserve Tangled rounds",
+    "body": "Expose every round through SwiftTangled.",
+    "rounds": [
+      {
+        "createdAt": "2026-07-20T17:27:07Z",
+        "patchBlob": {
+          "$type": "blob",
+          "ref": { "$link": "bafkreiroundone" },
+          "mimeType": "application/gzip",
+          "size": 1751
+        }
+      },
+      {
+        "createdAt": "2026-07-21T07:00:00Z",
+        "patchBlob": {
+          "$type": "blob",
+          "ref": { "$link": "bafkreiroundtwo" },
+          "mimeType": "application/gzip",
+          "size": 2012
+        }
+      }
+    ],
+    "source": { "branch": "feature/rounds" },
+    "target": {
+      "branch": "main",
+      "repo": "did:plc:repository",
+      "repoDid": "did:plc:repository"
+    },
+    "createdAt": "2026-07-20T17:27:07+03:00",
+    "mentions": ["did:plc:mentioned"],
+    "references": [
+      "at://did:plc:author/sh.tangled.repo.issue/3mqmjxilmrz22"
+    ],
+    "dependentOn": "at://did:plc:author/sh.tangled.repo.pull/3mr3itr7lb722"
+  }
+}

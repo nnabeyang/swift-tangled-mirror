@@ -1,0 +1,26 @@
+{
+  "cursor": "next",
+  "items": [
+    {
+      "uri": "at://did:plc:author/sh.tangled.repo.artifact/3martifact",
+      "cid": "bafyreirecord",
+      "value": {
+        "$type": "sh.tangled.repo.artifact",
+        "artifact": {
+          "$type": "blob",
+          "ref": {
+            "$link": "bafkreidie4e7g2mr7u4rbvzuhzrgjxkvcc7qeac7uzidusdy74lvgb2r3a"
+          },
+          "mimeType": "application/octet-stream",
+          "size": 13
+        },
+        "createdAt": "2026-07-25T12:34:56Z",
+        "name": "artifact-data",
+        "repoDid": "did:plc:repository",
+        "tag": {
+          "$bytes": "u7u7u7u7u7u7u7u7u7u7u7u7u7s="
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "tags": [
+    {
+      "name": "v1.0.0",
+      "hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "tag": {
+        "Hash": [187, 187, 187, 187, 187, 187, 187, 187, 187, 187, 187, 187, 187, 187, 187, 187, 187, 187, 187, 187],
+        "Name": "v1.0.0",
+        "Tagger": {"Name": "Alice", "Email": "alice@example.com", "When": "2026-07-20T11:00:00Z"},
+        "Message": "Version 1.0.0\n",
+        "TargetType": 1,
+        "Target": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+      },
+      "message": "Version 1.0.0\n"
+    },
+    {
+      "name": "snapshot",
+      "hash": "cccccccccccccccccccccccccccccccccccccccc"
+    }
+  ]
+}

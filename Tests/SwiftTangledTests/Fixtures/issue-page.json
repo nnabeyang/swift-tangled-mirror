@@ -1,0 +1,33 @@
+{
+  "items": [
+    {
+      "cid": "bafyreissueopen",
+      "uri": "at://did:plc:author/sh.tangled.repo.issue/3mr3jt3kbzm22",
+      "value": {
+        "$type": "sh.tangled.repo.issue",
+        "repo": "did:plc:repository",
+        "title": "Open issue",
+        "body": "Still being investigated.",
+        "createdAt": "2026-07-20T17:44:38+03:00"
+      },
+      "state": "open",
+      "commentCount": 1
+    },
+    {
+      "cid": "bafyreissueclosed",
+      "uri": "at://did:plc:author/sh.tangled.repo.issue/3mqmjxilmrz22",
+      "value": {
+        "$type": "sh.tangled.repo.issue",
+        "repo": "did:plc:repository",
+        "title": "Closed issue",
+        "createdAt": "2026-07-14T15:37:10Z",
+        "mentions": [],
+        "references": []
+      },
+      "state": "closed",
+      "stateUpdatedAt": "2026-07-14T17:47:34.307355Z",
+      "commentCount": 4
+    }
+  ],
+  "cursor": "next-issue-page"
+}

@@ -1,0 +1,51 @@
+{
+  "items": [
+    {
+      "cid": "bafyrecomment",
+      "uri": "at://did:plc:commenter/sh.tangled.feed.comment/3mrcomment",
+      "value": {
+        "$type": "sh.tangled.feed.comment",
+        "subject": {
+          "uri": "at://did:plc:author/sh.tangled.repo.issue/3mrissue",
+          "cid": "bafyreissue"
+        },
+        "body": {
+          "$type": "sh.tangled.markup.markdown",
+          "text": "Rendered **comment**",
+          "original": "Original **comment**",
+          "blobs": [
+            {
+              "$type": "blob",
+              "ref": "AAFVEiD2KY2ZLPRMCpZt91auUqPcdZZi3kljHrrSKlpk6kEFng==",
+              "mimeType": "image/png",
+              "size": 2048
+            }
+          ]
+        },
+        "createdAt": "2026-07-20T18:00:00Z"
+      }
+    },
+    {
+      "cid": "bafyrereply",
+      "uri": "at://did:plc:commenter/sh.tangled.feed.comment/3mrreply",
+      "value": {
+        "$type": "sh.tangled.feed.comment",
+        "subject": {
+          "uri": "at://did:plc:author/sh.tangled.repo.pull/3mrpull",
+          "cid": "bafyrepull"
+        },
+        "body": {
+          "$type": "sh.tangled.markup.markdown",
+          "text": "Round reply"
+        },
+        "replyTo": {
+          "uri": "at://did:plc:commenter/sh.tangled.feed.comment/3mrcomment",
+          "cid": "bafyrecomment"
+        },
+        "pullRoundIdx": 2,
+        "createdAt": "2026-07-20T18:05:00+00:00"
+      }
+    }
+  ],
+  "cursor": "next-comment-page"
+}

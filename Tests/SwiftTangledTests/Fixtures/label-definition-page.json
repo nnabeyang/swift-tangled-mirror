@@ -1,0 +1,22 @@
+{
+  "items": [
+    {
+      "cid": "bafyrelabeldefinition",
+      "uri": "at://did:plc:owner/sh.tangled.label.definition/priority",
+      "value": {
+        "$type": "sh.tangled.label.definition",
+        "name": "priority",
+        "valueType": {
+          "type": "string",
+          "format": "any",
+          "enum": ["high", "medium", "low"]
+        },
+        "scope": ["sh.tangled.repo.issue", "sh.tangled.repo.pull"],
+        "color": "#f59e0b",
+        "createdAt": "2026-07-20T17:00:00Z",
+        "multiple": true
+      }
+    }
+  ],
+  "cursor": "next-label-definition-page"
+}

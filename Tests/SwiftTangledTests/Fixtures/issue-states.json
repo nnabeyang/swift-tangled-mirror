@@ -1,0 +1,25 @@
+{
+  "items": [
+    {
+      "cid": "bafyreissuestateclosed",
+      "uri": "at://did:plc:author/sh.tangled.repo.issue.state/3mqmraogekv22",
+      "value": {
+        "$type": "sh.tangled.repo.issue.state",
+        "issue": "at://did:plc:author/sh.tangled.repo.issue/3mqmjxilmrz22",
+        "state": "sh.tangled.repo.issue.state.closed",
+        "createdAt": "2026-07-14T17:47:34.307Z"
+      }
+    },
+    {
+      "cid": "bafyreissuestatetriaged",
+      "uri": "at://did:plc:author/sh.tangled.repo.issue.state/3mqn000000022",
+      "value": {
+        "$type": "sh.tangled.repo.issue.state",
+        "issue": "at://did:plc:author/sh.tangled.repo.issue/3mqmjxilmrz22",
+        "state": "sh.tangled.repo.issue.state.triaged",
+        "createdAt": "2026-07-15T08:00:00Z"
+      }
+    }
+  ],
+  "cursor": "next-state-page"
+}

@@ -1,0 +1,26 @@
+{
+  "items": [
+    {
+      "cid": "bafyrelabeloperation",
+      "uri": "at://did:plc:operator/sh.tangled.label.op/3mroperation",
+      "value": {
+        "$type": "sh.tangled.label.op",
+        "subject": "at://did:plc:author/sh.tangled.repo.issue/3mrissue",
+        "add": [
+          {
+            "key": "at://did:plc:owner/sh.tangled.label.definition/priority",
+            "value": "high"
+          }
+        ],
+        "delete": [
+          {
+            "key": "at://did:plc:owner/sh.tangled.label.definition/status",
+            "value": "triaged"
+          }
+        ],
+        "performedAt": "2026-07-20T18:15:00Z"
+      }
+    }
+  ],
+  "cursor": "next-label-operation-page"
+}

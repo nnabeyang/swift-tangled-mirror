@@ -1,0 +1,62 @@
+{
+  "items": [
+    {
+      "cid": "bafyrepullopen",
+      "uri": "at://did:plc:author/sh.tangled.repo.pull/3mr4ik2ursq22",
+      "value": {
+        "$type": "sh.tangled.repo.pull",
+        "title": "Open pull request",
+        "rounds": [
+          {
+            "createdAt": "2026-07-20T23:54:22Z",
+            "patchBlob": {
+              "$type": "blob",
+              "ref": "AAFVEiD2KY2ZLPRMCpZt91auUqPcdZZi3kljHrrSKlpk6kEFng==",
+              "mimeType": "application/gzip",
+              "size": 14292
+            }
+          },
+          {
+            "createdAt": "2026-07-21T17:29:06+03:00",
+            "patchBlob": {
+              "$type": "blob",
+              "ref": { "$link": "bafkreiopentwo" },
+              "mimeType": "application/gzip",
+              "size": 13826
+            }
+          }
+        ],
+        "source": { "branch": "feature/open" },
+        "target": { "branch": "main", "repo": "did:plc:repository" },
+        "createdAt": "2026-07-21T17:29:02+03:00"
+      },
+      "state": "open",
+      "commentCount": 1
+    },
+    {
+      "cid": "bafyrepullmerged",
+      "uri": "at://did:plc:author/sh.tangled.repo.pull/3mr3itrannf22",
+      "value": {
+        "$type": "sh.tangled.repo.pull",
+        "title": "Merged pull request",
+        "rounds": [
+          {
+            "createdAt": "2026-07-20T17:27:07+03:00",
+            "patchBlob": {
+              "$type": "blob",
+              "ref": { "$link": "bafkreimerged" },
+              "mimeType": "application/gzip",
+              "size": 1751
+            }
+          }
+        ],
+        "target": { "branch": "main", "repo": "did:plc:repository" },
+        "createdAt": "2026-07-20T17:27:07+03:00"
+      },
+      "state": "merged",
+      "stateUpdatedAt": "2026-07-21T07:57:25.278269Z",
+      "commentCount": 4
+    }
+  ],
+  "cursor": "next-pull-page"
+}

@@ -1,0 +1,10 @@
+{
+  "ref": "main",
+  "path": "Vendor/Dependency",
+  "isBinary": false,
+  "submodule": {
+    "name": "Dependency",
+    "url": "https://example.com/dependency.git",
+    "branch": "stable"
+  }
+}
