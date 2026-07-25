@@ -64,7 +64,12 @@ struct ArtifactAPITests {
     )
     let service = ArtifactService(
       bobbinClient: bobbin,
-      repositoryLocator: RepositoryLocator(client: bobbin),
+      repositoryLocator: RepositoryLocator(
+        client: bobbin,
+        identityResolver: ArtifactDIDResolver(),
+        knotTransport: transport,
+        pdsTransport: transport
+      ),
       resolver: ArtifactDIDResolver(),
       transport: transport
     )
@@ -106,7 +111,12 @@ struct ArtifactAPITests {
     )
     let service = ArtifactService(
       bobbinClient: bobbin,
-      repositoryLocator: RepositoryLocator(client: bobbin),
+      repositoryLocator: RepositoryLocator(
+        client: bobbin,
+        identityResolver: ArtifactDIDResolver(),
+        knotTransport: transport,
+        pdsTransport: transport
+      ),
       resolver: ArtifactDIDResolver(),
       transport: transport
     )
@@ -137,7 +147,12 @@ struct ArtifactAPITests {
     )
     let service = ArtifactService(
       bobbinClient: bobbin,
-      repositoryLocator: RepositoryLocator(client: bobbin),
+      repositoryLocator: RepositoryLocator(
+        client: bobbin,
+        identityResolver: ArtifactDIDResolver(),
+        knotTransport: transport,
+        pdsTransport: transport
+      ),
       resolver: ArtifactDIDResolver(),
       transport: transport
     )
@@ -260,6 +275,14 @@ private actor ArtifactRoutingTransport: HTTPTransport {
     let name = request.url?.lastPathComponent
     let body: Data
     switch name {
+    case "sh.tangled.repo.describeRepo":
+      body = Data(
+        """
+        {"ownerDid":"did:plc:owner","repoDid":"did:plc:repository","rkey":"3mibd5tthdb22"}
+        """.utf8
+      )
+    case "com.atproto.repo.getRecord":
+      body = try fixture("discovery-repository")
     case "sh.tangled.repo.getRepoByRepoDid":
       body = try fixture("discovery-repository")
     case "sh.tangled.repo.tags":

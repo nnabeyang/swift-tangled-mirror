@@ -8,15 +8,13 @@ import Testing
 #endif
 
 @Suite struct RepositoryLocatorTests {
+  let ownerDID = "did:plc:owner"
+  let repoDID = "did:plc:repository"
+  let uri = "at://did:plc:owner/sh.tangled.repo/core"
+
   @Test func parsesEverySupportedRepositoryReference() throws {
-    #expect(
-      try RepositoryReference(
-        "at://did:plc:owner/sh.tangled.repo/3mibd5tthdb22"
-      ) == .atURI("at://did:plc:owner/sh.tangled.repo/3mibd5tthdb22")
-    )
-    #expect(
-      try RepositoryReference("did:plc:repository") == .repositoryDID("did:plc:repository")
-    )
+    #expect(try RepositoryReference(uri) == .atURI(uri))
+    #expect(try RepositoryReference(repoDID) == .repositoryDID(repoDID))
     #expect(
       try RepositoryReference("alice.example/core")
         == .ownerAndName(owner: "alice.example", name: "core")
@@ -34,8 +32,8 @@ import Testing
         == .ownerAndName(owner: "alice.example", name: "core")
     )
     #expect(
-      try RepositoryReference("https://tangled.org/did:plc:repository")
-        == .repositoryDID("did:plc:repository")
+      try RepositoryReference("https://tangled.org/\(repoDID)")
+        == .repositoryDID(repoDID)
     )
   }
 
@@ -44,178 +42,155 @@ import Testing
       "",
       "owner/repository/extra",
       "git@github.com:owner/repository.git",
-      "at://did:plc:owner/sh.tangled.issue/3mibd5tthdb22",
+      "at://did:plc:owner/sh.tangled.issue/core",
       "at://did:plc:owner/sh.tangled.repo",
     ] {
-      do {
+      #expect(throws: TangledError.self) {
         _ = try RepositoryReference(value)
-        Issue.record("Expected invalid reference: \(value)")
-      } catch TangledError.invalidRequest {
-        // Expected.
-      } catch {
-        Issue.record("Unexpected error for \(value): \(error)")
       }
     }
   }
 
-  @Test func resolvesATURIRepoDIDAndOwnerNameThroughExistingAPIs() async throws {
-    let repository = response(name: "core", repoDID: "did:plc:repository")
-    let firstPage = searchPage(
-      hits: [(name: "other", uri: "at://did:plc:owner/sh.tangled.repo/other")],
-      cursor: "next-page"
-    )
-    let secondPage = searchPage(
-      hits: [(name: nil, uri: "at://did:plc:owner/sh.tangled.repo/core")]
-    )
-    let transport = LocatorTransport([
-      .init(statusCode: 200, body: repository),
-      .init(statusCode: 200, body: repository),
-      .init(statusCode: 200, body: firstPage),
-      .init(statusCode: 200, body: secondPage),
-      .init(statusCode: 200, body: repository),
-    ])
-    let locator = RepositoryLocator(
-      client: makeClient(transport),
-      identityResolver: LocatorIdentityResolver(did: "did:plc:owner")
-    )
+  @Test func resolvesATURIFromOwnerPDSWithoutBobbin() async throws {
+    let bobbin = LocatorTransport([])
+    let pds = LocatorTransport([.init(statusCode: 200, body: pdsRecord())])
+    let locator = makeLocator(bobbin: bobbin, pds: pds)
 
-    let byURI = try await locator.resolve(
-      "at://did:plc:owner/sh.tangled.repo/3mibd5tthdb22"
-    )
-    let byDID = try await locator.resolve("did:plc:repository")
-    let byName = try await locator.resolve("alice.example/core")
+    let record = try await locator.resolve(uri)
 
-    #expect(byURI.value.name == "core")
-    #expect(byDID.value.repoDID == "did:plc:repository")
-    #expect(byName.uri == "at://did:plc:owner/sh.tangled.repo/core")
-
-    let requests = await transport.recordedRequests()
-    #expect(requests.count == 5)
-    #expect(
-      queryValues(named: "repo", in: requests[0])
-        == ["at://did:plc:owner/sh.tangled.repo/3mibd5tthdb22"]
-    )
-    #expect(queryValues(named: "repoDid", in: requests[1]) == ["did:plc:repository"])
-    #expect(queryValues(named: "q", in: requests[2]) == ["core"])
-    #expect(queryValues(named: "nsid", in: requests[2]) == ["sh.tangled.repo"])
-    #expect(queryValues(named: "author", in: requests[2]) == ["did:plc:owner"])
-    #expect(queryValues(named: "limit", in: requests[2]) == ["100"])
-    #expect(queryValues(named: "cursor", in: requests[3]) == ["next-page"])
-    #expect(queryValues(named: "repo", in: requests[4]) == [byName.uri])
+    #expect(record.value.name == "core")
+    #expect(await bobbin.requestCount() == 0)
+    let request = try #require(await pds.recordedRequests().first)
+    #expect(request.url?.path == "/pds/xrpc/com.atproto.repo.getRecord")
+    #expect(queryValue("repo", in: request) == ownerDID)
   }
 
-  @Test func ownerResolutionAcceptsDIDAndReportsMissingHandle() async throws {
-    let locator = RepositoryLocator(
-      client: makeClient(LocatorTransport([])),
-      identityResolver: LocatorIdentityResolver(did: nil)
-    )
-
-    #expect(try await locator.resolveOwnerDID("did:plc:owner") == "did:plc:owner")
-    do {
-      _ = try await locator.resolveOwnerDID("missing.example")
-      Issue.record("Expected handleNotResolved")
-    } catch TangledError.handleNotResolved(let handle) {
-      #expect(handle == "missing.example")
-    } catch {
-      Issue.record("Unexpected error: \(error)")
-    }
-  }
-
-  @Test func repoDIDFallsBackToAuthoritativeKnotMetadata() async throws {
-    let repoDID = "did:plc:repository"
-    let repository = response(name: "playground", repoDID: repoDID)
-    let transport = LocatorTransport([
-      .init(statusCode: 404, body: Data(#"{"error":"NotFound"}"#.utf8)),
-      .init(
-        statusCode: 200,
-        body: Data(
-          """
-          {"ownerDid":"did:plc:owner","repoDid":"\(repoDID)","rkey":"playground"}
-          """.utf8
-        )
-      ),
-      .init(statusCode: 200, body: repository),
-    ])
-    let locator = RepositoryLocator(
-      client: makeClient(transport),
-      identityResolver: LocatorIdentityResolver(
-        did: nil,
-        didDocument: knotDocument(did: repoDID)
-      ),
-      knotTransport: transport
-    )
+  @Test func repoDIDUsesKnotMetadataThenReadsOwnerPDS() async throws {
+    let bobbin = LocatorTransport([])
+    let knot = LocatorTransport([.init(statusCode: 200, body: knotDescription())])
+    let pds = LocatorTransport([.init(statusCode: 200, body: pdsRecord())])
+    let locator = makeLocator(bobbin: bobbin, knot: knot, pds: pds)
 
     let record = try await locator.resolve(repoDID)
 
-    #expect(record.uri == "at://did:plc:owner/sh.tangled.repo/playground")
-    #expect(record.value.repoDID == repoDID)
-    let requests = await transport.recordedRequests()
-    #expect(requests.count == 3)
-    #expect(requests[1].url?.host == "knot.example")
-    #expect(requests[1].url?.path == "/base/xrpc/sh.tangled.repo.describeRepo")
-    #expect(queryValues(named: "repoDid", in: requests[1]) == [repoDID])
-    #expect(
-      queryValues(named: "repo", in: requests[2])
-        == ["at://did:plc:owner/sh.tangled.repo/playground"]
-    )
+    #expect(record.uri == uri)
+    #expect(await bobbin.requestCount() == 0)
+    #expect(await knot.requestCount() == 1)
+    #expect(await pds.requestCount() == 1)
   }
 
-  @Test func repoDIDFallbackRejectsMismatchedKnotMetadata() async throws {
-    let transport = LocatorTransport([
-      .init(statusCode: 404, body: Data(#"{"error":"NotFound"}"#.utf8)),
-      .init(
-        statusCode: 200,
-        body: Data(
-          """
-          {"ownerDid":"did:plc:owner","repoDid":"did:plc:other","rkey":"playground"}
-          """.utf8
-        )
-      ),
+  @Test func repoDIDFallsBackToBobbinDiscoveryWhenKnotIsUnavailable() async throws {
+    let bobbin = LocatorTransport([
+      .init(statusCode: 200, body: bobbinRecord())
     ])
-    let locator = RepositoryLocator(
-      client: makeClient(transport),
-      identityResolver: LocatorIdentityResolver(
-        did: nil,
-        didDocument: knotDocument(did: "did:plc:repository")
-      ),
-      knotTransport: transport
-    )
+    let knot = LocatorTransport([
+      .init(statusCode: 503, body: Data())
+    ])
+    let pds = LocatorTransport([.init(statusCode: 200, body: pdsRecord())])
+    let locator = makeLocator(bobbin: bobbin, knot: knot, pds: pds)
 
-    do {
-      _ = try await locator.resolve("did:plc:repository")
-      Issue.record("Expected mismatched repository DID failure")
-    } catch TangledError.upstreamFailed(let message) {
-      #expect(message?.contains("did:plc:other") == true)
-      #expect(message?.contains("did:plc:repository") == true)
-    } catch {
-      Issue.record("Unexpected error: \(error)")
+    let record = try await locator.resolve(repoDID)
+
+    #expect(record.uri == uri)
+    #expect(await bobbin.requestCount() == 1)
+    #expect(await pds.requestCount() == 1)
+  }
+
+  @Test func repoDIDRejectsMismatchedKnotMetadataWithoutFallback() async {
+    let bobbin = LocatorTransport([])
+    let knot = LocatorTransport([
+      .init(statusCode: 200, body: knotDescription(repoDID: "did:plc:other"))
+    ])
+    let locator = makeLocator(bobbin: bobbin, knot: knot, pds: LocatorTransport([]))
+
+    await #expect(throws: TangledError.self) {
+      _ = try await locator.resolve(repoDID)
     }
-    #expect(await transport.requestCount() == 2)
+    #expect(await bobbin.requestCount() == 0)
   }
 
-  @Test func repeatedPaginationCursorFailsWithoutLooping() async throws {
-    let transport = LocatorTransport([
-      .init(statusCode: 200, body: searchPage(hits: [], cursor: "same")),
-      .init(statusCode: 200, body: searchPage(hits: [], cursor: "same")),
+  @Test func ownerNameRefreshesBobbinDiscoveryFromPDS() async throws {
+    let bobbin = LocatorTransport([
+      .init(statusCode: 200, body: searchPage(name: "core", uri: uri))
     ])
-    let locator = RepositoryLocator(
-      client: makeClient(transport),
-      identityResolver: LocatorIdentityResolver(did: "did:plc:owner")
-    )
+    let pds = LocatorTransport([.init(statusCode: 200, body: pdsRecord())])
+    let locator = makeLocator(bobbin: bobbin, pds: pds)
 
-    do {
+    let record = try await locator.resolve("alice.example/core")
+
+    #expect(record.value.knot == "fresh.knot.example")
+    #expect(await bobbin.requestCount() == 1)
+    #expect(await pds.requestCount() == 1)
+  }
+
+  @Test func ownerNameListsPDSRecordsWhenBobbinHasNotIndexedRepository() async throws {
+    let bobbin = LocatorTransport([
+      .init(statusCode: 200, body: searchPage())
+    ])
+    let pds = LocatorTransport([
+      .init(statusCode: 200, body: pdsList(cursor: "next")),
+      .init(statusCode: 200, body: pdsList(includesRecord: true)),
+    ])
+    let locator = makeLocator(bobbin: bobbin, pds: pds)
+
+    let record = try await locator.resolve("alice.example/core")
+
+    #expect(record.uri == uri)
+    let requests = await pds.recordedRequests()
+    #expect(requests.count == 2)
+    #expect(queryValue("cursor", in: requests[1]) == "next")
+  }
+
+  @Test func ownerNameTreatsPDSListingAsAuthoritativeForMissingRepository() async {
+    let bobbin = LocatorTransport([
+      .init(statusCode: 200, body: searchPage())
+    ])
+    let pds = LocatorTransport([
+      .init(statusCode: 200, body: pdsList())
+    ])
+    let locator = makeLocator(bobbin: bobbin, pds: pds)
+
+    await #expect(throws: TangledError.self) {
       _ = try await locator.resolve("alice.example/missing")
-      Issue.record("Expected upstreamFailed")
-    } catch TangledError.upstreamFailed(let message) {
-      #expect(message == "repository search returned a repeated cursor")
-    } catch {
-      Issue.record("Unexpected error: \(error)")
     }
-    #expect(await transport.requestCount() == 2)
+  }
+
+  @Test func ownerResolutionAcceptsDIDAndReportsMissingHandle() async throws {
+    let resolver = LocatorIdentityResolver(handleDID: nil, documents: [:])
+    let locator = RepositoryLocator(
+      client: makeClient(LocatorTransport([])),
+      identityResolver: resolver,
+      knotTransport: LocatorTransport([]),
+      pdsTransport: LocatorTransport([])
+    )
+
+    #expect(try await locator.resolveOwnerDID(ownerDID) == ownerDID)
+    await #expect(throws: TangledError.self) {
+      _ = try await locator.resolveOwnerDID("missing.example")
+    }
   }
 }
 
 extension RepositoryLocatorTests {
+  fileprivate func makeLocator(
+    bobbin: LocatorTransport,
+    knot: LocatorTransport = LocatorTransport([]),
+    pds: LocatorTransport
+  ) -> RepositoryLocator {
+    RepositoryLocator(
+      client: makeClient(bobbin),
+      identityResolver: LocatorIdentityResolver(
+        handleDID: ownerDID,
+        documents: [
+          ownerDID: document(did: ownerDID, endpoint: "https://pds.example/pds"),
+          repoDID: document(did: repoDID, endpoint: "https://knot.example/knot"),
+        ]
+      ),
+      knotTransport: knot,
+      pdsTransport: pds
+    )
+  }
+
   fileprivate func makeClient(_ transport: LocatorTransport) -> BobbinClient {
     BobbinClient(
       baseURL: URL(string: "https://bobbin.example")!,
@@ -224,40 +199,56 @@ extension RepositoryLocatorTests {
     )
   }
 
-  fileprivate func response(name: String, repoDID: String) -> Data {
+  fileprivate func pdsRecord() -> Data {
     Data(
       """
-      {"uri":"at://did:plc:owner/sh.tangled.repo/\(name)","cid":"bafy\(name)","value":\(String(decoding: responseObject(name: name, repoDID: repoDID), as: UTF8.self))}
+      {"uri":"\(uri)","cid":"bafkreidie4e7g2mr7u4rbvzuhzrgjxkvcc7qeac7uzidusdy74lvgb2r3a","value":\(recordValue())}
       """.utf8
     )
   }
 
-  fileprivate func responseObject(name: String, repoDID: String) -> Data {
+  fileprivate func bobbinRecord() -> Data {
     Data(
       """
-      {"name":"\(name)","knot":"knot1.tangled.sh","repoDid":"\(repoDID)","createdAt":"2026-03-30T09:14:36Z"}
+      {"uri":"\(uri)","cid":"bafyold","value":{"name":"core","knot":"old.knot.example","repoDid":"\(repoDID)","createdAt":"2026-03-30T09:14:36Z"}}
       """.utf8
     )
   }
 
-  fileprivate func searchPage(hits: [(name: String?, uri: String)], cursor: String? = nil) -> Data {
-    let values = hits.map { hit in
-      let name = hit.name.map { "\"name\":\"\($0)\"" } ?? ""
-      return
-        "{\"uri\":\"\(hit.uri)\",\"nsid\":\"sh.tangled.repo\",\"score\":1,\"value\":{\(name)}}"
-    }.joined(separator: ",")
-    let cursorField = cursor.map { ",\"cursor\":\"\($0)\"" } ?? ""
-    return Data("{\"hits\":[\(values)]\(cursorField)}".utf8)
+  fileprivate func recordValue() -> String {
+    """
+    {"$type":"sh.tangled.repo","name":"core","knot":"fresh.knot.example","repoDid":"\(repoDID)","createdAt":"2026-07-26T00:00:00Z"}
+    """
   }
 
-  fileprivate func queryValues(named name: String, in request: URLRequest) -> [String] {
-    guard let url = request.url else { return [] }
-    return URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?
-      .filter { $0.name == name }
-      .compactMap(\.value) ?? []
+  fileprivate func knotDescription(repoDID: String? = nil) -> Data {
+    Data(
+      """
+      {"ownerDid":"\(ownerDID)","repoDid":"\(repoDID ?? self.repoDID)","rkey":"core"}
+      """.utf8
+    )
   }
 
-  fileprivate func knotDocument(did: String) -> DIDDocument {
+  fileprivate func searchPage(name: String? = nil, uri: String? = nil) -> Data {
+    guard let name, let uri else { return Data(#"{"hits":[]}"#.utf8) }
+    return Data(
+      """
+      {"hits":[{"uri":"\(uri)","nsid":"sh.tangled.repo","score":1,"value":{"name":"\(name)"}}]}
+      """.utf8
+    )
+  }
+
+  fileprivate func pdsList(includesRecord: Bool = false, cursor: String? = nil) -> Data {
+    let records =
+      includesRecord
+      ? """
+      [{"uri":"\(uri)","cid":"bafkreidie4e7g2mr7u4rbvzuhzrgjxkvcc7qeac7uzidusdy74lvgb2r3a","value":\(recordValue())}]
+      """ : "[]"
+    let cursorField = cursor.map { #","cursor":"\#($0)""# } ?? ""
+    return Data(#"{"records":\#(records)\#(cursorField)}"#.utf8)
+  }
+
+  fileprivate func document(did: String, endpoint: String) -> DIDDocument {
     DIDDocument(
       context: ["https://www.w3.org/ns/did/v1"],
       did: FormatString(rawValue: did),
@@ -265,23 +256,29 @@ extension RepositoryLocatorTests {
         .init(
           id: "#atproto_pds",
           type: "AtprotoPersonalDataServer",
-          serviceEndpoint: "https://knot.example/base"
+          serviceEndpoint: endpoint
         )
       ]
     )
   }
+
+  fileprivate func queryValue(_ name: String, in request: URLRequest) -> String? {
+    guard let url = request.url else { return nil }
+    return URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?
+      .first { $0.name == name }?.value
+  }
 }
 
 private struct LocatorIdentityResolver: ATPResolver {
-  let did: String?
-  var didDocument: DIDDocument? = nil
+  let handleDID: String?
+  let documents: [String: DIDDocument]
 
   func resolve(handle: Handle) async throws -> DID? {
-    try did.map(DID.init(string:))
+    try handleDID.map(DID.init(string:))
   }
 
   func resolve(did: DID) async throws -> DIDDocument? {
-    didDocument
+    documents[did.rawValue]
   }
 }
 

@@ -10,27 +10,47 @@ public struct RepositoryLocator: Sendable {
   private let client: BobbinClient
   private let identityResolver: any ATPResolver
   private let knotTransport: any HTTPTransport
+  private let pdsClient: PDSRecordClient
+  private let recordReader: TangledRecordReader
 
   public init(
     client: BobbinClient = BobbinClient(),
     identityResolver: any ATPResolver = URLSessionATPResolver(),
-    knotTransport: any HTTPTransport = URLSessionTransport()
+    knotTransport: any HTTPTransport = URLSessionTransport(),
+    pdsTransport: any HTTPTransport = URLSessionTransport()
   ) {
     self.client = client
     self.identityResolver = identityResolver
     self.knotTransport = knotTransport
+    let pdsClient = PDSRecordClient(resolver: identityResolver, transport: pdsTransport)
+    self.pdsClient = pdsClient
+    self.recordReader = TangledRecordReader(pdsClient: pdsClient, bobbinClient: client)
   }
 
   public func resolve(_ rawReference: String) async throws -> TangledRecord<Repository> {
     let reference = try RepositoryReference(rawReference)
     switch reference {
     case .atURI(let uri):
-      return try await client.repository(uri: uri)
+      return try await recordReader.repository(uri: uri).record
     case .repositoryDID(let did):
       do {
-        return try await client.repository(repoDID: did)
-      } catch TangledError.notFound {
         return try await repositoryThroughKnot(repoDID: did)
+      } catch is CancellationError {
+        throw CancellationError()
+      } catch let knotError as TangledError {
+        guard knotError.allowsRepositoryDiscoveryFallback else {
+          throw knotError
+        }
+        do {
+          let discovered = try await client.repository(repoDID: did)
+          let record = try await recordReader.repository(uri: discovered.uri).record
+          try validate(record: record, repoDID: did)
+          return record
+        } catch is CancellationError {
+          throw CancellationError()
+        } catch {
+          throw knotError
+        }
       }
     case .ownerAndName(let owner, let name):
       let ownerDID = try await resolveOwnerDID(owner)
@@ -116,7 +136,7 @@ extension RepositoryLocator {
     }
     guard (200 ... 299).contains(response.statusCode) else {
       if response.statusCode == 404 {
-        throw TangledError.notFound("repository not found on Bobbin or its Knot: \(rawRepoDID)")
+        throw TangledError.notFound("repository not found on its Knot: \(rawRepoDID)")
       }
       throw TangledError.serverStatus(response.statusCode, "Knot describeRepo failed")
     }
@@ -137,12 +157,8 @@ extension RepositoryLocator {
     }
     let uri =
       "at://\(description.ownerDid.rawValue)/sh.tangled.repo/\(description.rkey.rawValue)"
-    let record = try await client.repository(uri: uri)
-    guard record.value.repoDID == rawRepoDID else {
-      throw TangledError.upstreamFailed(
-        "repository record does not match Knot repository DID \(rawRepoDID)"
-      )
-    }
+    let record = try await recordReader.repository(uri: uri).record
+    try validate(record: record, repoDID: rawRepoDID)
     return record
   }
 
@@ -151,6 +167,52 @@ extension RepositoryLocator {
     owner: String,
     name: String
   ) async throws -> TangledRecord<Repository> {
+    let discovered: SearchHit?
+    do {
+      discovered = try await repositoryThroughBobbin(ownerDID: ownerDID, name: name)
+    } catch is CancellationError {
+      throw CancellationError()
+    } catch {
+      discovered = nil
+    }
+    if let discovered {
+      do {
+        let record = try await recordReader.repository(uri: discovered.uri).record
+        if record.matchesRepositoryName(name) {
+          return record
+        }
+      } catch is CancellationError {
+        throw CancellationError()
+      } catch {
+        // Bobbin is discovery only. Continue with the owner's authoritative records.
+      }
+    }
+
+    var cursor: String?
+    var seenCursors = Set<String>()
+    repeat {
+      let page = try await pdsClient.repositories(
+        ownerDID: ownerDID,
+        cursor: cursor,
+        limit: 100
+      )
+      if let record = page.items.first(where: { $0.matchesRepositoryName(name) }) {
+        return record
+      }
+      guard let nextCursor = page.cursor else { break }
+      guard seenCursors.insert(nextCursor).inserted else {
+        throw TangledError.upstreamFailed("repository records returned a repeated cursor")
+      }
+      cursor = nextCursor
+    } while true
+
+    throw TangledError.notFound("repository not found: \(owner)/\(name)")
+  }
+
+  private func repositoryThroughBobbin(
+    ownerDID: String,
+    name: String
+  ) async throws -> SearchHit {
     var cursor: String?
     var seenCursors = Set<String>()
     repeat {
@@ -164,7 +226,7 @@ extension RepositoryLocator {
         )
       )
       if let hit = page.items.first(where: { $0.matchesRepositoryName(name) }) {
-        return try await client.repository(uri: hit.uri)
+        return hit
       }
       guard let nextCursor = page.cursor else { break }
       guard seenCursors.insert(nextCursor).inserted else {
@@ -173,7 +235,18 @@ extension RepositoryLocator {
       cursor = nextCursor
     } while true
 
-    throw TangledError.notFound("repository not found: \(owner)/\(name)")
+    throw TangledError.notFound("repository not found on Bobbin")
+  }
+
+  private func validate(
+    record: TangledRecord<Repository>,
+    repoDID: String
+  ) throws {
+    guard record.value.repoDID == repoDID else {
+      throw TangledError.upstreamFailed(
+        "repository record does not match repository DID \(repoDID)"
+      )
+    }
   }
 }
 
@@ -185,5 +258,25 @@ extension SearchHit {
       return true
     }
     return (try? ATURI(string: uri).rkey?.rawValue) == name
+  }
+}
+
+extension TangledRecord where Value == Repository {
+  fileprivate func matchesRepositoryName(_ name: String) -> Bool {
+    value.name == name || (try? ATURI(string: uri).rkey?.rawValue) == name
+  }
+}
+
+extension TangledError {
+  fileprivate var allowsRepositoryDiscoveryFallback: Bool {
+    switch self {
+    case .notFound, .network, .transport, .handleNotResolved, .rateLimited,
+      .serviceUnavailable:
+      true
+    case .serverStatus(let statusCode, _):
+      statusCode >= 500
+    default:
+      false
+    }
   }
 }

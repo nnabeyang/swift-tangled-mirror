@@ -25,7 +25,13 @@ public struct ArtifactService: Sendable {
     transport: any HTTPTransport = URLSessionTransport()
   ) {
     self.bobbinClient = bobbinClient
-    self.repositoryLocator = repositoryLocator ?? RepositoryLocator(client: bobbinClient)
+    self.repositoryLocator =
+      repositoryLocator
+      ?? RepositoryLocator(
+        client: bobbinClient,
+        identityResolver: resolver,
+        pdsTransport: transport
+      )
     self.resolver = resolver
     self.transport = transport
   }
