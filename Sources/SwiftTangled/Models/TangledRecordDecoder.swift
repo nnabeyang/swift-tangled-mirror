@@ -87,6 +87,30 @@ enum TangledRecordDecoder {
   static func artifact(
     uri: String,
     cid: String?,
+    value: UnknownATPValue
+  ) throws -> TangledRecord<Artifact> {
+    let wire: WireArtifact = try decode(value)
+    guard let repositoryDID = wire.repoDid else {
+      throw TangledError.decoding(ArtifactRecordDecodeError.missingRepositoryDID)
+    }
+    return try artifact(
+      uri: uri,
+      cid: cid,
+      repositoryDID: repositoryDID,
+      tag: wire.tag,
+      name: wire.name,
+      blob: BlobReference(
+        cid: wire.artifact.ref.toBaseEncodedString,
+        mimeType: wire.artifact.mimeType,
+        size: Int(wire.artifact.size)
+      ),
+      createdAt: wire.createdAt
+    )
+  }
+
+  static func artifact(
+    uri: String,
+    cid: String?,
     repositoryDID: String,
     tag: Data,
     name: String,
@@ -112,6 +136,11 @@ enum TangledRecordDecoder {
         createdAt: createdAt
       )
     )
+  }
+
+  static func recordType(of value: UnknownATPValue) throws -> String {
+    let wire: WireRecordType = try decode(value)
+    return wire.type
   }
 
   private static func decode<Value: Decodable>(_ value: UnknownATPValue) throws -> Value {
@@ -183,6 +212,23 @@ private struct WirePullRequestBlob: Decodable {
   let size: Int
 }
 
+private struct WireArtifact: Decodable {
+  let artifact: LexBlob
+  let createdAt: FormatString<Date>
+  let name: String
+  let repoDid: String?
+  let tag: Data
+}
+
+private struct WireRecordType: Decodable {
+  let type: String
+
+  private enum CodingKeys: String, CodingKey {
+    case type = "$type"
+  }
+}
+
 private enum ArtifactRecordDecodeError: Error {
   case invalidTagLength(Int)
+  case missingRepositoryDID
 }
