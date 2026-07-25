@@ -23,8 +23,8 @@ push, branch, commit, checkout, and working-tree operations.
    tables. Follow returned cursors when the requested result may span pages.
 
 Read [references/workflows.md](references/workflows.md) before reviewing,
-creating, commenting on, or merging a pull request, or when handling pagination and
-failures.
+creating, commenting on, closing, reopening, or merging a pull request, or when
+handling pagination and failures.
 
 ## Work Safely
 
@@ -34,9 +34,10 @@ failures.
   before selecting a round; use the latest round unless the user identifies a
   specific round.
 - Perform `issue create`, `issue comment`, `issue edit`, `issue close`,
-  `issue reopen`, `pr create`, `pr comment`, or `pr merge` only when
-  the user's request authorizes that write. Before writing, verify the exact
-  repository or pull request, branch or round, title, and body.
+  `issue reopen`, `pr create`, `pr comment`, `pr close`, `pr reopen`, or
+  `pr merge` only when the user's request authorizes that write. Before
+  writing, verify the exact repository or pull request, branch or round, title,
+  body, and requested final state as applicable.
 - Perform `artifact upload` or `artifact delete` only when the user authorizes
   the write. Verify the repository, annotated tag, artifact name, local file,
   and replacement scope first. Use `--yes` for an authorized noninteractive
@@ -48,6 +49,10 @@ failures.
   contains more than one pull request, merge only when the user authorized the
   stack and pass `--stack`. Never retry a merge automatically when the command
   says the Git merge succeeded but status records failed.
+- Before `pr close` or `pr reopen`, verify the Pull Request AT URI, Web URL,
+  current state, and requested final state. Report the returned status record
+  URI and CID. Do not retry automatically when Bobbin or the Web UI has not
+  reflected a successful PDS write.
 - Before creating a pull request from a fork, verify that Git `origin` is the
   intended source, `--repo` is the intended target, and Tangled's fork metadata
   connects them. Keep public test branches, commits, and pull requests free of
@@ -60,7 +65,10 @@ failures.
   as the authentication interface.
 - Do not invent an equivalent when `tng` reports an unsupported operation.
   Explain the missing capability and preserve the original error category.
-- Do not use or scrape the Tangled web UI as an API. Use `tng` output.
+- Do not use or scrape the Tangled Web UI as a general data API. Use `tng`
+  output for structured reads. The Web UI may be checked as a visibility
+  confirmation when delayed indexing makes Pull Request creation or state
+  ambiguous.
 
 ## Interpret Failures
 

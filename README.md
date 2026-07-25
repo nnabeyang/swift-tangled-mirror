@@ -75,7 +75,7 @@ requirement, and supported platforms.
 | `tng auth` | Sign in, inspect the current session, or sign out |
 | `tng repo` | View and browse repositories, branches, tags, files, and commits |
 | `tng issue` | List, view, create, comment on, edit, close, and reopen issues |
-| `tng pr` | List, view, diff, create, review, and merge pull requests |
+| `tng pr` | List, view, diff, create, review, close, reopen, and merge pull requests |
 | `tng pipeline` | List, inspect, and watch Spindle CI pipelines |
 | `tng artifact` | Publish and download artifacts attached to annotated Git tags |
 | `tng events` | Watch live Tangled records through Jetstream |
@@ -101,7 +101,13 @@ tng pr create --base main --head feature/my-change \
 
 The source and target commits must already exist locally. `tng` does not run
 `git fetch` or `git push`. Use `tng pr view`, `tng pr diff`, `tng pr comment`,
-and `tng pr merge` to continue the review workflow.
+`tng pr close`, `tng pr reopen`, and `tng pr merge` to continue the review
+workflow. State changes use the pull request AT URI:
+
+```sh
+tng pr close PULL_REQUEST_AT_URI --json
+tng pr reopen PULL_REQUEST_AT_URI --json
+```
 
 ### Issues
 

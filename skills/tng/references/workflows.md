@@ -123,6 +123,23 @@ Omitting `--round` targets the latest round. Supply exactly one of `--body` and
 `--body-file`. Report the returned comment URI and CID. A successful write
 does not guarantee immediate visibility through Bobbin.
 
+## Close or reopen a pull request
+
+Inspect the Pull Request and verify its AT URI, Web URL, current state, and the
+state requested by the user. Treat both commands as authenticated writes:
+
+```sh
+tng pr view PULL_AT_URI --json
+tng pr close PULL_AT_URI --json
+tng pr reopen PULL_AT_URI --json
+```
+
+Run only the state-changing command that the user authorized. Each state
+change creates an immutable status record. Report its URI, CID, Pull Request
+URI, and status. Distinguish that successful PDS write from later Bobbin
+indexing and Web UI visibility, and do not retry automatically while those
+read surfaces are delayed.
+
 ## Merge a pull request
 
 Treat merge as a destructive, explicitly authorized operation. Always run the
@@ -182,6 +199,12 @@ source as a fork of that target. The command verifies the source head on
 not fetch or push. If it reports that the base commit is unavailable locally,
 run the exact `git fetch` command it suggests and review the updated history
 before retrying.
+
+An empty `tng pr list` result does not by itself prove that creation failed or
+that no matching Pull Request exists. When creation is ambiguous, check the
+Web UI as a visibility confirmation in addition to PDS and Bobbin results.
+Retry creation only when the Web UI also shows no Pull Request and the user
+explicitly authorizes the retry.
 
 ## Paginate JSON results
 
