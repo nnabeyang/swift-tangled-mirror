@@ -15,7 +15,7 @@
         }
     },
     "initializeCommand": ".devcontainer/init.sh",
-    "postCreateCommand": "apt-get update && apt-get install -y curl sqlite3 libsqlite3-dev libncurses5-dev zlib1g-dev python3 build-essential",
+    "postCreateCommand": ".tangled/ci/install-linux-dependencies.sh",
     "postStartCommand": "cd ${WORKSPACE_DIR}",
     "customizations": {
         "vscode": {

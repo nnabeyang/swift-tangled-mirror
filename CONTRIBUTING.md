@@ -78,6 +78,30 @@ OAuth login uses a loopback callback server. In a Dev Container or remote
 environment, pass `--no-browser` and `--callback-port PORT`, open the printed
 URL on the host, and forward that port when it is not forwarded automatically.
 
+### Tangled Spindle CI
+
+The Linux CI workflow runs on Tangled Spindle for pushes to `main`, pull
+requests targeting `main`, and manual runs. It builds a Swift 6.3.2 Ubuntu
+Noble environment with the same system-package installer used by the Dev
+Container, then runs:
+
+```sh
+swift build
+swift test
+swift run --skip-build tng --version
+swift run --skip-build tng capabilities --json
+swift run --skip-build tng repo view nnabeyang.tngl.sh/swift-tangled --json
+```
+
+Open the repository's **Pipelines** page to inspect each step and its logs, or
+to start the `linux` workflow manually. The steps have separate timeouts so a
+stalled build, test, or smoke check reports a bounded failure.
+
+The workflow does not require credentials. If a future workflow needs a
+secret, add it through the Tangled repository settings. Never put tokens, SSH
+keys, `.env` contents, or other credentials in a workflow file, command,
+pipeline log, or artifact.
+
 ## Design Guidelines
 
 - Put reusable behavior and domain logic in `SwiftTangled`.
