@@ -49,7 +49,6 @@ let package = Package(
         "CZlib",
         "TangledLexicons",
         .product(name: "SwiftAtproto", package: "swift-atproto"),
-        .product(name: "ATProtoCrypto", package: "swift-atproto"),
         .product(name: "Crypto", package: "swift-crypto"),
         .product(name: "OAuth4Swift", package: "oauth4swift"),
         .product(name: "GermConvenience", package: "GermConvenience"),
