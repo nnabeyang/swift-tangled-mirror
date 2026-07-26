@@ -43,18 +43,18 @@ public struct PDSRecordClient: Sendable {
       throw TangledError.invalidRequest("repository record limit must be between 1 and 100")
     }
     let pdsURL = try await pdsURL(for: ownerDID)
-    let request = try request(
-      pdsURL: pdsURL,
-      nsid: Com.Atproto.RepoListRecords.id,
-      queryItems: [
-        URLQueryItem(name: "repo", value: ownerDID.rawValue),
-        URLQueryItem(name: "collection", value: "sh.tangled.repo"),
-        URLQueryItem(name: "cursor", value: cursor),
-        URLQueryItem(name: "limit", value: limit.map(String.init)),
-        URLQueryItem(name: "reverse", value: reverse ? "true" : nil),
-      ].filter { $0.value != nil }
-    )
-    let output: Com.Atproto.RepoListRecords_Output = try await response(for: request)
+    let output = try await decode {
+      try await PDSRecordXRPCClient(
+        baseURL: pdsURL,
+        transport: transport
+      ).RepoListRecords(
+        collection: FormatString(rawValue: "sh.tangled.repo"),
+        cursor: cursor,
+        limit: limit,
+        repo: FormatString(rawValue: ownerDID.rawValue),
+        reverse: reverse
+      )
+    }
     return Page(
       items: try output.records.map { record in
         try validate(
@@ -147,16 +147,16 @@ extension PDSRecordClient {
   ) async throws -> Com.Atproto.RepoGetRecord_Output {
     let target = try RecordTarget(uri: uri, expectedCollection: collection)
     let pdsURL = try await pdsURL(for: target.ownerDID)
-    let request = try request(
-      pdsURL: pdsURL,
-      nsid: Com.Atproto.RepoGetRecord.id,
-      queryItems: [
-        URLQueryItem(name: "repo", value: target.ownerDID.rawValue),
-        URLQueryItem(name: "collection", value: target.collection.rawValue),
-        URLQueryItem(name: "rkey", value: target.rkey.rawValue),
-      ]
-    )
-    let output: Com.Atproto.RepoGetRecord_Output = try await response(for: request)
+    let output = try await decode {
+      try await PDSRecordXRPCClient(
+        baseURL: pdsURL,
+        transport: transport
+      ).RepoGetRecord(
+        collection: FormatString(target.collection),
+        repo: FormatString(rawValue: target.ownerDID.rawValue),
+        rkey: FormatString(target.rkey)
+      )
+    }
     try validate(
       uri: output.uri.rawValue,
       ownerDID: target.ownerDID,
@@ -192,50 +192,15 @@ extension PDSRecordClient {
     }
   }
 
-  private func request(
-    pdsURL: URL,
-    nsid: String,
-    queryItems: [URLQueryItem]
-  ) throws -> URLRequest {
-    let endpoint =
-      pdsURL
-      .appendingPathComponent("xrpc", isDirectory: true)
-      .appendingPathComponent(nsid, isDirectory: false)
-    guard var components = URLComponents(url: endpoint, resolvingAgainstBaseURL: false) else {
-      throw TangledError.invalidRequest("invalid PDS endpoint")
-    }
-    components.queryItems = queryItems
-    guard let url = components.url else {
-      throw TangledError.invalidRequest("invalid PDS request for \(nsid)")
-    }
-    var request = URLRequest(url: url, timeoutInterval: 20)
-    request.httpMethod = "GET"
-    request.setValue("application/json", forHTTPHeaderField: "Accept")
-    return request
-  }
-
-  private func response<Value: Decodable>(for request: URLRequest) async throws -> Value {
-    let data: Data
-    let httpResponse: HTTPURLResponse
+  private func decode<Value>(
+    _ operation: () async throws -> Value
+  ) async throws -> Value {
     do {
-      (data, httpResponse) = try await transport.send(request)
+      return try await operation()
     } catch is CancellationError {
       throw CancellationError()
     } catch let error as TangledError {
       throw error
-    } catch let error as URLError {
-      throw TangledError.network(error)
-    } catch {
-      throw TangledError.transport(String(describing: error))
-    }
-    guard (200 ... 299).contains(httpResponse.statusCode) else {
-      throw mapError(data: data, response: httpResponse)
-    }
-
-    do {
-      let decoder = JSONDecoder()
-      decoder.userInfo[.atprotoLexiconDecodingMode] = LexiconDecodingMode.permissive
-      return try decoder.decode(Value.self, from: data)
     } catch {
       throw TangledError.decoding(error)
     }
@@ -263,6 +228,55 @@ extension PDSRecordClient {
         "PDS returned an unexpected record URI: \(rawURI)"
       )
     }
+  }
+}
+
+private struct PDSRecordXRPCClient: XRPCCallable {
+  let baseURL: URL
+  let transport: any HTTPTransport
+
+  func getProxy(nsid _: String) -> String? {
+    nil
+  }
+
+  func response(_ components: XRPCRequestComponents) async throws -> Data {
+    guard components.method == .get else {
+      throw TangledError.invalidRequest("PDS record reads support XRPC queries only")
+    }
+    let endpoint =
+      baseURL
+      .appendingPathComponent("xrpc", isDirectory: true)
+      .appendingPathComponent(components.nsId, isDirectory: false)
+    guard var urlComponents = URLComponents(url: endpoint, resolvingAgainstBaseURL: false) else {
+      throw TangledError.invalidRequest("invalid PDS endpoint")
+    }
+    urlComponents.percentEncodedQueryItems = components.queryItems
+    guard let url = urlComponents.url else {
+      throw TangledError.invalidRequest("invalid PDS request for \(components.nsId)")
+    }
+    var request = URLRequest(url: url, timeoutInterval: 20)
+    request.httpMethod = components.method.rawValue
+    for field in components.headers {
+      request.addValue(field.value, forHTTPHeaderField: field.name.rawName)
+    }
+
+    let data: Data
+    let httpResponse: HTTPURLResponse
+    do {
+      (data, httpResponse) = try await transport.send(request)
+    } catch is CancellationError {
+      throw CancellationError()
+    } catch let error as TangledError {
+      throw error
+    } catch let error as URLError {
+      throw TangledError.network(error)
+    } catch {
+      throw TangledError.transport(String(describing: error))
+    }
+    guard (200 ... 299).contains(httpResponse.statusCode) else {
+      throw mapError(data: data, response: httpResponse)
+    }
+    return data
   }
 
   private func mapError(data: Data, response: HTTPURLResponse) -> TangledError {
