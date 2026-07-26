@@ -94,10 +94,9 @@ swift run --skip-build tng repo view nnabeyang.tngl.sh/swift-tangled --json
 ```
 
 Open the repository's **Pipelines** page to inspect each step and its logs, or
-to start the `linux` workflow manually. Swift image preparation relies on
-Spindle's workflow timeout so a cold Docker pull is not interrupted by a
-shorter repository-level limit. The build, test, and smoke-check commands have
-separate timeouts so a stalled command reports a bounded failure.
+to start the `linux` workflow manually. Environment preparation, build, test,
+and smoke checks rely on Spindle's workflow timeout so a slow but progressing
+command is not interrupted by a shorter repository-level limit.
 
 The workflow does not require credentials. If a future workflow needs a
 secret, add it through the Tangled repository settings. Never put tokens, SSH

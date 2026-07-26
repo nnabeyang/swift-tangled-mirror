@@ -23,42 +23,39 @@ steps:
 
   - name: "Build"
     command: |
-      timeout --signal=TERM 600s \
-        docker run --rm \
-          --env CI=true \
-          --volume "$PWD:/workspace" \
-          --workdir /workspace \
-          swift-tangled-ci:6.3.2 \
-          swift build
+      docker run --rm \
+        --env CI=true \
+        --volume "$PWD:/workspace" \
+        --workdir /workspace \
+        swift-tangled-ci:6.3.2 \
+        swift build
 
   - name: "Test"
     command: |
-      timeout --signal=TERM 600s \
-        docker run --rm \
-          --env CI=true \
-          --volume "$PWD:/workspace" \
-          --workdir /workspace \
-          swift-tangled-ci:6.3.2 \
-          swift test
+      docker run --rm \
+        --env CI=true \
+        --volume "$PWD:/workspace" \
+        --workdir /workspace \
+        swift-tangled-ci:6.3.2 \
+        swift test
 
   - name: "CLI smoke tests"
     command: |
-      timeout --signal=TERM 300s \
-        docker run --rm \
-          --env CI=true \
-          --volume "$PWD:/workspace" \
-          --workdir /workspace \
-          swift-tangled-ci:6.3.2 \
-          bash -euo pipefail -c '
-            version=$(swift run --skip-build tng --version)
-            grep -Eq "^[0-9]+\.[0-9]+\.[0-9]+$" <<<"$version"
+      docker run --rm \
+        --env CI=true \
+        --volume "$PWD:/workspace" \
+        --workdir /workspace \
+        swift-tangled-ci:6.3.2 \
+        bash -euo pipefail -c '
+          version=$(swift run --skip-build tng --version)
+          grep -Eq "^[0-9]+\.[0-9]+\.[0-9]+$" <<<"$version"
 
-            swift run --skip-build tng capabilities --json \
-              >/tmp/tng-capabilities.json
-            python3 -m json.tool /tmp/tng-capabilities.json >/dev/null
+          swift run --skip-build tng capabilities --json \
+            >/tmp/tng-capabilities.json
+          python3 -m json.tool /tmp/tng-capabilities.json >/dev/null
 
-            swift run --skip-build tng repo view \
-              nnabeyang.tngl.sh/swift-tangled --json \
-              >/tmp/tng-repository.json
-            python3 -m json.tool /tmp/tng-repository.json >/dev/null
-          '
+          swift run --skip-build tng repo view \
+            nnabeyang.tngl.sh/swift-tangled --json \
+            >/tmp/tng-repository.json
+          python3 -m json.tool /tmp/tng-repository.json >/dev/null
+        '
