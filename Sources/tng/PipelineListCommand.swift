@@ -1,4 +1,5 @@
 import ArgumentParser
+import Foundation
 
 struct PipelineListCommand: AsyncParsableCommand {
   static let configuration = CommandConfiguration(
@@ -10,6 +11,9 @@ struct PipelineListCommand: AsyncParsableCommand {
     help: "Repository AT URI, repo DID, handle/name, or clone URL (defaults to Git origin)"
   )
   var repository: String?
+
+  @Option(help: "Spindle hostname or URL; overrides repository discovery")
+  var spindle: String?
 
   @Option(name: [.customShort("L"), .long], help: "Maximum number of pipelines to return")
   var limit = 30
@@ -24,12 +28,16 @@ struct PipelineListCommand: AsyncParsableCommand {
     guard (1 ... 250).contains(limit) else {
       throw ValidationError("--limit must be between 1 and 250")
     }
+    if let spindle, spindle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+      throw ValidationError("--spindle must not be empty")
+    }
   }
 
   func run() async throws {
     try await runCLICommand(jsonErrors: json) {
       try await PipelineCommandService(formatter: .live).list(
         repository: repository,
+        spindle: spindle,
         limit: limit,
         cursor: cursor,
         json: json

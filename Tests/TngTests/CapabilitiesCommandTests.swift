@@ -69,6 +69,13 @@ import Testing
     let artifactDownload = try #require(
       document.commands.first { $0.path == ["artifact", "download"] }
     )
+    let pipelineReads = document.commands.filter {
+      [
+        ["pipeline", "list"],
+        ["pipeline", "view"],
+        ["pipeline", "status"],
+      ].contains($0.path)
+    }
 
     #expect(pullCreate.access == .write)
     #expect(pullCreate.authenticationRequired)
@@ -104,6 +111,12 @@ import Testing
     #expect(artifactDownload.access == .write)
     #expect(!artifactDownload.authenticationRequired)
     #expect(artifactDownload.options.contains { $0.names == ["-o", "--output"] })
+    #expect(pipelineReads.count == 3)
+    #expect(
+      pipelineReads.allSatisfy { command in
+        command.options.contains { $0.names == ["--spindle"] }
+      }
+    )
   }
 
   @Test func capabilityJSONRoundTrips() throws {

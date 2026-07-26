@@ -1,4 +1,5 @@
 import ArgumentParser
+import Foundation
 
 struct PipelineViewCommand: AsyncParsableCommand {
   static let configuration = CommandConfiguration(
@@ -15,14 +16,24 @@ struct PipelineViewCommand: AsyncParsableCommand {
   )
   var repository: String?
 
+  @Option(help: "Spindle hostname or URL; skips repository discovery")
+  var spindle: String?
+
   @Flag(help: "Output the complete pipeline as JSON")
   var json = false
+
+  mutating func validate() throws {
+    if let spindle, spindle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+      throw ValidationError("--spindle must not be empty")
+    }
+  }
 
   func run() async throws {
     try await runCLICommand(jsonErrors: json) {
       try await PipelineCommandService(formatter: .live).view(
         pipelineID: pipelineID,
         repository: repository,
+        spindle: spindle,
         json: json
       )
     }

@@ -48,13 +48,15 @@ struct PipelineCommandService: Sendable {
 
   func list(
     repository: String?,
+    spindle: String?,
     limit: Int,
     cursor: String?,
     json: Bool
   ) async throws -> CLICommandOutput {
+    let explicitSpindle = try normalizedSpindle(spindle)
     let record = try await resolveRepositoryRecord(repository)
     let page = try await dependencies.pipelines(
-      try repositorySpindle(record),
+      try explicitSpindle ?? repositorySpindle(record),
       try repositoryDID(record),
       cursor,
       limit
@@ -68,22 +70,22 @@ struct PipelineCommandService: Sendable {
   func view(
     pipelineID: String,
     repository: String?,
+    spindle: String?,
     json: Bool
   ) async throws -> CLICommandOutput {
-    let record = try await resolveRepositoryRecord(repository)
-    _ = try repositoryDID(record)
-    let pipeline = try await dependencies.pipeline(try repositorySpindle(record), pipelineID)
+    let resolvedSpindle = try await resolveSpindle(repository: repository, spindle: spindle)
+    let pipeline = try await dependencies.pipeline(resolvedSpindle, pipelineID)
     return CLICommandOutput(stdout: try json ? formatter.json(pipeline) : format(pipeline))
   }
 
   func status(
     pipelineID: String,
     repository: String?,
+    spindle: String?,
     json: Bool
   ) async throws -> CLICommandOutput {
-    let record = try await resolveRepositoryRecord(repository)
-    _ = try repositoryDID(record)
-    let pipeline = try await dependencies.pipeline(try repositorySpindle(record), pipelineID)
+    let resolvedSpindle = try await resolveSpindle(repository: repository, spindle: spindle)
+    let pipeline = try await dependencies.pipeline(resolvedSpindle, pipelineID)
     return CLICommandOutput(
       stdout: try json ? formatter.json(pipeline.workflows) : format(pipeline.workflows)
     )
@@ -96,14 +98,7 @@ struct PipelineCommandService: Sendable {
     interval: TimeInterval,
     json: Bool
   ) async throws {
-    let resolvedSpindle: String
-    if let spindle {
-      resolvedSpindle = try SpindleClient(spindle: spindle).baseURL.absoluteString
-    } else {
-      let record = try await resolveRepositoryRecord(repository)
-      _ = try repositoryDID(record)
-      resolvedSpindle = try repositorySpindle(record)
-    }
+    let resolvedSpindle = try await resolveSpindle(repository: repository, spindle: spindle)
     var previousStates: [PipelineWorkflowState]?
 
     while !Task.isCancelled {
@@ -154,6 +149,20 @@ extension PipelineCommandService {
       )
     }
     return spindle
+  }
+
+  fileprivate func resolveSpindle(
+    repository: String?,
+    spindle: String?
+  ) async throws -> String {
+    if let explicitSpindle = try normalizedSpindle(spindle) {
+      return explicitSpindle
+    }
+    return try repositorySpindle(try await resolveRepositoryRecord(repository))
+  }
+
+  fileprivate func normalizedSpindle(_ spindle: String?) throws -> String? {
+    try spindle.map { try SpindleClient(spindle: $0).baseURL.absoluteString }
   }
 
   fileprivate func format(_ pipelines: [Pipeline]) -> String {

@@ -8,25 +8,31 @@ import Testing
 @Suite struct PipelineCommandTests {
   @Test func parsesListViewStatusAndWatchArguments() throws {
     let list = try PipelineListCommand.parse([
-      "alice.example/core", "--limit", "25", "--cursor", "next", "--json",
+      "alice.example/core", "--spindle", "spindle.example", "--limit", "25",
+      "--cursor", "next", "--json",
     ])
     #expect(list.repository == "alice.example/core")
+    #expect(list.spindle == "spindle.example")
     #expect(list.limit == 25)
     #expect(list.cursor == "next")
     #expect(list.json)
 
     let view = try PipelineViewCommand.parse([
-      samplePipelineID, "--repo", "alice.example/core", "--json",
+      samplePipelineID, "--repo", "alice.example/core", "--spindle", "spindle.example",
+      "--json",
     ])
     #expect(view.pipelineID == samplePipelineID)
     #expect(view.repository == "alice.example/core")
+    #expect(view.spindle == "spindle.example")
     #expect(view.json)
 
     let status = try PipelineStatusCommand.parse([
-      samplePipelineID, "--repo", "alice.example/core", "--json",
+      samplePipelineID, "--repo", "alice.example/core", "--spindle", "spindle.example",
+      "--json",
     ])
     #expect(status.pipelineID == samplePipelineID)
     #expect(status.repository == "alice.example/core")
+    #expect(status.spindle == "spindle.example")
     #expect(status.json)
 
     let watch = try PipelineWatchCommand.parse([
@@ -46,6 +52,15 @@ import Testing
       _ = try PipelineListCommand.parse(["--limit", "251"])
     }
     #expect(throws: (any Error).self) {
+      _ = try PipelineListCommand.parse(["--spindle", ""])
+    }
+    #expect(throws: (any Error).self) {
+      _ = try PipelineViewCommand.parse([samplePipelineID, "--spindle", ""])
+    }
+    #expect(throws: (any Error).self) {
+      _ = try PipelineStatusCommand.parse([samplePipelineID, "--spindle", ""])
+    }
+    #expect(throws: (any Error).self) {
       _ = try PipelineWatchCommand.parse([samplePipelineID, "--interval", "0.1"])
     }
     #expect(throws: (any Error).self) {
@@ -56,12 +71,18 @@ import Testing
     }
   }
 
-  @Test func listResolvesRepositoryAndFormatsPage() async throws {
+  @Test func listUsesCurrentRepositorySpindleAndFormatsPage() async throws {
     let recorder = PipelineCommandRecorder()
-    let service = PipelineCommandService(dependencies: dependencies(recorder: recorder))
+    let service = PipelineCommandService(
+      dependencies: dependencies(
+        recorder: recorder,
+        repositoryRecord: sampleRepositoryRecord(spindle: "fresh.spindle.example")
+      )
+    )
 
     let output = try await service.list(
       repository: "alice.example/core",
+      spindle: nil,
       limit: 25,
       cursor: "previous",
       json: false
@@ -76,7 +97,7 @@ import Testing
       await recorder.listCalls()
         == [
           .init(
-            spindle: "spindle.tangled.sh",
+            spindle: "fresh.spindle.example",
             repositoryDID: "did:plc:repository",
             cursor: "previous",
             limit: 25
@@ -96,6 +117,7 @@ import Testing
 
     let output = try await service.list(
       repository: nil,
+      spindle: nil,
       limit: 30,
       cursor: nil,
       json: true
@@ -116,21 +138,25 @@ import Testing
     let view = try await service.view(
       pipelineID: samplePipelineID,
       repository: "alice.example/core",
+      spindle: nil,
       json: false
     )
     let viewJSON = try await service.view(
       pipelineID: samplePipelineID,
       repository: "alice.example/core",
+      spindle: nil,
       json: true
     )
     let status = try await service.status(
       pipelineID: samplePipelineID,
       repository: "alice.example/core",
+      spindle: nil,
       json: false
     )
     let statusJSON = try await service.status(
       pipelineID: samplePipelineID,
       repository: "alice.example/core",
+      spindle: nil,
       json: true
     )
 
@@ -157,7 +183,7 @@ import Testing
     )
   }
 
-  @Test func commandsRejectMissingRepositoryMetadataBeforeSpindleRequest() async {
+  @Test func listRejectsMissingDIDAndReadsRejectMissingSpindle() async {
     let recorder = PipelineCommandRecorder()
     let missingDID = PipelineCommandService(
       dependencies: dependencies(
@@ -175,6 +201,7 @@ import Testing
     await #expect(throws: TangledError.self) {
       _ = try await missingDID.list(
         repository: "alice.example/core",
+        spindle: "explicit.spindle.example",
         limit: 30,
         cursor: nil,
         json: false
@@ -184,11 +211,146 @@ import Testing
       _ = try await missingSpindle.view(
         pipelineID: samplePipelineID,
         repository: "alice.example/core",
+        spindle: nil,
         json: false
       )
     }
     #expect(await recorder.listCalls().isEmpty)
     #expect(await recorder.pipelineCalls().isEmpty)
+  }
+
+  @Test func explicitSpindleOverridesRepositoryAndSkipsUnneededDiscovery() async throws {
+    let listRecorder = PipelineCommandRecorder()
+    let listService = PipelineCommandService(
+      dependencies: dependencies(
+        recorder: listRecorder,
+        repositoryRecord: sampleRepositoryRecord(spindle: nil)
+      )
+    )
+
+    _ = try await listService.list(
+      repository: "alice.example/core",
+      spindle: "explicit.spindle.example",
+      limit: 30,
+      cursor: nil,
+      json: false
+    )
+
+    #expect(await listRecorder.references() == ["alice.example/core"])
+    #expect(
+      await listRecorder.listCalls()
+        == [
+          .init(
+            spindle: "https://explicit.spindle.example",
+            repositoryDID: "did:plc:repository",
+            cursor: nil,
+            limit: 30
+          )
+        ]
+    )
+
+    let readRecorder = PipelineCommandRecorder()
+    let pipeline = samplePipeline()
+    let readService = PipelineCommandService(
+      dependencies: PipelineCommandDependencies(
+        resolveRepository: { _ in
+          throw TangledError.invalidRequest("repository discovery must be skipped")
+        },
+        pipelines: { _, _, _, _ in PipelinePage(pipelines: [], total: 0) },
+        pipeline: { spindle, pipelineID in
+          await readRecorder.record(
+            pipeline: .init(spindle: spindle, pipelineID: pipelineID)
+          )
+          return pipeline
+        },
+        originURL: {
+          throw TangledError.invalidRequest("origin must be skipped")
+        },
+        sleep: { _ in }
+      )
+    )
+
+    _ = try await readService.view(
+      pipelineID: samplePipelineID,
+      repository: nil,
+      spindle: "explicit.spindle.example",
+      json: false
+    )
+    _ = try await readService.status(
+      pipelineID: samplePipelineID,
+      repository: nil,
+      spindle: "explicit.spindle.example",
+      json: false
+    )
+
+    #expect(
+      await readRecorder.pipelineCalls()
+        == Array(
+          repeating: .init(
+            spindle: "https://explicit.spindle.example",
+            pipelineID: samplePipelineID
+          ),
+          count: 2
+        )
+    )
+  }
+
+  @Test func invalidExplicitSpindleFailsBeforeDiscoveryOrRequest() async {
+    let recorder = PipelineCommandRecorder()
+    let service = PipelineCommandService(dependencies: dependencies(recorder: recorder))
+
+    await #expect(throws: TangledError.self) {
+      _ = try await service.list(
+        repository: "alice.example/core",
+        spindle: "ftp://spindle.example",
+        limit: 30,
+        cursor: nil,
+        json: false
+      )
+    }
+    await #expect(throws: TangledError.self) {
+      _ = try await service.view(
+        pipelineID: samplePipelineID,
+        repository: "alice.example/core",
+        spindle: "ftp://spindle.example",
+        json: false
+      )
+    }
+
+    #expect(await recorder.references().isEmpty)
+    #expect(await recorder.listCalls().isEmpty)
+    #expect(await recorder.pipelineCalls().isEmpty)
+  }
+
+  @Test func pipelineReadsDoNotRequireRepositoryDID() async throws {
+    let recorder = PipelineCommandRecorder()
+    let service = PipelineCommandService(
+      dependencies: dependencies(
+        recorder: recorder,
+        repositoryRecord: sampleRepositoryRecord(repositoryDID: nil)
+      )
+    )
+
+    _ = try await service.view(
+      pipelineID: samplePipelineID,
+      repository: "alice.example/core",
+      spindle: nil,
+      json: false
+    )
+    _ = try await service.status(
+      pipelineID: samplePipelineID,
+      repository: "alice.example/core",
+      spindle: nil,
+      json: false
+    )
+
+    #expect(
+      await recorder.pipelineCalls()
+        == Array(
+          repeating: .init(spindle: "spindle.tangled.sh", pipelineID: samplePipelineID),
+          count: 2
+        )
+    )
   }
 
   @Test func watchPrintsOnlyStateChangesAndFinishesOnSuccess() async throws {
