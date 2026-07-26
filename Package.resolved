@@ -1,5 +1,5 @@
 {
-  "originHash" : "e695e8b5999cf421ab873afcb2e065916c6eb22949d72b8b01325fe5b1306b23",
+  "originHash" : "c13d5b4d01317dd22dca6dd875e31d7b2537232a741fa72036ff8dea1ce38ce6",
   "pins" : [
     {
       "identity" : "compress-nio",
@@ -87,8 +87,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/nnabeyang/swift-atproto.git",
       "state" : {
-        "revision" : "7d6319891a35283d134be43dc9cb4441ff1b8549",
-        "version" : "0.42.1"
+        "revision" : "59e32887eeacef35822bff9954480edbfef3352c",
+        "version" : "0.42.2"
       }
     },
     {

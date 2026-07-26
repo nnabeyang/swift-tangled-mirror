@@ -800,43 +800,32 @@ struct PDSArtifactTests {
       requests.map(\.nsID)
         == ["com.atproto.repo.uploadBlob", "com.atproto.repo.putRecord"]
     )
-    let input = try JSONDecoder().decode(
-      Com.Atproto.RepoPutRecord_Input.self,
-      from: #require(requests.last?.body)
-    )
-    #expect(input.repo.rawValue == sessionDID)
-    #expect(input.rkey.rawValue == recordKey)
-    #expect(input.swapRecord == nil)
-    guard case .record(let value) = input.record,
-      let artifact = value as? Sh.Tangled.RepoArtifact
-    else {
-      Issue.record("Expected generated artifact record")
-      return
-    }
-    #expect(artifact.repo?.rawValue == repositoryURI)
-    #expect(artifact.repoDid?.rawValue == repositoryDID)
-    #expect(artifact.name == "artifact-data")
-    #expect(artifact.tag == Data(repeating: 0xBB, count: 20))
+    let input = try putRecordJSON(from: #require(requests.last?.body))
+    #expect(input["repo"] as? String == sessionDID)
+    #expect(input["rkey"] as? String == recordKey)
+    #expect(input["swapRecord"] == nil)
+    let artifact = try #require(input["record"] as? [String: Any])
+    #expect(artifact["repo"] as? String == repositoryURI)
+    #expect(artifact["repoDid"] as? String == repositoryDID)
+    #expect(artifact["name"] as? String == "artifact-data")
+    let tag = try #require(artifact["tag"] as? [String: String])
+    #expect(tag == ["$bytes": "u7u7u7u7u7u7u7u7u7u7u7u7u7s"])
   }
 
-  @Test func ownArtifactRecordsAreReadAuthoritativelyFromPDS() async throws {
-    let generated = try JSONDecoder().decode(
-      Sh.Tangled.RepoArtifact.self,
-      from: Data(
-        """
-        {"$type":"sh.tangled.repo.artifact","artifact":{"$type":"blob","ref":{"$link":"\(blobCID)"},"mimeType":"application/octet-stream","size":13},"createdAt":"2026-07-25T12:34:56Z","name":"artifact-data","repo":"\(repositoryURI)","repoDid":"\(repositoryDID)","tag":"u7u7u7u7u7u7u7u7u7u7u7u7u7s="}
-        """.utf8
-      )
-    )
-    let record = Com.Atproto.RepoListRecords_Record(
-      cid: FormatString(rawValue: "bafyartifactrecord"),
-      uri: FormatString(
-        rawValue: "at://\(sessionDID)/sh.tangled.repo.artifact/\(recordKey)"
-      ),
-      value: .record(generated)
-    )
+  @Test(arguments: [
+    #""u7u7u7u7u7u7u7u7u7u7u7u7u7s=""#,
+    #"{"$bytes":"u7u7u7u7u7u7u7u7u7u7u7u7u7s="}"#,
+  ])
+  func ownArtifactRecordsAcceptCanonicalAndLegacyTagBytes(_ tagJSON: String) async throws {
     let mock = try PDSXRPCMock(
-      listPages: [.init(records: [record])]
+      listPages: [],
+      rawListPages: [
+        Data(
+          """
+          {"records":[{"uri":"at://\(sessionDID)/sh.tangled.repo.artifact/\(recordKey)","cid":"bafyartifactrecord","value":{"$type":"sh.tangled.repo.artifact","artifact":{"$type":"blob","ref":{"$link":"\(blobCID)"},"mimeType":"application/octet-stream","size":13},"createdAt":"2026-07-25T12:34:56Z","name":"artifact-data","repo":"\(repositoryURI)","repoDid":"\(repositoryDID)","tag":\(tagJSON)}}]}
+          """.utf8
+        )
+      ]
     )
 
     let records = try await makeClient(mock).artifactRecords(
@@ -876,12 +865,9 @@ struct PDSArtifactTests {
     )
 
     let request = try #require(await mock.recordedRequests().last)
-    let input = try JSONDecoder().decode(
-      Com.Atproto.RepoPutRecord_Input.self,
-      from: #require(request.body)
-    )
-    #expect(input.rkey.rawValue == recordKey)
-    #expect(input.swapRecord?.rawValue == "bafycurrent")
+    let input = try putRecordJSON(from: #require(request.body))
+    #expect(input["rkey"] as? String == recordKey)
+    #expect(input["swapRecord"] as? String == "bafycurrent")
   }
 
   @Test func otherAuthorAndMissingScopesFailBeforeUpload() async throws {
@@ -973,6 +959,10 @@ struct PDSArtifactTests {
       """.utf8
     )
   }
+
+  private func putRecordJSON(from data: Data) throws -> [String: Any] {
+    try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+  }
 }
 
 private actor PDSXRPCMock: XRPCCallable {
@@ -998,13 +988,14 @@ private actor PDSXRPCMock: XRPCCallable {
 
   init(
     listPages: [Com.Atproto.RepoListRecords_Output],
+    rawListPages: [Data]? = nil,
     putOutput: Com.Atproto.RepoPutRecord_Output? = nil,
     uploadOutput: Data? = nil,
     failingNSID: String? = nil,
     failure: Failure? = nil
   ) throws {
     let encoder = JSONEncoder()
-    self.listPages = try listPages.map(encoder.encode)
+    self.listPages = try rawListPages ?? listPages.map(encoder.encode)
     self.putOutput = try encoder.encode(
       putOutput
         ?? Com.Atproto.RepoPutRecord_Output(

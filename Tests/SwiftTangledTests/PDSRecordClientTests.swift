@@ -12,7 +12,11 @@ import Testing
   private let repositoryDID = "did:plc:repository"
   private let rkey = "3mrecord"
 
-  @Test func readsEverySupportedRecordFromTheOwnerPDS() async throws {
+  @Test(arguments: [
+    #""AAAAAAAAAAAAAAAAAAAAAAAAAAA=""#,
+    #"{"$bytes":"AAAAAAAAAAAAAAAAAAAAAAAAAAA="}"#,
+  ])
+  func readsEverySupportedRecordFromTheOwnerPDS(_ artifactTagJSON: String) async throws {
     let responses = [
       response(
         collection: "sh.tangled.repo",
@@ -39,7 +43,7 @@ import Testing
         collection: "sh.tangled.repo.artifact",
         value:
           """
-          {"$type":"sh.tangled.repo.artifact","artifact":{"$type":"blob","ref":{"$link":"bafkreidie4e7g2mr7u4rbvzuhzrgjxkvcc7qeac7uzidusdy74lvgb2r3a"},"mimeType":"application/octet-stream","size":13},"createdAt":"2026-07-26T00:03:00Z","name":"release.zip","repoDid":"\(repositoryDID)","tag":"AAAAAAAAAAAAAAAAAAAAAAAAAAA="}
+          {"$type":"sh.tangled.repo.artifact","artifact":{"$type":"blob","ref":{"$link":"bafkreidie4e7g2mr7u4rbvzuhzrgjxkvcc7qeac7uzidusdy74lvgb2r3a"},"mimeType":"application/octet-stream","size":13},"createdAt":"2026-07-26T00:03:00Z","name":"release.zip","repoDid":"\(repositoryDID)","tag":\(artifactTagJSON)}
           """
       ),
     ]
@@ -78,6 +82,28 @@ import Testing
     #expect(query(named: "repo", request: requests[0]) == ownerDID)
     #expect(query(named: "collection", request: requests[0]) == "sh.tangled.repo")
     #expect(query(named: "rkey", request: requests[0]) == rkey)
+  }
+
+  @Test(arguments: [
+    #"{"$bytes":"not base64"}"#,
+    #"{"$bytes":"AA=="}"#,
+  ])
+  func rejectsInvalidArtifactTagBytes(_ artifactTagJSON: String) async {
+    let transport = PDSRecordTransport([
+      response(
+        collection: "sh.tangled.repo.artifact",
+        value:
+          """
+          {"$type":"sh.tangled.repo.artifact","artifact":{"$type":"blob","ref":{"$link":"bafkreidie4e7g2mr7u4rbvzuhzrgjxkvcc7qeac7uzidusdy74lvgb2r3a"},"mimeType":"application/octet-stream","size":13},"createdAt":"2026-07-26T00:03:00Z","name":"release.zip","repoDid":"\(repositoryDID)","tag":\(artifactTagJSON)}
+          """
+      )
+    ])
+
+    await #expect(throws: TangledError.self) {
+      _ = try await makeClient(transport: transport).artifact(
+        uri: uri(collection: "sh.tangled.repo.artifact")
+      )
+    }
   }
 
   @Test func listsRepositoryRecordsWithPagination() async throws {

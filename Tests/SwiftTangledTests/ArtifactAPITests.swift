@@ -42,6 +42,61 @@ struct ArtifactAPITests {
     #expect(query("order", requests[0]) == "asc")
   }
 
+  @Test func bobbinAcceptsLegacyArtifactTagBytes() async throws {
+    let transport = ArtifactRoutingTransport(
+      artifactPage: artifactPage(tagJSON: #""u7u7u7u7u7u7u7u7u7u7u7u7u7s=""#)
+    )
+    let client = BobbinClient(
+      baseURL: URL(string: "https://bobbin.example")!,
+      transport: transport,
+      retryPolicy: .init(maxAttempts: 1)
+    )
+
+    let page = try await client.artifacts(repositoryDID: repositoryDID)
+
+    #expect(page.items.count == 1)
+    #expect(page.items[0].value.tagObjectHash == String(repeating: "bb", count: 20))
+  }
+
+  @Test func bobbinDecodesCurrentWebArtifactShape() async throws {
+    let response = Data(
+      """
+      {"items":[{"uri":"at://did:plc:jge3zxi7lgrfnvhzcgrimeo7/sh.tangled.repo.artifact/3mrhvfbc3p222","cid":"bafyreidcnxgag7i3eruepwqe435sav2d6tbtalgai4luax2l6jdmxosh74","value":{"$type":"sh.tangled.repo.artifact","artifact":{"$type":"blob","$type":"blob","ref":{"$link":"bafkreiauophu4tt4xssqw3c3naywdihdjje5xlduezmdz7ulcqf5grsokq"},"mimeType":"application/gzip","size":8671623},"createdAt":"2026-07-25T15:43:36+03:00","name":"tng-0.1.1-macos-arm64.tar.gz","repoDid":"did:plc:5lkgngawfsd5jh7ch5h5ir2v","tag":{"$bytes":"wskxG0rUL13Z6/4FI0umifCNNTs="},"$type":"sh.tangled.repo.artifact"}}],"cursor":null}
+      """.utf8
+    )
+    let transport = ArtifactRoutingTransport(artifactPage: response)
+    let client = BobbinClient(
+      baseURL: URL(string: "https://bobbin.example")!,
+      transport: transport,
+      retryPolicy: .init(maxAttempts: 1)
+    )
+
+    let page = try await client.artifacts(
+      repositoryDID: "did:plc:5lkgngawfsd5jh7ch5h5ir2v"
+    )
+
+    #expect(page.items.count == 1)
+    #expect(page.items[0].value.name == "tng-0.1.1-macos-arm64.tar.gz")
+    #expect(page.items[0].value.tagObjectHash == "c2c9311b4ad42f5dd9ebfe05234ba689f08d353b")
+  }
+
+  @Test(arguments: [
+    #"{"$bytes":"not base64"}"#,
+    #"{"$bytes":"AA=="}"#,
+  ])
+  func bobbinRejectsInvalidArtifactTagBytes(_ tagJSON: String) async {
+    let transport = ArtifactRoutingTransport(artifactPage: artifactPage(tagJSON: tagJSON))
+    let client = BobbinClient(
+      baseURL: URL(string: "https://bobbin.example")!,
+      transport: transport,
+      retryPolicy: .init(maxAttempts: 1)
+    )
+
+    await #expect(throws: TangledError.self) {
+      _ = try await client.artifacts(repositoryDID: repositoryDID)
+    }
+  }
+
   @Test func invalidRepositoryDIDFailsBeforeBobbinRequest() async {
     let transport = ArtifactRoutingTransport()
     let client = BobbinClient(
@@ -312,6 +367,14 @@ struct ArtifactAPITests {
     )
   }
 
+  private func artifactPage(tagJSON: String) -> Data {
+    Data(
+      """
+      {"items":[{"uri":"at://did:plc:author/sh.tangled.repo.artifact/3martifact","cid":"bafyreirecord","value":{"$type":"sh.tangled.repo.artifact","artifact":{"$type":"blob","$type":"blob","ref":{"$link":"bafkreidie4e7g2mr7u4rbvzuhzrgjxkvcc7qeac7uzidusdy74lvgb2r3a"},"mimeType":"application/octet-stream","size":13},"createdAt":"2026-07-25T12:34:56Z","name":"artifact-data","repoDid":"\(repositoryDID)","tag":\(tagJSON),"$type":"sh.tangled.repo.artifact"}}]}
+      """.utf8
+    )
+  }
+
   private func artifactRecord(
     uriSuffix: String,
     name: String,
@@ -337,10 +400,15 @@ struct ArtifactAPITests {
 
 private actor ArtifactRoutingTransport: HTTPTransport {
   private let blob: Data
+  private let artifactPage: Data?
   private var requests: [URLRequest] = []
 
-  init(blob: Data = Data("artifact-data".utf8)) {
+  init(
+    blob: Data = Data("artifact-data".utf8),
+    artifactPage: Data? = nil
+  ) {
     self.blob = blob
+    self.artifactPage = artifactPage
   }
 
   func send(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
@@ -362,7 +430,7 @@ private actor ArtifactRoutingTransport: HTTPTransport {
       body = try fixture("git-tags")
     case "sh.tangled.repo.listArtifacts":
       if query("cursor", request) == nil {
-        body = try fixture("artifact-page")
+        body = try artifactPage ?? fixture("artifact-page")
       } else {
         body = Data(#"{"items":[]}"#.utf8)
       }
