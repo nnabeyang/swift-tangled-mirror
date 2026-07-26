@@ -8,7 +8,8 @@ struct IssueCommandDependencies: Sendable {
     @Sendable (String, String?, IssueStatus?, String?, Int, BobbinSortOrder) async throws -> Page<
       IssueListItem
     >
-  let issue: @Sendable (String) async throws -> TangledRecord<Issue>
+  let viewIssue: @Sendable (String) async throws -> TangledRecord<Issue>
+  let authoritativeIssue: @Sendable (String) async throws -> TangledRecord<Issue>
   let comments: @Sendable (String, String?, Int) async throws -> Page<TangledRecord<Comment>>
   let createIssue: @Sendable (String, String, String?) async throws -> TangledRecord<Issue>
   let createComment: @Sendable (RecordReference, String) async throws -> TangledRecord<Comment>
@@ -32,7 +33,8 @@ struct IssueCommandDependencies: Sendable {
           order: order
         )
       },
-      issue: { try await client.issue(uri: $0) },
+      viewIssue: { try await client.issue(uri: $0) },
+      authoritativeIssue: { try await client.issue(uri: $0) },
       comments: { uri, cursor, limit in
         try await client.comments(subjectURI: uri, cursor: cursor, limit: limit)
       },
@@ -122,7 +124,7 @@ struct IssueCommandService: Sendable {
     commentCursor: String? = nil,
     json: Bool
   ) async throws -> CLICommandOutput {
-    let record = try await dependencies.issue(issueURI)
+    let record = try await dependencies.viewIssue(issueURI)
     guard comments else {
       return CLICommandOutput(stdout: try json ? formatter.json(record) : format(record))
     }
@@ -164,7 +166,7 @@ struct IssueCommandService: Sendable {
     bodyFile: String?,
     json: Bool
   ) async throws -> CLICommandOutput {
-    let issue = try await dependencies.issue(issueURI)
+    let issue = try await dependencies.authoritativeIssue(issueURI)
     guard let cid = issue.cid, !cid.isEmpty else {
       throw TangledError.invalidRequest("issue does not expose a CID")
     }
@@ -188,7 +190,7 @@ struct IssueCommandService: Sendable {
     bodyFile: String?,
     json: Bool
   ) async throws -> CLICommandOutput {
-    let current = try await dependencies.issue(issueURI)
+    let current = try await dependencies.authoritativeIssue(issueURI)
     let resolvedBody: String?
     if let bodyFile {
       resolvedBody = try String(contentsOfFile: bodyFile, encoding: .utf8)
@@ -210,7 +212,7 @@ struct IssueCommandService: Sendable {
     state: IssueStatus,
     json: Bool
   ) async throws -> CLICommandOutput {
-    let issue = try await dependencies.issue(issueURI)
+    let issue = try await dependencies.authoritativeIssue(issueURI)
     let record = try await dependencies.setIssueState(issue.uri, state)
     return CLICommandOutput(stdout: try json ? formatter.json(record) : format(record))
   }

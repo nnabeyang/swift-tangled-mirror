@@ -488,7 +488,11 @@ extension IssueCommandTests {
           cursor: "next-page"
         )
       },
-      issue: { uri in
+      viewIssue: { uri in
+        await recorder.record(issueURI: uri)
+        return issueRecord
+      },
+      authoritativeIssue: { uri in
         await recorder.record(issueURI: uri)
         return issueRecord
       },
