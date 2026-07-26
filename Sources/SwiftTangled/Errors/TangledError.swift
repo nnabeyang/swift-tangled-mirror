@@ -6,6 +6,7 @@ public enum TangledError: Error, Sendable {
   case transport(String)
   case decoding(any Error)
   case invalidRequest(String?)
+  case conflict(String?)
   case unauthorized
   case insufficientScope(String)
   case notFound(String?)

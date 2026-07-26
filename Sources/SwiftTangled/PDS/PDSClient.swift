@@ -640,7 +640,14 @@ extension PDSClient {
       throw TangledError.insufficientScope(String(describing: error))
     } catch let error as DecodingError {
       throw TangledError.decoding(error)
+    } catch OAuth.Errors.oauthError(let response, _)
+      where response.error == "InvalidSwap"
+    {
+      throw TangledError.conflict(nil)
     } catch let error as any XRPCError {
+      if error.error == "InvalidSwap" {
+        throw TangledError.conflict(error.message)
+      }
       throw TangledError.transport(error.message ?? error.error ?? String(describing: error))
     } catch {
       throw TangledError.transport(String(describing: error))

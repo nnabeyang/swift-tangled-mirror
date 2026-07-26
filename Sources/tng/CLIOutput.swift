@@ -249,6 +249,7 @@ private func jsonErrorCode(for error: any Error) -> String {
     case .transport: return "transport"
     case .decoding: return "decoding"
     case .invalidRequest: return "invalid_request"
+    case .conflict: return "conflict"
     case .unauthorized: return "unauthorized"
     case .insufficientScope: return "insufficient_scope"
     case .notFound: return "not_found"
@@ -284,7 +285,7 @@ private func authenticationError(_ error: TangledError) -> Bool {
   case .unauthorized, .insufficientScope, .oauthTimeout, .oauthStateMismatch, .oauthCancelled,
     .portBindFailure, .browserLaunchFailed, .keychainFailure, .sessionStoreFailure:
     true
-  case .notImplemented, .network, .transport, .decoding, .invalidRequest,
+  case .notImplemented, .network, .transport, .decoding, .invalidRequest, .conflict,
     .notFound, .rateLimited, .upstreamFailed, .serviceUnavailable,
     .serverStatus, .handleNotResolved:
     false
@@ -323,6 +324,8 @@ func describeTangledError(_ error: TangledError) -> String {
     "response decoding failed"
   case .invalidRequest(let message):
     "invalid request\(message.map { ": \($0)" } ?? "")"
+  case .conflict(let message):
+    "conflict: \(message ?? "record changed since it was read; fetch the latest state and retry")"
   case .unauthorized:
     "unauthorized; run 'tng auth login <handle>'"
   case .insufficientScope(let scope):

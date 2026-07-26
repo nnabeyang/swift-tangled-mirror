@@ -1,4 +1,5 @@
 import Foundation
+import OAuth4Swift
 import SwiftAtproto
 import TangledLexicons
 import Testing
@@ -323,6 +324,79 @@ import Testing
       )
     }
     #expect(await mock.recordedRequests().isEmpty)
+  }
+
+  @Test func updateIssueReportsInvalidSwapAsConflictWithoutRetrying() async throws {
+    for failure in [PDSXRPCMock.Failure.oauthInvalidSwap, .xrpcInvalidSwap] {
+      let issueURI = "at://\(sessionDID)/sh.tangled.repo.issue/\(recordKey)"
+      let mock = try PDSXRPCMock(listPages: [], failure: failure)
+      let client = PDSClient(
+        client: mock,
+        repoDID: sessionDID,
+        authorizedScopes: ["atproto", "repo:sh.tangled.repo.issue"]
+      )
+      let current = TangledRecord(
+        uri: issueURI,
+        cid: "bafycurrent",
+        value: Issue(
+          repositoryDID: repositoryDID,
+          title: "Old title",
+          createdAt: createdAt
+        )
+      )
+
+      do {
+        _ = try await client.updateIssue(
+          current: current,
+          title: "Updated title",
+          body: nil
+        )
+        Issue.record("Expected record conflict")
+      } catch TangledError.conflict {
+        // Expected.
+      } catch {
+        Issue.record("Unexpected error: \(error)")
+      }
+
+      #expect(
+        await mock.recordedRequests().map(\.nsID)
+          == ["com.atproto.repo.putRecord"]
+      )
+    }
+  }
+
+  @Test func updateIssueKeepsOtherXRPCErrorsAsTransportFailures() async throws {
+    let issueURI = "at://\(sessionDID)/sh.tangled.repo.issue/\(recordKey)"
+    let mock = try PDSXRPCMock(listPages: [], failure: .xrpcOther)
+    let client = PDSClient(
+      client: mock,
+      repoDID: sessionDID,
+      authorizedScopes: ["atproto", "repo:sh.tangled.repo.issue"]
+    )
+    let current = TangledRecord(
+      uri: issueURI,
+      cid: "bafycurrent",
+      value: Issue(
+        repositoryDID: repositoryDID,
+        title: "Old title",
+        createdAt: createdAt
+      )
+    )
+
+    do {
+      _ = try await client.updateIssue(
+        current: current,
+        title: "Updated title",
+        body: nil
+      )
+      Issue.record("Expected transport failure")
+    } catch TangledError.transport(let message) {
+      #expect(message == "upstream failed")
+    } catch {
+      Issue.record("Unexpected error: \(error)")
+    }
+
+    #expect(await mock.recordedRequests().count == 1)
   }
 
   @Test func setIssueStateWritesGeneratedOpenAndClosedRecords() async throws {
@@ -902,6 +976,12 @@ struct PDSArtifactTests {
 }
 
 private actor PDSXRPCMock: XRPCCallable {
+  enum Failure: Sendable {
+    case oauthInvalidSwap
+    case xrpcInvalidSwap
+    case xrpcOther
+  }
+
   struct Request: Sendable {
     let nsID: String
     let query: [String: String]
@@ -913,13 +993,15 @@ private actor PDSXRPCMock: XRPCCallable {
   private let deleteOutput: Data
   private let uploadOutput: Data
   private let failingNSID: String?
+  private let failure: Failure?
   private var requests: [Request] = []
 
   init(
     listPages: [Com.Atproto.RepoListRecords_Output],
     putOutput: Com.Atproto.RepoPutRecord_Output? = nil,
     uploadOutput: Data? = nil,
-    failingNSID: String? = nil
+    failingNSID: String? = nil,
+    failure: Failure? = nil
   ) throws {
     let encoder = JSONEncoder()
     self.listPages = try listPages.map(encoder.encode)
@@ -939,6 +1021,7 @@ private actor PDSXRPCMock: XRPCCallable {
         """.utf8
       )
     self.failingNSID = failingNSID
+    self.failure = failure
   }
 
   nonisolated func getProxy(nsid: String) -> String? {
@@ -960,6 +1043,23 @@ private actor PDSXRPCMock: XRPCCallable {
     )
     if components.nsId == failingNSID {
       throw URLError(.cannotConnectToHost)
+    }
+    if components.nsId == "com.atproto.repo.putRecord", let failure {
+      switch failure {
+      case .oauthInvalidSwap:
+        let response = try JSONDecoder().decode(
+          OAuth.ErrorResponse.self,
+          from: Data(#"{"error":"InvalidSwap"}"#.utf8)
+        )
+        throw OAuth.Errors.oauthError(response, .badRequest)
+      case .xrpcInvalidSwap:
+        throw Com.Atproto.RepoPutRecord.Error.invalidswap(nil)
+      case .xrpcOther:
+        throw Com.Atproto.RepoPutRecord.Error.unexpected(
+          error: "UpstreamFailure",
+          message: "upstream failed"
+        )
+      }
     }
     switch components.nsId {
     case "com.atproto.repo.uploadBlob":

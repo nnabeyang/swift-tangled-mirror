@@ -421,6 +421,29 @@ import struct SwiftTangled.Issue
     #expect(call.body == "")
   }
 
+  @Test func editPropagatesConflictWithoutRetrying() async {
+    let recorder = IssueCommandRecorder()
+    let service = IssueCommandService(
+      dependencies: dependencies(
+        recorder: recorder,
+        updateIssueError: .conflict(nil)
+      )
+    )
+
+    await #expect(throws: TangledError.self) {
+      _ = try await service.edit(
+        issueURI: sampleIssueURI,
+        title: "Updated title",
+        body: nil,
+        bodyFile: nil,
+        json: false
+      )
+    }
+
+    #expect(await recorder.authoritativeIssueURIs() == [sampleIssueURI])
+    #expect(await recorder.updateCalls().count == 1)
+  }
+
   @Test func closeAndReopenFetchIssueAndCreateStateRecords() async throws {
     let recorder = IssueCommandRecorder()
     let service = IssueCommandService(dependencies: dependencies(recorder: recorder))
@@ -503,6 +526,7 @@ extension IssueCommandTests {
     repositoryRecord: TangledRecord<Repository>? = nil,
     issueRecord: TangledRecord<Issue>? = nil,
     authoritativeIssueError: TangledError? = nil,
+    updateIssueError: TangledError? = nil,
     originURL: @escaping @Sendable () throws -> String = { "unused" }
   ) -> IssueCommandDependencies {
     let repositoryRecord = repositoryRecord ?? sampleRepositoryRecord()
@@ -579,6 +603,9 @@ extension IssueCommandTests {
       },
       updateIssue: { current, title, body in
         await recorder.record(update: .init(current: current, title: title, body: body))
+        if let updateIssueError {
+          throw updateIssueError
+        }
         return TangledRecord(
           uri: current.uri,
           cid: "bafyupdated",

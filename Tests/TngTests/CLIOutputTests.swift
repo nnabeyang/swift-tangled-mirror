@@ -13,6 +13,21 @@ import Testing
     #expect(report.diagnostic == "API error: invalid request: invalid value\n")
   }
 
+  @Test func reportsRecordConflictsAsAPIErrors() {
+    let error = TangledError.conflict(nil)
+    let report = errorReport(for: error)
+    let jsonReport = jsonErrorReport(for: error)
+
+    #expect(report.exitCode == .api)
+    #expect(
+      report.diagnostic
+        == "API error: conflict: record changed since it was read; fetch the latest state and retry\n"
+    )
+    #expect(jsonReport.category == "api")
+    #expect(jsonReport.code == "conflict")
+    #expect(jsonReport.exitCode == CLIExitCode.api.rawValue)
+  }
+
   @Test func reportsAuthenticationErrors() {
     let errors: [TangledError] = [
       .unauthorized,
