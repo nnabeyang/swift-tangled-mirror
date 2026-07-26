@@ -1,4 +1,5 @@
 import Foundation
+import SwiftAtproto
 import Testing
 
 @testable import TangledLexicons
@@ -50,6 +51,30 @@ import Testing
   #expect(String(decoding: score, as: UTF8.self) == "32.5")
 }
 
+@Test func malformedKnownRecordFallsBackToUnknownRecord() throws {
+  let data = Data(
+    """
+    {
+      "$type": "sh.tangled.actor.profile",
+      "bluesky": false,
+      "stats": ["future-stat"]
+    }
+    """.utf8
+  )
+
+  let value = try JSONDecoder().decode(UnknownATPValue.self, from: data)
+  let roundTrip = try JSONEncoder().encode(value)
+  let raw = try JSONDecoder().decode(RawProfileStats.self, from: roundTrip)
+  guard case .record(let record) = value else {
+    Issue.record("Expected a record value")
+    return
+  }
+  let unknown = try #require(record as? UnknownRecord)
+
+  #expect(unknown.type == Sh.Tangled.ActorProfile.nsId)
+  #expect(raw.stats == ["future-stat"])
+}
+
 @Test func generatedPullDecodesLegacyAndModernBlobLinks() throws {
   let legacy = "AAFVEiD2KY2ZLPRMCpZt91auUqPcdZZi3kljHrrSKlpk6kEFng=="
   let modern = "bafkreidie4e7g2mr7u4rbvzuhzrgjxkvcc7qeac7uzidusdy74lvgb2r3a"
@@ -91,4 +116,8 @@ import Testing
       == "bafkreihwfggzslhujqfjm3pxk2xffi64owlgfxsjmmplvurkljsouqifty"
   )
   #expect(pull.rounds[1].patchBlob.ref.toBaseEncodedString == modern)
+}
+
+private struct RawProfileStats: Decodable {
+  let stats: [String]
 }
