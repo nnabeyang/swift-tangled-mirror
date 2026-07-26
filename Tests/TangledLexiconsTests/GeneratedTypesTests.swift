@@ -75,6 +75,32 @@ import Testing
   #expect(raw.stats == ["future-stat"])
 }
 
+@Test func markupMarkdownDecodesLegacyAndModernBlobLinks() throws {
+  let legacy = "AAFVEiD2KY2ZLPRMCpZt91auUqPcdZZi3kljHrrSKlpk6kEFng=="
+  let modern = "bafkreidie4e7g2mr7u4rbvzuhzrgjxkvcc7qeac7uzidusdy74lvgb2r3a"
+  let data = Data(
+    """
+    {
+      "text": "hello",
+      "blobs": [
+        {"$type": "blob", "ref": "\(legacy)", "mimeType": "image/png", "size": 10},
+        {"$type": "blob", "ref": {"$link": "\(modern)"}, "mimeType": "image/png", "size": 20}
+      ]
+    }
+    """.utf8
+  )
+
+  let markdown = try JSONDecoder().decode(Sh.Tangled.MarkupMarkdown.self, from: data)
+  let blobs = try #require(markdown.blobs)
+
+  #expect(blobs.count == 2)
+  #expect(
+    blobs[0].ref.toBaseEncodedString
+      == "bafkreihwfggzslhujqfjm3pxk2xffi64owlgfxsjmmplvurkljsouqifty"
+  )
+  #expect(blobs[1].ref.toBaseEncodedString == modern)
+}
+
 @Test func generatedPullDecodesLegacyAndModernBlobLinks() throws {
   let legacy = "AAFVEiD2KY2ZLPRMCpZt91auUqPcdZZi3kljHrrSKlpk6kEFng=="
   let modern = "bafkreidie4e7g2mr7u4rbvzuhzrgjxkvcc7qeac7uzidusdy74lvgb2r3a"
