@@ -16,11 +16,10 @@ virtualisation:
 steps:
   - name: "Prepare Swift 6.3.2 environment"
     command: |
-      timeout --signal=TERM 300s \
-        docker build \
-          --file .tangled/ci/Dockerfile \
-          --tag swift-tangled-ci:6.3.2 \
-          .tangled/ci
+      docker build \
+        --file .tangled/ci/Dockerfile \
+        --tag swift-tangled-ci:6.3.2 \
+        .tangled/ci
 
   - name: "Build"
     command: |
