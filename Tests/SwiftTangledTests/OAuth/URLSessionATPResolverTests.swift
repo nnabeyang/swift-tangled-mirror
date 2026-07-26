@@ -7,26 +7,41 @@ import Testing
   import FoundationNetworking
 #endif
 
-@Test func handleResolutionFallsBackToXRPCService() async throws {
-  ResolverURLProtocol.reset()
-  let configuration = URLSessionConfiguration.ephemeral
-  configuration.protocolClasses = [ResolverURLProtocol.self]
-  let resolver = URLSessionATPResolver(
-    session: URLSession(configuration: configuration),
-    plcDirectory: URL(string: "https://plc.example")!,
-    handleResolver: URL(string: "https://resolver.example")!
-  )
+@Suite(.serialized) struct URLSessionATPResolverTests {
+  @Test func handleResolutionFallsBackToXRPCService() async throws {
+    ResolverURLProtocol.reset()
+    let resolver = makeResolver()
 
-  let did = try await resolver.resolve(handle: Handle(string: "alice.example"))
+    let did = try await resolver.resolve(handle: Handle(string: "alice.example"))
 
-  #expect(did?.rawValue == "did:plc:resolved")
-  let requests = ResolverURLProtocol.recordedRequests()
-  #expect(requests.count == 2)
-  #expect(requests[0].url?.absoluteString == "https://alice.example/.well-known/atproto-did")
-  #expect(
-    requests[1].url?.absoluteString
-      == "https://resolver.example/xrpc/com.atproto.identity.resolveHandle?handle=alice.example"
-  )
+    #expect(did?.rawValue == "did:plc:resolved")
+    let requests = ResolverURLProtocol.recordedRequests()
+    #expect(requests.count == 2)
+    #expect(requests[0].url?.absoluteString == "https://alice.example/.well-known/atproto-did")
+    #expect(
+      requests[1].url?.absoluteString
+        == "https://resolver.example/xrpc/com.atproto.identity.resolveHandle?handle=alice.example"
+    )
+  }
+
+  @Test func malformedFallbackDIDReturnsNil() async throws {
+    ResolverURLProtocol.reset()
+    let resolver = makeResolver()
+
+    let did = try await resolver.resolve(handle: Handle(string: "malformed.example"))
+
+    #expect(did == nil)
+  }
+
+  private func makeResolver() -> URLSessionATPResolver {
+    let configuration = URLSessionConfiguration.ephemeral
+    configuration.protocolClasses = [ResolverURLProtocol.self]
+    return URLSessionATPResolver(
+      session: URLSession(configuration: configuration),
+      plcDirectory: URL(string: "https://plc.example")!,
+      handleResolver: URL(string: "https://resolver.example")!
+    )
+  }
 }
 
 private final class ResolverURLProtocol: URLProtocol {
@@ -47,8 +62,19 @@ private final class ResolverURLProtocol: URLProtocol {
     Self.lock.unlock()
 
     let isFallback = request.url?.host == "resolver.example"
+    let handle = URLComponents(url: request.url!, resolvingAgainstBaseURL: false)?
+      .queryItems?
+      .first { $0.name == "handle" }?
+      .value
     let statusCode = isFallback ? 200 : 500
-    let body = isFallback ? Data(#"{"did":"did:plc:resolved"}"#.utf8) : Data()
+    let body =
+      if isFallback, handle == "malformed.example" {
+        Data(#"{"did":"not-a-did"}"#.utf8)
+      } else if isFallback {
+        Data(#"{"did":"did:plc:resolved"}"#.utf8)
+      } else {
+        Data()
+      }
     let response = HTTPURLResponse(
       url: request.url!,
       statusCode: statusCode,

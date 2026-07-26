@@ -53,15 +53,16 @@ public struct URLSessionATPResolver: ATPResolver {
   }
 
   private func resolveWithService(handle: Handle) async throws -> DID? {
+    let response: Com.Atproto.IdentityResolveHandle.ResponseBody
     do {
-      let response = try await HTTPXRPCClient(
+      response = try await HTTPXRPCClient(
         baseURL: handleResolver,
         transport: URLSessionTransport(session: session)
-      ).IdentityResolveHandle(handle: FormatString(rawValue: handle.rawValue))
-      return try DID(string: response.did.rawValue)
+      ).IdentityResolveHandle(handle: .init(handle))
     } catch TangledError.notFound {
       return nil
     }
+    return response.did.typed
   }
 
   public func resolve(did: DID) async throws -> DIDDocument? {
