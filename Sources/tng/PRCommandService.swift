@@ -7,6 +7,9 @@ struct PRCommandDependencies: Sendable {
   let pullRequests:
     @Sendable (String, String?, PullRequestStatus?, String?, Int, BobbinSortOrder) async throws ->
       Page<PullRequestListItem>
+  let authorPullRequests:
+    @Sendable (String, String, String, PullRequestStatus?, String?, Int, BobbinSortOrder) async throws
+      -> Page<PullRequestListItem>
   let viewPullRequest: @Sendable (String) async throws -> TangledRecord<PullRequest>
   let authoritativePullRequest: @Sendable (String) async throws -> TangledRecord<PullRequest>
   let comments: @Sendable (String, String?, Int) async throws -> Page<TangledRecord<Comment>>
@@ -27,6 +30,7 @@ struct PRCommandDependencies: Sendable {
     let client = BobbinClient()
     let locator = RepositoryLocator(client: client)
     let pdsRecordClient = PDSRecordClient()
+    let authorPullRequestList = AuthorPullRequestListService(pdsRecordClient: pdsRecordClient)
     let recordReader = TangledRecordReader(
       pdsClient: pdsRecordClient,
       bobbinClient: client
@@ -37,6 +41,18 @@ struct PRCommandDependencies: Sendable {
       pullRequests: { repositoryDID, authorDID, status, cursor, limit, order in
         try await client.pullRequests(
           repositoryDID: repositoryDID,
+          authorDID: authorDID,
+          status: status,
+          cursor: cursor,
+          limit: limit,
+          order: order
+        )
+      },
+      authorPullRequests: {
+        repositoryDID, repositoryOwnerDID, authorDID, status, cursor, limit, order in
+        try await authorPullRequestList.list(
+          repositoryDID: repositoryDID,
+          repositoryOwnerDID: repositoryOwnerDID,
           authorDID: authorDID,
           status: status,
           cursor: cursor,
@@ -127,16 +143,27 @@ struct PRCommandService: Sendable {
         "repository does not expose a repository DID: \(repositoryRecord.uri)"
       )
     }
-    let authorDID: String?
     if let author {
-      authorDID = try await dependencies.resolveOwnerDID(author)
-    } else {
-      authorDID = nil
+      let authorDID = try await dependencies.resolveOwnerDID(author)
+      let repositoryOwnerDID = try repositoryOwnerDID(repositoryRecord.uri)
+      let page = try await dependencies.authorPullRequests(
+        repositoryDID,
+        repositoryOwnerDID,
+        authorDID,
+        status,
+        cursor,
+        limit,
+        sort
+      )
+      return CLICommandOutput(
+        stdout: try json ? formatter.json(page) : format(page.items),
+        stderr: formatter.cursorDiagnostic(page.cursor, json: json)
+      )
     }
     async let coverage = readBobbinCoverage(using: dependencies.coverage)
     let page = try await dependencies.pullRequests(
       repositoryDID,
-      authorDID,
+      nil,
       status,
       cursor,
       limit,
@@ -151,6 +178,18 @@ struct PRCommandService: Sendable {
           initialPageIsEmpty: cursor == nil && page.items.isEmpty
         ).stderr
     )
+  }
+
+  private func repositoryOwnerDID(_ repositoryURI: String) throws -> String {
+    let owner =
+      repositoryURI.removingPrefix("at://").split(separator: "/", maxSplits: 1)
+      .first.map(String.init)
+    guard let owner, owner.hasPrefix("did:") else {
+      throw TangledError.invalidRequest(
+        "repository record does not expose an owner DID: \(repositoryURI)"
+      )
+    }
+    return owner
   }
 
   func view(
@@ -396,7 +435,7 @@ extension PRCommandService {
         item.status.rawValue,
         item.record.value.title,
         String(item.record.value.rounds.count),
-        String(item.commentCount),
+        item.commentCount >= 0 ? String(item.commentCount) : "-",
         item.record.value.createdAt.rawValue,
       ]
     }

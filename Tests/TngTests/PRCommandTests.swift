@@ -167,15 +167,16 @@ import Testing
     )
 
     #expect(output.stdout.hasPrefix("URI\tSTATUS\tTITLE\tROUNDS\tCOMMENTS\tCREATED\n"))
-    #expect(output.stdout.contains("\tmerged\tFix login flow\t2\t4\t"))
+    #expect(output.stdout.contains("\tmerged\tFix login flow\t2\t-\t"))
     #expect(output.stderr == "Next cursor: next-page\n")
     #expect(await recorder.references() == ["alice.example/core"])
     #expect(await recorder.owners() == ["bob.example"])
     #expect(
-      await recorder.listCalls()
+      await recorder.authorListCalls()
         == [
           .init(
             repositoryDID: "did:plc:repository",
+            repositoryOwnerDID: "did:plc:owner",
             authorDID: "did:plc:resolved-author",
             status: .merged,
             cursor: "previous",
@@ -184,6 +185,7 @@ import Testing
           )
         ]
     )
+    #expect(await recorder.listCalls().isEmpty)
   }
 
   @Test func listUsesOriginFallbackAndPreservesPageJSON() async throws {
@@ -631,6 +633,30 @@ extension PRCommandTests {
           cursor: "next-page"
         )
       },
+      authorPullRequests: {
+        repositoryDID, repositoryOwnerDID, authorDID, status, cursor, limit, order in
+        await recorder.record(
+          authorList: .init(
+            repositoryDID: repositoryDID,
+            repositoryOwnerDID: repositoryOwnerDID,
+            authorDID: authorDID,
+            status: status,
+            cursor: cursor,
+            limit: limit,
+            order: order
+          )
+        )
+        return Page(
+          items: [
+            PullRequestListItem(
+              record: pullRequestRecord,
+              status: status ?? .open,
+              commentCount: -1
+            )
+          ],
+          cursor: "next-page"
+        )
+      },
       viewPullRequest: { uri in
         await recorder.record(viewPullRequestURI: uri)
         return viewPullRequestRecord
@@ -835,6 +861,16 @@ private actor PRCommandRecorder {
     let order: BobbinSortOrder
   }
 
+  struct AuthorListCall: Equatable, Sendable {
+    let repositoryDID: String
+    let repositoryOwnerDID: String
+    let authorDID: String
+    let status: PullRequestStatus?
+    let cursor: String?
+    let limit: Int
+    let order: BobbinSortOrder
+  }
+
   struct PatchCall: Equatable, Sendable {
     let uri: String
     let roundNumber: Int?
@@ -858,6 +894,7 @@ private actor PRCommandRecorder {
   private var recordedReferences: [String] = []
   private var recordedOwners: [String] = []
   private var recordedListCalls: [ListCall] = []
+  private var recordedAuthorListCalls: [AuthorListCall] = []
   private var recordedViewPullRequestURIs: [String] = []
   private var recordedAuthoritativePullRequestURIs: [String] = []
   private var recordedPatchCalls: [PatchCall] = []
@@ -875,6 +912,10 @@ private actor PRCommandRecorder {
 
   func record(list: ListCall) {
     recordedListCalls.append(list)
+  }
+
+  func record(authorList: AuthorListCall) {
+    recordedAuthorListCalls.append(authorList)
   }
 
   func record(viewPullRequestURI: String) {
@@ -911,6 +952,10 @@ private actor PRCommandRecorder {
 
   func listCalls() -> [ListCall] {
     recordedListCalls
+  }
+
+  func authorListCalls() -> [AuthorListCall] {
+    recordedAuthorListCalls
   }
 
   func pullRequestURIs() -> [String] {
