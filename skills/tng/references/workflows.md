@@ -16,7 +16,9 @@ may also use a Tangled repository URL or Git remote form. If an owner/name
 reference does not resolve but an authoritative repository AT URI or repo DID
 is already available, retry with that identifier; do not scrape the web UI to
 discover one. Preserve AT URIs and repo DIDs from JSON output for later
-commands.
+commands. Repository listings come from the owner's PDS. Repository and Issue
+record reads prefer the record owner's PDS and use Bobbin only as a fallback
+for temporary PDS failures; Issue lists and comments are Bobbin aggregates.
 
 ## Create an issue
 
@@ -76,11 +78,18 @@ State changes create immutable state records. Report their URI and CID.
 
 ## Review a pull request
 
-1. Find the pull request when its AT URI is not known:
+1. Find the pull request when its AT URI is not known. When the author is
+   known, use `--author` to read the author's PDS without waiting for Bobbin:
 
    ```sh
+   tng pr list OWNER/REPOSITORY --author AUTHOR_HANDLE --limit 30 --json
    tng pr list OWNER/REPOSITORY --limit 30 --json
    ```
+
+   The author mode reads pull requests from the author PDS and status records
+   from the author and repository owner PDSes. It reports an unknown comment
+   count as `-1` in JSON and `-` in the table. Without `--author`, the list is a
+   Bobbin aggregate and may lag recent PDS writes.
 
 2. Read its rounds and comments:
 
@@ -200,11 +209,13 @@ not fetch or push. If it reports that the base commit is unavailable locally,
 run the exact `git fetch` command it suggests and review the updated history
 before retrying.
 
-An empty `tng pr list` result does not by itself prove that creation failed or
-that no matching Pull Request exists. When creation is ambiguous, check the
-Web UI as a visibility confirmation in addition to PDS and Bobbin results.
-Retry creation only when the Web UI also shows no Pull Request and the user
-explicitly authorizes the retry.
+After creation, preserve the returned Pull Request AT URI and verify that exact
+record with `tng pr view PULL_AT_URI --json`. Do not use an unfiltered,
+Bobbin-backed `pr list` as the immediate creation check. When checking for an
+existing Pull Request by author, use `pr list --author AUTHOR_HANDLE`; an empty
+unfiltered result does not prove absence. If creation was interrupted before a
+URI was returned, do not retry until PDS state has been checked and the user
+explicitly authorizes another write.
 
 ## Paginate JSON results
 
@@ -228,6 +239,10 @@ Stop when the cursor is absent, the requested number of records has been
 collected, or continuing would exceed the user's intended scope. Detect a
 repeated cursor and stop instead of looping.
 
+Treat every cursor as specific to its command, read mode, filters, and sort
+order. In particular, `pr list --author` requires a cursor returned by the same
+author PDS listing; do not pass it to or from an unfiltered Bobbin listing.
+
 ## Publish or retrieve an artifact
 
 Use Git to create and push an annotated tag before publishing. Verify the
@@ -249,6 +264,10 @@ tng artifact list OWNER/REPOSITORY --json
 tng artifact view v1.0.0 --repo OWNER/REPOSITORY --json
 tng artifact download v1.0.0 myapp --repo OWNER/REPOSITORY -o ./myapp --json
 ```
+
+When signed in, `artifact list` merges the account's authoritative PDS records
+with Bobbin results and prefers the PDS value for a duplicate record URI.
+Preserve its opaque integrated cursor unchanged with the same sort order.
 
 Download refuses existing paths by default. Use `--force` only after verifying
 that the destination is the intended regular file. To remove only the artifact

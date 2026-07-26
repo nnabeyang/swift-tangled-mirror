@@ -28,8 +28,10 @@ handling pagination and failures.
 
 ## Work Safely
 
-- Treat `repo`, `issue`, `pr`, and `pipeline` reads as current state from
-  Bobbin or Spindle. Use Git for local and remote Git state.
+- Choose the read source by operation. Prefer owner PDS records for current
+  repository, issue, pull request, and artifact state; use Bobbin for indexed
+  aggregate reads, Spindle for pipelines, and Jetstream for live events. Use
+  Git for local and remote Git state.
 - Treat pull request round numbers as zero-based. Inspect the pull request
   before selecting a round; use the latest round unless the user identifies a
   specific round.
@@ -57,6 +59,10 @@ handling pagination and failures.
   intended source, `--repo` is the intended target, and Tangled's fork metadata
   connects them. Keep public test branches, commits, and pull requests free of
   private issue identifiers.
+- When working on `tng` itself, use a released, globally installed `tng` for
+  authenticated Tangled writes. Do not use that checkout's `.build` executable
+  or `swift run tng` unless the user explicitly asks to test the development
+  CLI.
 - Do not run `git push`, change branches, edit files, merge, star, or unstar
   merely because they might help a Tangled task. Obtain authorization when
   they are not already part of the request.
@@ -92,6 +98,7 @@ precondition and do not silently fetch, push, or rewrite repository state.
 ## Report Results
 
 Summarize the resolved repository and record URI, selected round, relevant
-pipeline state, and any cursor not consumed. After a write, report the created
-record URI and CID returned by `tng`. Distinguish a successful PDS write from
-later Bobbin indexing or read-back.
+pipeline state, read source when it affects freshness, and any cursor not
+consumed. After a write, report the created record URI and CID returned by
+`tng`. Distinguish a successful PDS write from later Bobbin indexing or
+read-back.
