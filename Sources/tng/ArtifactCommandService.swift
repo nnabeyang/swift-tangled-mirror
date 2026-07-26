@@ -11,7 +11,7 @@ import SwiftTangled
 struct ArtifactCommandDependencies: Sendable {
   let list:
     @Sendable (String, String?, Int?, ArtifactSortOrder) async throws
-      -> Page<TangledRecord<Artifact>>
+      -> ArtifactPageRead
   let view: @Sendable (String, String) async throws -> ArtifactTagView
   let upload:
     @Sendable (String, String, URL, String?, String, Bool) async throws
@@ -30,7 +30,7 @@ struct ArtifactCommandDependencies: Sendable {
     let service = ArtifactService()
     return ArtifactCommandDependencies(
       list: {
-        try await service.list(
+        try await service.listWithDiagnostics(
           repository: $0,
           cursor: $1,
           limit: $2,
@@ -113,12 +113,18 @@ struct ArtifactCommandService: Sendable {
     json: Bool
   ) async throws -> CLICommandOutput {
     let reference = try repository ?? dependencies.originURL()
-    let page = try await dependencies.list(reference, cursor, limit, sort)
+    let read = try await dependencies.list(reference, cursor, limit, sort)
+    let page = read.page
     return CLICommandOutput(
       stdout: try json
         ? formatter.json(ArtifactJSONEnvelope(result: page))
         : format(page.items),
-      stderr: formatter.cursorDiagnostic(page.cursor, json: json)
+      stderr:
+        formatter.cursorDiagnostic(page.cursor, json: json)
+        + BobbinReadDiagnostics(
+          coverage: .available(.init(ready: true, eventsProcessed: 0, lastCursor: 0)),
+          authoritativeChanges: read.authoritativeChanges
+        ).stderr
     )
   }
 

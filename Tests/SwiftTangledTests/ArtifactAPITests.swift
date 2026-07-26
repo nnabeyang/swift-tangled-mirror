@@ -55,6 +55,57 @@ struct ArtifactAPITests {
     #expect(await transport.recordedRequests().isEmpty)
   }
 
+  @Test func authoritativeArtifactPaginationIsStableAndPDSWins() throws {
+    let indexed = [
+      artifactRecord(uriSuffix: "a", name: "indexed-a", createdAt: "2026-07-25T12:00:00Z"),
+      artifactRecord(uriSuffix: "a", name: "indexed-a", createdAt: "2026-07-25T12:00:00Z"),
+      artifactRecord(uriSuffix: "b", name: "indexed-b", createdAt: "2026-07-25T13:00:00Z"),
+      artifactRecord(uriSuffix: "c", name: "indexed-c", createdAt: "2026-07-25T14:00:00Z"),
+    ]
+    let authoritative = [
+      artifactRecord(uriSuffix: "b", name: "fresh-b", createdAt: "2026-07-25T13:00:00Z"),
+      artifactRecord(uriSuffix: "d", name: "fresh-d", createdAt: "2026-07-25T15:00:00Z"),
+    ]
+
+    let first = try ArtifactPageMerger.merge(
+      indexed: indexed,
+      authoritative: authoritative,
+      position: nil,
+      limit: 2,
+      sort: .desc
+    )
+    let cursor = try #require(first.page.cursor)
+    let second = try ArtifactPageMerger.merge(
+      indexed: indexed,
+      authoritative: authoritative,
+      position: try ArtifactCursor.decode(cursor, sort: .desc),
+      limit: 2,
+      sort: .desc
+    )
+
+    #expect(first.authoritativeChanges == 2)
+    #expect(first.page.items.map(\.value.name) == ["fresh-d", "indexed-c"])
+    #expect(second.page.items.map(\.value.name) == ["fresh-b", "indexed-a"])
+    #expect(second.page.cursor == nil)
+    #expect(Set((first.page.items + second.page.items).map(\.uri)).count == 4)
+  }
+
+  @Test func integratedArtifactCursorRejectsInvalidDataAndSortMismatch() throws {
+    let record = artifactRecord(
+      uriSuffix: "cursor",
+      name: "cursor",
+      createdAt: "2026-07-25T12:00:00Z"
+    )
+    let cursor = try ArtifactCursor.encode(record: record, sort: .asc)
+
+    #expect(throws: TangledError.self) {
+      _ = try ArtifactCursor.decode(cursor, sort: .desc)
+    }
+    #expect(throws: TangledError.self) {
+      _ = try ArtifactCursor.decode("tng-artifact-v1.invalid", sort: .asc)
+    }
+  }
+
   @Test func serviceDownloadsFromRecordAuthorPDSAndVerifiesCID() async throws {
     let transport = ArtifactRoutingTransport()
     let bobbin = BobbinClient(
@@ -257,6 +308,28 @@ struct ArtifactAPITests {
           size: 13
         ),
         createdAt: FormatString(rawValue: "2026-07-25T12:34:56Z")
+      )
+    )
+  }
+
+  private func artifactRecord(
+    uriSuffix: String,
+    name: String,
+    createdAt: String
+  ) -> TangledRecord<Artifact> {
+    TangledRecord(
+      uri: "at://did:plc:author/sh.tangled.repo.artifact/\(uriSuffix)",
+      cid: "bafy\(uriSuffix)",
+      value: Artifact(
+        repositoryDID: repositoryDID,
+        tagObjectHash: String(repeating: "bb", count: 20),
+        name: name,
+        blob: BlobReference(
+          cid: "bafkreidie4e7g2mr7u4rbvzuhzrgjxkvcc7qeac7uzidusdy74lvgb2r3a",
+          mimeType: "application/octet-stream",
+          size: 13
+        ),
+        createdAt: FormatString(rawValue: createdAt)
       )
     )
   }

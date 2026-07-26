@@ -90,6 +90,24 @@ import Testing
     )
   }
 
+  @Test func listReportsAuthoritativeArtifactChangesOnStderr() async throws {
+    let service = ArtifactCommandService(
+      dependencies: dependencies(authoritativeChanges: 2),
+      formatter: .plain
+    )
+
+    let output = try await service.list(
+      repository: "alice.example/core",
+      limit: 30,
+      cursor: nil,
+      sort: .desc,
+      json: true
+    )
+
+    #expect(output.stdout.contains("\"schemaVersion\" : 1"))
+    #expect(output.stderr.contains("Merged 2 authoritative PDS records"))
+  }
+
   @Test func humanViewIncludesTagAndArtifactDetails() async throws {
     let service = ArtifactCommandService(
       dependencies: dependencies(),
@@ -288,7 +306,8 @@ private actor ArtifactDependencyRecorder {
 private func dependencies(
   recorder: ArtifactDependencyRecorder = ArtifactDependencyRecorder(),
   inputIsTerminal: Bool = false,
-  confirmation: Bool = true
+  confirmation: Bool = true,
+  authoritativeChanges: Int = 0
 ) -> ArtifactCommandDependencies {
   ArtifactCommandDependencies(
     list: { repository, cursor, limit, sort in
@@ -300,7 +319,10 @@ private func dependencies(
           sort: sort
         )
       )
-      return Page(items: [artifactRecord()], cursor: "following")
+      return ArtifactPageRead(
+        page: Page(items: [artifactRecord()], cursor: "following"),
+        authoritativeChanges: authoritativeChanges
+      )
     },
     view: { _, _ in artifactView() },
     upload: { repository, tag, file, name, contentType, force in

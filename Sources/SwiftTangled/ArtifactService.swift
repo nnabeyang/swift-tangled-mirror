@@ -43,35 +43,186 @@ public struct ArtifactService: Sendable {
     sort: ArtifactSortOrder = .desc,
     pdsClient: PDSClient? = nil
   ) async throws -> Page<TangledRecord<Artifact>> {
-    let resolved = try await resolvedRepository(repository)
-    let page = try await bobbinClient.artifacts(
-      repositoryDID: resolved.did,
+    try await listWithDiagnostics(
+      repository: repository,
       cursor: cursor,
+      limit: limit,
+      sort: sort,
+      pdsClient: pdsClient
+    ).page
+  }
+
+  package func listWithDiagnostics(
+    repository: String,
+    cursor: String? = nil,
+    limit: Int? = nil,
+    sort: ArtifactSortOrder = .desc,
+    pdsClient: PDSClient? = nil
+  ) async throws -> ArtifactPageRead {
+    if let limit, !(1 ... 1_000).contains(limit) {
+      throw TangledError.invalidRequest("artifact limit must be between 1 and 1000")
+    }
+    let resolved = try await resolvedRepository(repository)
+    guard let pdsClient, cursor == nil || ArtifactCursor.isIntegrated(cursor) else {
+      return ArtifactPageRead(
+        page: try await bobbinClient.artifacts(
+          repositoryDID: resolved.did,
+          cursor: cursor,
+          limit: limit,
+          sort: sort
+        ),
+        authoritativeChanges: 0
+      )
+    }
+
+    let position = try cursor.map { try ArtifactCursor.decode($0, sort: sort) }
+    let indexed = try await allArtifacts(repositoryDID: resolved.did, sort: sort)
+    return try ArtifactPageMerger.merge(
+      indexed: indexed,
+      authoritative: try await pdsClient.artifactRecords(repositoryDID: resolved.did),
+      position: position,
       limit: limit,
       sort: sort
     )
-    guard cursor == nil, let pdsClient else {
-      return page
+  }
+}
+
+package struct ArtifactPageRead: Sendable {
+  package let page: Page<TangledRecord<Artifact>>
+  package let authoritativeChanges: Int
+
+  package init(
+    page: Page<TangledRecord<Artifact>>,
+    authoritativeChanges: Int
+  ) {
+    self.page = page
+    self.authoritativeChanges = authoritativeChanges
+  }
+}
+
+enum ArtifactPageMerger {
+  static func merge(
+    indexed: [TangledRecord<Artifact>],
+    authoritative: [TangledRecord<Artifact>],
+    position: ArtifactCursor.Position?,
+    limit: Int?,
+    sort: ArtifactSortOrder
+  ) throws -> ArtifactPageRead {
+    var recordsByURI: [String: TangledRecord<Artifact>] = [:]
+    for record in indexed {
+      recordsByURI[record.uri] = record
     }
-    var records = page.items
-    for record in try await pdsClient.artifactRecords(repositoryDID: resolved.did) {
-      records.removeAll { $0.uri == record.uri }
-      records.append(record)
-    }
-    records.sort {
-      switch sort {
-      case .asc:
-        $0.value.createdAt.rawValue < $1.value.createdAt.rawValue
-      case .desc:
-        $0.value.createdAt.rawValue > $1.value.createdAt.rawValue
+    var authoritativeChanges = 0
+    for record in authoritative {
+      if recordsByURI[record.uri] != record {
+        authoritativeChanges += 1
       }
+      recordsByURI[record.uri] = record
     }
-    if let limit, records.count > limit {
-      records.removeSubrange(limit...)
+    var records = recordsByURI.values.sorted { ArtifactCursor.precedes($0, $1, sort: sort) }
+    if let position {
+      records.removeAll { !ArtifactCursor.follows($0, position: position, sort: sort) }
     }
-    return Page(items: records, cursor: page.cursor)
+    let pageLimit = limit ?? records.count
+    let pageItems = Array(records.prefix(pageLimit))
+    let nextCursor =
+      records.count > pageItems.count
+      ? try pageItems.last.map { try ArtifactCursor.encode(record: $0, sort: sort) }
+      : nil
+    return ArtifactPageRead(
+      page: Page(items: pageItems, cursor: nextCursor),
+      authoritativeChanges: authoritativeChanges
+    )
+  }
+}
+
+enum ArtifactCursor {
+  private static let prefix = "tng-artifact-v1."
+
+  struct Position: Codable {
+    let version: Int
+    let sort: ArtifactSortOrder
+    let createdAt: String
+    let uri: String
   }
 
+  static func isIntegrated(_ cursor: String?) -> Bool {
+    cursor?.hasPrefix(prefix) == true
+  }
+
+  static func encode(
+    record: TangledRecord<Artifact>,
+    sort: ArtifactSortOrder
+  ) throws -> String {
+    let data = try JSONEncoder().encode(
+      Position(
+        version: 1,
+        sort: sort,
+        createdAt: record.value.createdAt.rawValue,
+        uri: record.uri
+      )
+    )
+    return prefix
+      + data.base64EncodedString()
+      .replacingOccurrences(of: "+", with: "-")
+      .replacingOccurrences(of: "/", with: "_")
+      .replacingOccurrences(of: "=", with: "")
+  }
+
+  static func decode(_ cursor: String, sort: ArtifactSortOrder) throws -> Position {
+    guard cursor.hasPrefix(prefix) else {
+      throw TangledError.invalidRequest("invalid integrated artifact cursor")
+    }
+    var encoded = String(cursor.dropFirst(prefix.count))
+      .replacingOccurrences(of: "-", with: "+")
+      .replacingOccurrences(of: "_", with: "/")
+    encoded += String(repeating: "=", count: (4 - encoded.count % 4) % 4)
+    guard let data = Data(base64Encoded: encoded),
+      let position = try? JSONDecoder().decode(Position.self, from: data),
+      position.version == 1
+    else {
+      throw TangledError.invalidRequest("invalid integrated artifact cursor")
+    }
+    guard position.sort == sort else {
+      throw TangledError.invalidRequest(
+        "artifact cursor sort does not match --sort \(sort.rawValue)"
+      )
+    }
+    return position
+  }
+
+  static func precedes(
+    _ lhs: TangledRecord<Artifact>,
+    _ rhs: TangledRecord<Artifact>,
+    sort: ArtifactSortOrder
+  ) -> Bool {
+    let lhsKey = (lhs.value.createdAt.rawValue, lhs.uri)
+    let rhsKey = (rhs.value.createdAt.rawValue, rhs.uri)
+    switch sort {
+    case .asc:
+      return lhsKey < rhsKey
+    case .desc:
+      return lhsKey > rhsKey
+    }
+  }
+
+  static func follows(
+    _ record: TangledRecord<Artifact>,
+    position: Position,
+    sort: ArtifactSortOrder
+  ) -> Bool {
+    let recordKey = (record.value.createdAt.rawValue, record.uri)
+    let positionKey = (position.createdAt, position.uri)
+    switch sort {
+    case .asc:
+      return recordKey > positionKey
+    case .desc:
+      return recordKey < positionKey
+    }
+  }
+}
+
+extension ArtifactService {
   public func view(
     repository: String,
     tag: String,
@@ -237,7 +388,10 @@ extension ArtifactService {
     throw TangledError.notFound("tag not found: \(name)")
   }
 
-  private func allArtifacts(repositoryDID: String) async throws
+  private func allArtifacts(
+    repositoryDID: String,
+    sort: ArtifactSortOrder = .desc
+  ) async throws
     -> [TangledRecord<Artifact>]
   {
     var result: [TangledRecord<Artifact>] = []
@@ -247,7 +401,8 @@ extension ArtifactService {
       let page = try await bobbinClient.artifacts(
         repositoryDID: repositoryDID,
         cursor: cursor,
-        limit: 1000
+        limit: 1000,
+        sort: sort
       )
       result.append(contentsOf: page.items)
       guard let next = page.cursor else { break }
