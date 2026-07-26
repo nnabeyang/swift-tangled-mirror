@@ -177,7 +177,8 @@ import struct SwiftTangled.Issue
     )
     #expect(record.uri == sampleIssueURI)
     #expect(record.value.title == "Login fails")
-    #expect(await recorder.issueURIs() == [sampleIssueURI, sampleIssueURI])
+    #expect(await recorder.viewIssueURIs() == [sampleIssueURI, sampleIssueURI])
+    #expect(await recorder.authoritativeIssueURIs().isEmpty)
   }
 
   @Test func viewCanIncludeCommentsAndCursor() async throws {
@@ -334,6 +335,8 @@ import struct SwiftTangled.Issue
           )
         ]
     )
+    #expect(await recorder.viewIssueURIs().isEmpty)
+    #expect(await recorder.authoritativeIssueURIs() == [sampleIssueURI])
   }
 
   @Test func commentPreservesJSONAndRejectsIssueWithoutCID() async throws {
@@ -392,6 +395,8 @@ import struct SwiftTangled.Issue
     #expect(call.current.uri == sampleIssueURI)
     #expect(call.title == "Login fails")
     #expect(call.body == "Updated from file\n")
+    #expect(await recorder.viewIssueURIs().isEmpty)
+    #expect(await recorder.authoritativeIssueURIs() == [sampleIssueURI])
   }
 
   @Test func editPreservesJSONAndCanClearBody() async throws {
@@ -437,7 +442,11 @@ import struct SwiftTangled.Issue
       from: Data(reopened.stdout.utf8)
     )
     #expect(record.value.state == .open)
-    #expect(await recorder.issueURIs().suffix(2) == [sampleIssueURI, sampleIssueURI])
+    #expect(await recorder.viewIssueURIs().isEmpty)
+    #expect(
+      await recorder.authoritativeIssueURIs().suffix(2)
+        == [sampleIssueURI, sampleIssueURI]
+    )
     #expect(
       await recorder.stateCalls()
         == [
@@ -446,6 +455,46 @@ import struct SwiftTangled.Issue
         ]
     )
   }
+
+  @Test func authoritativeReadFailurePreventsIssueWrites() async {
+    let recorder = IssueCommandRecorder()
+    let service = IssueCommandService(
+      dependencies: dependencies(
+        recorder: recorder,
+        authoritativeIssueError: .serviceUnavailable("PDS unavailable")
+      )
+    )
+
+    await #expect(throws: TangledError.self) {
+      _ = try await service.comment(
+        issueURI: sampleIssueURI,
+        body: "Comment",
+        bodyFile: nil,
+        json: false
+      )
+    }
+    await #expect(throws: TangledError.self) {
+      _ = try await service.edit(
+        issueURI: sampleIssueURI,
+        title: "Updated",
+        body: nil,
+        bodyFile: nil,
+        json: false
+      )
+    }
+    await #expect(throws: TangledError.self) {
+      _ = try await service.setState(
+        issueURI: sampleIssueURI,
+        state: .closed,
+        json: false
+      )
+    }
+
+    #expect(await recorder.authoritativeIssueURIs().count == 3)
+    #expect(await recorder.createCommentCalls().isEmpty)
+    #expect(await recorder.updateCalls().isEmpty)
+    #expect(await recorder.stateCalls().isEmpty)
+  }
 }
 
 extension IssueCommandTests {
@@ -453,6 +502,7 @@ extension IssueCommandTests {
     recorder: IssueCommandRecorder,
     repositoryRecord: TangledRecord<Repository>? = nil,
     issueRecord: TangledRecord<Issue>? = nil,
+    authoritativeIssueError: TangledError? = nil,
     originURL: @escaping @Sendable () throws -> String = { "unused" }
   ) -> IssueCommandDependencies {
     let repositoryRecord = repositoryRecord ?? sampleRepositoryRecord()
@@ -489,11 +539,14 @@ extension IssueCommandTests {
         )
       },
       viewIssue: { uri in
-        await recorder.record(issueURI: uri)
+        await recorder.record(viewIssueURI: uri)
         return issueRecord
       },
       authoritativeIssue: { uri in
-        await recorder.record(issueURI: uri)
+        await recorder.record(authoritativeIssueURI: uri)
+        if let authoritativeIssueError {
+          throw authoritativeIssueError
+        }
         return issueRecord
       },
       comments: { subjectURI, cursor, limit in
@@ -644,7 +697,8 @@ private actor IssueCommandRecorder {
   private var recordedReferences: [String] = []
   private var recordedOwners: [String] = []
   private var recordedListCalls: [ListCall] = []
-  private var recordedIssueURIs: [String] = []
+  private var recordedViewIssueURIs: [String] = []
+  private var recordedAuthoritativeIssueURIs: [String] = []
   private var recordedCreateCalls: [CreateCall] = []
   private var recordedCommentListCalls: [CommentListCall] = []
   private var recordedCreateCommentCalls: [CreateCommentCall] = []
@@ -663,8 +717,12 @@ private actor IssueCommandRecorder {
     recordedListCalls.append(list)
   }
 
-  func record(issueURI: String) {
-    recordedIssueURIs.append(issueURI)
+  func record(viewIssueURI: String) {
+    recordedViewIssueURIs.append(viewIssueURI)
+  }
+
+  func record(authoritativeIssueURI: String) {
+    recordedAuthoritativeIssueURIs.append(authoritativeIssueURI)
   }
 
   func record(create: CreateCall) {
@@ -699,8 +757,12 @@ private actor IssueCommandRecorder {
     recordedListCalls
   }
 
-  func issueURIs() -> [String] {
-    recordedIssueURIs
+  func viewIssueURIs() -> [String] {
+    recordedViewIssueURIs
+  }
+
+  func authoritativeIssueURIs() -> [String] {
+    recordedAuthoritativeIssueURIs
   }
 
   func createCalls() -> [CreateCall] {

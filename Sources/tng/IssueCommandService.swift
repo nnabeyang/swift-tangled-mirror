@@ -20,6 +20,11 @@ struct IssueCommandDependencies: Sendable {
   static let live: IssueCommandDependencies = {
     let client = BobbinClient()
     let locator = RepositoryLocator(client: client)
+    let pdsRecordClient = PDSRecordClient()
+    let recordReader = TangledRecordReader(
+      pdsClient: pdsRecordClient,
+      bobbinClient: client
+    )
     return IssueCommandDependencies(
       resolveRepository: { try await locator.resolve($0) },
       resolveOwnerDID: { try await locator.resolveOwnerDID($0) },
@@ -33,8 +38,8 @@ struct IssueCommandDependencies: Sendable {
           order: order
         )
       },
-      viewIssue: { try await client.issue(uri: $0) },
-      authoritativeIssue: { try await client.issue(uri: $0) },
+      viewIssue: { try await recordReader.issue(uri: $0).record },
+      authoritativeIssue: { try await pdsRecordClient.issue(uri: $0) },
       comments: { uri, cursor, limit in
         try await client.comments(subjectURI: uri, cursor: cursor, limit: limit)
       },
