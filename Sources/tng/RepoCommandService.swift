@@ -25,11 +25,13 @@ struct RepoCommandDependencies: Sendable {
   static let live: RepoCommandDependencies = {
     let client = BobbinClient()
     let locator = RepositoryLocator(client: client)
+    let pdsRecordClient = PDSRecordClient()
     return RepoCommandDependencies(
       resolveRepository: { try await locator.resolve($0) },
       resolveOwnerDID: { try await locator.resolveOwnerDID($0) },
       repositories: { ownerDID, cursor, limit, order in
-        try await client.repositories(
+        try await authoritativeRepositories(
+          client: pdsRecordClient,
           ownerDID: ownerDID,
           cursor: cursor,
           limit: limit,
@@ -90,6 +92,37 @@ struct RepoCommandDependencies: Sendable {
       }
     )
   }()
+}
+
+private func authoritativeRepositories(
+  client: PDSRecordClient,
+  ownerDID: String,
+  cursor: String?,
+  limit: Int,
+  order: BobbinSortOrder
+) async throws -> Page<TangledRecord<Repository>> {
+  var items: [TangledRecord<Repository>] = []
+  var nextCursor = cursor
+  var seenCursors = Set<String>()
+
+  repeat {
+    let page = try await client.repositories(
+      ownerDID: ownerDID,
+      cursor: nextCursor,
+      limit: min(limit - items.count, 100),
+      reverse: order == .descending
+    )
+    items.append(contentsOf: page.items)
+    guard items.count < limit, let next = page.cursor else {
+      return Page(items: items, cursor: page.cursor)
+    }
+    guard seenCursors.insert(next).inserted else {
+      throw TangledError.upstreamFailed("repository records returned a repeated cursor")
+    }
+    nextCursor = next
+  } while items.count < limit
+
+  return Page(items: items, cursor: nextCursor)
 }
 
 struct RepoCommandService: Sendable {

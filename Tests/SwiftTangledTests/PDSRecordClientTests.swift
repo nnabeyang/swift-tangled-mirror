@@ -96,7 +96,8 @@ import Testing
     let page = try await client.repositories(
       ownerDID: ownerDID,
       cursor: "previous-page",
-      limit: 25
+      limit: 25,
+      reverse: true
     )
 
     #expect(page.items.count == 1)
@@ -108,6 +109,7 @@ import Testing
     #expect(query(named: "collection", request: request) == "sh.tangled.repo")
     #expect(query(named: "cursor", request: request) == "previous-page")
     #expect(query(named: "limit", request: request) == "25")
+    #expect(query(named: "reverse", request: request) == "true")
   }
 
   @Test func repositoryListingRejectsInvalidInputsBeforeResolution() async {

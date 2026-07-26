@@ -13,7 +13,7 @@ struct RepoListCommand: AsyncParsableCommand {
   @Option(name: [.customShort("L"), .long], help: "Maximum number of repositories to return")
   var limit = 30
 
-  @Option(help: "Bobbin cursor from a previous response")
+  @Option(help: "PDS cursor from a previous response")
   var cursor: String?
 
   @Option(

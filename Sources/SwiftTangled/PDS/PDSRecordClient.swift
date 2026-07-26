@@ -30,7 +30,8 @@ public struct PDSRecordClient: Sendable {
   public func repositories(
     ownerDID rawOwnerDID: String,
     cursor: String? = nil,
-    limit: Int? = nil
+    limit: Int? = nil,
+    reverse: Bool = false
   ) async throws -> Page<TangledRecord<Repository>> {
     let ownerDID: DID
     do {
@@ -50,6 +51,7 @@ public struct PDSRecordClient: Sendable {
         URLQueryItem(name: "collection", value: "sh.tangled.repo"),
         URLQueryItem(name: "cursor", value: cursor),
         URLQueryItem(name: "limit", value: limit.map(String.init)),
+        URLQueryItem(name: "reverse", value: reverse ? "true" : nil),
       ].filter { $0.value != nil }
     )
     let output: Com.Atproto.RepoListRecords_Output = try await response(for: request)
