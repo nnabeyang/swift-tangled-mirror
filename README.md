@@ -88,6 +88,12 @@ Most repository-aware commands infer the repository from the Git `origin`.
 Pass `--repo OWNER/REPOSITORY` to target one explicitly. Commands intended for
 automation support `--json` where documented by their help.
 
+Repository listings read the owner's PDS directly. Aggregate reads that require
+Bobbin, including issue and pull request lists, comments, and search, report a
+warning on standard error when index coverage is unavailable or incomplete or
+when an initial query returns no results. JSON output on standard output keeps
+the same schema when these diagnostics are present.
+
 ### Pull Requests
 
 Create a pull request after pushing its source branch:
@@ -148,6 +154,11 @@ tng artifact download v1.0.0 tng \
   --repo OWNER/REPOSITORY \
   -o ./tng
 ```
+
+When signed in, artifact listings merge the account's authoritative PDS
+records with Bobbin results and prefer the PDS value for the same record URI.
+Pagination cursors are opaque and must be passed back unchanged with the same
+sort order. Cursors produced by earlier `tng` versions remain accepted.
 
 ### Live Events
 
