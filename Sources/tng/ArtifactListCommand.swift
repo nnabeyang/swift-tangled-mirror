@@ -15,7 +15,7 @@ struct ArtifactListCommand: AsyncParsableCommand {
   @Option(name: [.customShort("L"), .long], help: "Maximum number of artifacts to return")
   var limit = 30
 
-  @Option(help: "Bobbin cursor from a previous response")
+  @Option(help: "Pagination cursor from a previous response")
   var cursor: String?
 
   @Option(

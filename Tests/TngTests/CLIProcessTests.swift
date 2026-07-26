@@ -120,6 +120,15 @@ import Testing
     #expect(help.stderr.isEmpty)
   }
 
+  @Test func artifactListHelpDescribesItsIntegratedPaginationCursor() throws {
+    let help = try TngProcess.run(["artifact", "list", "--help"])
+
+    #expect(help.status == 0)
+    #expect(help.stdout.contains("Pagination cursor from a previous response"))
+    #expect(!help.stdout.contains("Bobbin cursor from a previous response"))
+    #expect(help.stderr.isEmpty)
+  }
+
   @Test func headlessAuthRequiresAValidFixedCallbackPort() throws {
     let missing = try TngProcess.run([
       "auth", "login", "alice.example", "--no-browser",
