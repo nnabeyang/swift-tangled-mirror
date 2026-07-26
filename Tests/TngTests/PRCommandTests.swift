@@ -660,6 +660,9 @@ extension PRCommandTests {
           cursor: "comment-next"
         )
       },
+      coverage: {
+        BobbinCoverage(ready: true, eventsProcessed: 100, lastCursor: 100)
+      },
       pullRequestPatch: { uri, roundNumber in
         await recorder.record(patchURI: uri, roundNumber: roundNumber)
         return samplePullRequestPatch(roundNumber: roundNumber ?? 1)

@@ -555,6 +555,9 @@ extension IssueCommandTests {
         )
         return Page(items: [sampleCommentRecord()], cursor: "comments-next")
       },
+      coverage: {
+        BobbinCoverage(ready: true, eventsProcessed: 100, lastCursor: 100)
+      },
       createIssue: { repositoryDID, title, body in
         await recorder.record(
           create: .init(repositoryDID: repositoryDID, title: title, body: body)

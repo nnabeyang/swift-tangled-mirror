@@ -353,6 +353,9 @@ private func dependencies(
       await recorder.recordDelete(repository: repository, tag: tag, name: name)
       return artifactRecord()
     },
+    coverage: {
+      BobbinCoverage(ready: true, eventsProcessed: 100, lastCursor: 100)
+    },
     originURL: { "git@tangled.org:alice.example/core" },
     inputIsTerminal: { inputIsTerminal },
     confirm: { _ in confirmation }

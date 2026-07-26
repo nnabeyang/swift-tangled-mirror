@@ -5,6 +5,7 @@ struct SearchCommandDependencies: Sendable {
   let resolveRepository: @Sendable (String) async throws -> TangledRecord<Repository>
   let resolveOwnerDID: @Sendable (String) async throws -> String
   let search: @Sendable (String, SearchOptions) async throws -> Page<SearchHit>
+  let coverage: @Sendable () async throws -> BobbinCoverage
 
   static let live: SearchCommandDependencies = {
     let client = BobbinClient()
@@ -12,7 +13,8 @@ struct SearchCommandDependencies: Sendable {
     return SearchCommandDependencies(
       resolveRepository: { try await locator.resolve($0) },
       resolveOwnerDID: { try await locator.resolveOwnerDID($0) },
-      search: { try await client.search($0, options: $1) }
+      search: { try await client.search($0, options: $1) },
+      coverage: { try await client.coverage() }
     )
   }()
 }
@@ -75,10 +77,16 @@ struct SearchCommandService: Sendable {
       cursor: cursor,
       limit: limit
     )
+    async let coverage = readBobbinCoverage(using: dependencies.coverage)
     let page = try await dependencies.search(query, options)
     return CLICommandOutput(
       stdout: try json ? formatter.json(page) : format(page.items),
-      stderr: formatter.cursorDiagnostic(page.cursor, json: json)
+      stderr:
+        formatter.cursorDiagnostic(page.cursor, json: json)
+        + BobbinReadDiagnostics(
+          coverage: try await coverage,
+          initialPageIsEmpty: cursor == nil && page.items.isEmpty
+        ).stderr
     )
   }
 }

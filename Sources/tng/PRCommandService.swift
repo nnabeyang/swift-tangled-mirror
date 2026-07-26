@@ -10,6 +10,7 @@ struct PRCommandDependencies: Sendable {
   let viewPullRequest: @Sendable (String) async throws -> TangledRecord<PullRequest>
   let authoritativePullRequest: @Sendable (String) async throws -> TangledRecord<PullRequest>
   let comments: @Sendable (String, String?, Int) async throws -> Page<TangledRecord<Comment>>
+  let coverage: @Sendable () async throws -> BobbinCoverage
   let pullRequestPatch: @Sendable (String, Int?) async throws -> PullRequestPatch
   let originURL: @Sendable () throws -> String
   let defaultBranch: @Sendable (String) async throws -> GitDefaultBranch
@@ -48,6 +49,7 @@ struct PRCommandDependencies: Sendable {
       comments: { uri, cursor, limit in
         try await client.comments(subjectURI: uri, cursor: cursor, limit: limit)
       },
+      coverage: { try await client.coverage() },
       pullRequestPatch: { uri, roundNumber in
         try await PullRequestPatchLoader(pdsRecordClient: pdsRecordClient).load(
           pullRequestURI: uri,
@@ -131,6 +133,7 @@ struct PRCommandService: Sendable {
     } else {
       authorDID = nil
     }
+    async let coverage = readBobbinCoverage(using: dependencies.coverage)
     let page = try await dependencies.pullRequests(
       repositoryDID,
       authorDID,
@@ -141,7 +144,12 @@ struct PRCommandService: Sendable {
     )
     return CLICommandOutput(
       stdout: try json ? formatter.json(page) : format(page.items),
-      stderr: formatter.cursorDiagnostic(page.cursor, json: json)
+      stderr:
+        formatter.cursorDiagnostic(page.cursor, json: json)
+        + BobbinReadDiagnostics(
+          coverage: try await coverage,
+          initialPageIsEmpty: cursor == nil && page.items.isEmpty
+        ).stderr
     )
   }
 
@@ -156,11 +164,17 @@ struct PRCommandService: Sendable {
     guard comments else {
       return CLICommandOutput(stdout: try json ? formatter.json(record) : format(record))
     }
+    async let coverage = readBobbinCoverage(using: dependencies.coverage)
     let page = try await dependencies.comments(pullRequestURI, commentCursor, commentLimit)
     let result = PRViewWithCommentsResult(pullRequest: record, comments: page)
     return CLICommandOutput(
       stdout: try json ? formatter.json(result) : format(record) + format(page.items),
-      stderr: formatter.cursorDiagnostic(page.cursor, json: json)
+      stderr:
+        formatter.cursorDiagnostic(page.cursor, json: json)
+        + BobbinReadDiagnostics(
+          coverage: try await coverage,
+          initialPageIsEmpty: commentCursor == nil && page.items.isEmpty
+        ).stderr
     )
   }
 

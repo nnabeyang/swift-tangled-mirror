@@ -11,6 +11,7 @@ struct IssueCommandDependencies: Sendable {
   let viewIssue: @Sendable (String) async throws -> TangledRecord<Issue>
   let authoritativeIssue: @Sendable (String) async throws -> TangledRecord<Issue>
   let comments: @Sendable (String, String?, Int) async throws -> Page<TangledRecord<Comment>>
+  let coverage: @Sendable () async throws -> BobbinCoverage
   let createIssue: @Sendable (String, String, String?) async throws -> TangledRecord<Issue>
   let createComment: @Sendable (RecordReference, String) async throws -> TangledRecord<Comment>
   let updateIssue: @Sendable (TangledRecord<Issue>, String, String?) async throws -> TangledRecord<Issue>
@@ -43,6 +44,7 @@ struct IssueCommandDependencies: Sendable {
       comments: { uri, cursor, limit in
         try await client.comments(subjectURI: uri, cursor: cursor, limit: limit)
       },
+      coverage: { try await client.coverage() },
       createIssue: { repositoryDID, title, body in
         try await PDSClient.restore(from: CLISessionStore.make().store).createIssue(
           repositoryDID: repositoryDID,
@@ -108,6 +110,7 @@ struct IssueCommandService: Sendable {
     } else {
       authorDID = nil
     }
+    async let coverage = readBobbinCoverage(using: dependencies.coverage)
     let page = try await dependencies.issues(
       repositoryDID,
       authorDID,
@@ -118,7 +121,12 @@ struct IssueCommandService: Sendable {
     )
     return CLICommandOutput(
       stdout: try json ? formatter.json(page) : format(page.items),
-      stderr: formatter.cursorDiagnostic(page.cursor, json: json)
+      stderr:
+        formatter.cursorDiagnostic(page.cursor, json: json)
+        + BobbinReadDiagnostics(
+          coverage: try await coverage,
+          initialPageIsEmpty: cursor == nil && page.items.isEmpty
+        ).stderr
     )
   }
 
@@ -133,11 +141,17 @@ struct IssueCommandService: Sendable {
     guard comments else {
       return CLICommandOutput(stdout: try json ? formatter.json(record) : format(record))
     }
+    async let coverage = readBobbinCoverage(using: dependencies.coverage)
     let page = try await dependencies.comments(issueURI, commentCursor, commentLimit)
     let result = IssueViewWithCommentsResult(issue: record, comments: page)
     return CLICommandOutput(
       stdout: try json ? formatter.json(result) : format(record) + format(page.items),
-      stderr: formatter.cursorDiagnostic(page.cursor, json: json)
+      stderr:
+        formatter.cursorDiagnostic(page.cursor, json: json)
+        + BobbinReadDiagnostics(
+          coverage: try await coverage,
+          initialPageIsEmpty: commentCursor == nil && page.items.isEmpty
+        ).stderr
     )
   }
 

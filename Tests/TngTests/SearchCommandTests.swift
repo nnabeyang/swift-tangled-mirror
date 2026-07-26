@@ -128,7 +128,34 @@ import Testing
     )
 
     #expect(output.stdout == "SCORE\tNSID\tURI\n")
-    #expect(output.stderr.isEmpty)
+    #expect(output.stderr.contains("Bobbin returned no results"))
+  }
+
+  @Test func warmingCoverageWarnsForNonemptyResults() async throws {
+    let recorder = SearchCommandRecorder()
+    let service = SearchCommandService(
+      dependencies: dependencies(
+        recorder: recorder,
+        coverage: {
+          BobbinCoverage(ready: false, eventsProcessed: 45, lastCursor: 51)
+        }
+      )
+    )
+
+    let output = try await service.search(
+      query: "swift",
+      nsid: nil,
+      author: nil,
+      repository: nil,
+      since: nil,
+      until: nil,
+      limit: 30,
+      cursor: nil,
+      json: true
+    )
+
+    #expect(output.stdout.contains("\"items\""))
+    #expect(output.stderr.contains("coverage is not ready"))
   }
 
   @Test func repositoryWithoutDIDFailsBeforeSearch() async {
@@ -194,7 +221,10 @@ extension SearchCommandTests {
   fileprivate func dependencies(
     recorder: SearchCommandRecorder,
     repositoryRecord: TangledRecord<Repository>? = nil,
-    page: Page<SearchHit>? = nil
+    page: Page<SearchHit>? = nil,
+    coverage: @escaping @Sendable () async throws -> BobbinCoverage = {
+      BobbinCoverage(ready: true, eventsProcessed: 100, lastCursor: 100)
+    }
   ) -> SearchCommandDependencies {
     let repositoryRecord = repositoryRecord ?? sampleRepositoryRecord()
     let page = page ?? samplePage()
@@ -210,7 +240,8 @@ extension SearchCommandTests {
       search: { query, options in
         await recorder.record(search: .init(query: query, options: options))
         return page
-      }
+      },
+      coverage: coverage
     )
   }
 

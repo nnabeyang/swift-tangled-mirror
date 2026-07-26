@@ -22,12 +22,14 @@ struct ArtifactCommandDependencies: Sendable {
   let delete:
     @Sendable (String, String, String) async throws
       -> TangledRecord<Artifact>
+  let coverage: @Sendable () async throws -> BobbinCoverage
   let originURL: @Sendable () throws -> String
   let inputIsTerminal: @Sendable () -> Bool
   let confirm: @Sendable (String) -> Bool
 
   static let live: ArtifactCommandDependencies = {
-    let service = ArtifactService()
+    let client = BobbinClient()
+    let service = ArtifactService(bobbinClient: client)
     return ArtifactCommandDependencies(
       list: {
         try await service.listWithDiagnostics(
@@ -76,6 +78,7 @@ struct ArtifactCommandDependencies: Sendable {
           pdsClient: pdsClient
         )
       },
+      coverage: { try await client.coverage() },
       originURL: { try GitOriginReader().read() },
       inputIsTerminal: { standardInputIsTerminal() },
       confirm: { promptForArtifactDeletion($0) }
@@ -113,6 +116,7 @@ struct ArtifactCommandService: Sendable {
     json: Bool
   ) async throws -> CLICommandOutput {
     let reference = try repository ?? dependencies.originURL()
+    async let coverage = readBobbinCoverage(using: dependencies.coverage)
     let read = try await dependencies.list(reference, cursor, limit, sort)
     let page = read.page
     return CLICommandOutput(
@@ -122,7 +126,8 @@ struct ArtifactCommandService: Sendable {
       stderr:
         formatter.cursorDiagnostic(page.cursor, json: json)
         + BobbinReadDiagnostics(
-          coverage: .available(.init(ready: true, eventsProcessed: 0, lastCursor: 0)),
+          coverage: try await coverage,
+          initialPageIsEmpty: cursor == nil && page.items.isEmpty,
           authoritativeChanges: read.authoritativeChanges
         ).stderr
     )
@@ -134,11 +139,16 @@ struct ArtifactCommandService: Sendable {
     json: Bool
   ) async throws -> CLICommandOutput {
     let reference = try repository ?? dependencies.originURL()
+    async let coverage = readBobbinCoverage(using: dependencies.coverage)
     let result = try await dependencies.view(reference, tag)
     return CLICommandOutput(
       stdout: try json
         ? formatter.json(ArtifactJSONEnvelope(result: result))
-        : format(result)
+        : format(result),
+      stderr: BobbinReadDiagnostics(
+        coverage: try await coverage,
+        initialPageIsEmpty: result.artifacts.isEmpty
+      ).stderr
     )
   }
 
