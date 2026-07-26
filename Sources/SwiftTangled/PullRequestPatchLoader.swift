@@ -12,16 +12,26 @@ import SwiftAtproto
 #endif
 
 public struct PullRequestPatchLoader: Sendable {
-  private let bobbinClient: BobbinClient
+  private let pullRequest: @Sendable (String) async throws -> TangledRecord<PullRequest>
   private let resolver: any ATPResolver
   private let transport: any HTTPTransport
 
   public init(
-    bobbinClient: BobbinClient = BobbinClient(),
+    pdsRecordClient: PDSRecordClient = PDSRecordClient(),
     resolver: any ATPResolver = URLSessionATPResolver(),
     transport: any HTTPTransport = URLSessionTransport()
   ) {
-    self.bobbinClient = bobbinClient
+    self.pullRequest = { try await pdsRecordClient.pullRequest(uri: $0) }
+    self.resolver = resolver
+    self.transport = transport
+  }
+
+  init(
+    pullRequest: @escaping @Sendable (String) async throws -> TangledRecord<PullRequest>,
+    resolver: any ATPResolver,
+    transport: any HTTPTransport
+  ) {
+    self.pullRequest = pullRequest
     self.resolver = resolver
     self.transport = transport
   }
@@ -31,7 +41,7 @@ public struct PullRequestPatchLoader: Sendable {
     roundNumber: Int? = nil
   ) async throws -> PullRequestPatch {
     let ownerDID = try pullRequestOwnerDID(pullRequestURI)
-    let record = try await bobbinClient.pullRequest(uri: pullRequestURI)
+    let record = try await pullRequest(pullRequestURI)
     let rounds = record.value.rounds
     guard !rounds.isEmpty else {
       throw TangledError.notFound("pull request has no rounds")

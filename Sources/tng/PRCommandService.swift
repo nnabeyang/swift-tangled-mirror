@@ -25,6 +25,11 @@ struct PRCommandDependencies: Sendable {
   static let live: PRCommandDependencies = {
     let client = BobbinClient()
     let locator = RepositoryLocator(client: client)
+    let pdsRecordClient = PDSRecordClient()
+    let recordReader = TangledRecordReader(
+      pdsClient: pdsRecordClient,
+      bobbinClient: client
+    )
     return PRCommandDependencies(
       resolveRepository: { try await locator.resolve($0) },
       resolveOwnerDID: { try await locator.resolveOwnerDID($0) },
@@ -38,13 +43,13 @@ struct PRCommandDependencies: Sendable {
           order: order
         )
       },
-      viewPullRequest: { try await client.pullRequest(uri: $0) },
-      authoritativePullRequest: { try await client.pullRequest(uri: $0) },
+      viewPullRequest: { try await recordReader.pullRequest(uri: $0).record },
+      authoritativePullRequest: { try await pdsRecordClient.pullRequest(uri: $0) },
       comments: { uri, cursor, limit in
         try await client.comments(subjectURI: uri, cursor: cursor, limit: limit)
       },
       pullRequestPatch: { uri, roundNumber in
-        try await PullRequestPatchLoader(bobbinClient: client).load(
+        try await PullRequestPatchLoader(pdsRecordClient: pdsRecordClient).load(
           pullRequestURI: uri,
           roundNumber: roundNumber
         )

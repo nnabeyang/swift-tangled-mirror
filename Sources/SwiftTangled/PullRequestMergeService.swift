@@ -11,7 +11,7 @@ public struct PullRequestMergeService: Sendable {
     knotClient: KnotClient = KnotClient()
   ) {
     let repositoryLocator = repositoryLocator ?? RepositoryLocator(client: bobbinClient)
-    let patchLoader = patchLoader ?? PullRequestPatchLoader(bobbinClient: bobbinClient)
+    let patchLoader = patchLoader ?? PullRequestPatchLoader()
     self.dependencies = PullRequestMergeDependencies(
       pullRequest: { try await bobbinClient.pullRequest(uri: $0) },
       pullRequestStatus: { uri in

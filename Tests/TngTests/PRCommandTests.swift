@@ -280,6 +280,57 @@ import Testing
     #expect(body["text"] as? String == "Review comment")
   }
 
+  @Test func viewAndCommentUseSeparatePullRequestReads() async throws {
+    let recorder = PRCommandRecorder()
+    let viewRecord = samplePullRequestRecord(title: "Indexed view")
+    let authoritativeRecord = samplePullRequestRecord(title: "Authoritative comment")
+    let service = PRCommandService(
+      dependencies: dependencies(
+        recorder: recorder,
+        viewPullRequestRecord: viewRecord,
+        authoritativePullRequestRecord: authoritativeRecord
+      )
+    )
+
+    let viewed = try await service.view(
+      pullRequestURI: samplePullRequestURI,
+      json: false
+    )
+    _ = try await service.comment(
+      pullRequestURI: samplePullRequestURI,
+      body: "Latest round",
+      bodyFile: nil,
+      roundNumber: nil,
+      json: false
+    )
+
+    #expect(viewed.stdout.contains("Title\tIndexed view"))
+    #expect(await recorder.viewPullRequestURIs() == [samplePullRequestURI])
+    #expect(await recorder.authoritativePullRequestURIs() == [samplePullRequestURI])
+  }
+
+  @Test func commentDoesNotWriteWhenAuthoritativeReadFails() async {
+    let recorder = PRCommandRecorder()
+    let service = PRCommandService(
+      dependencies: dependencies(
+        recorder: recorder,
+        authoritativePullRequestError: .notFound("not indexed in PDS")
+      )
+    )
+
+    await #expect(throws: TangledError.self) {
+      _ = try await service.comment(
+        pullRequestURI: samplePullRequestURI,
+        body: "Must not be written",
+        bodyFile: nil,
+        roundNumber: nil,
+        json: false
+      )
+    }
+
+    #expect(await recorder.commentWriteCount() == 0)
+  }
+
   @Test func listRejectsRepositoryWithoutRepositoryDID() async {
     let recorder = PRCommandRecorder()
     let repository = sampleRepositoryRecord(repositoryDID: nil)
@@ -539,11 +590,16 @@ extension PRCommandTests {
     recorder: PRCommandRecorder,
     repositoryRecord: TangledRecord<Repository>? = nil,
     pullRequestRecord: TangledRecord<PullRequest>? = nil,
+    viewPullRequestRecord: TangledRecord<PullRequest>? = nil,
+    authoritativePullRequestRecord: TangledRecord<PullRequest>? = nil,
+    authoritativePullRequestError: TangledError? = nil,
     resolvedRepositories: [String: TangledRecord<Repository>] = [:],
     originURL: @escaping @Sendable () throws -> String = { "unused" }
   ) -> PRCommandDependencies {
     let repositoryRecord = repositoryRecord ?? sampleRepositoryRecord()
     let pullRequestRecord = pullRequestRecord ?? samplePullRequestRecord()
+    let viewPullRequestRecord = viewPullRequestRecord ?? pullRequestRecord
+    let authoritativePullRequestRecord = authoritativePullRequestRecord ?? pullRequestRecord
     return PRCommandDependencies(
       resolveRepository: { reference in
         await recorder.record(reference: reference)
@@ -577,11 +633,14 @@ extension PRCommandTests {
       },
       viewPullRequest: { uri in
         await recorder.record(viewPullRequestURI: uri)
-        return pullRequestRecord
+        return viewPullRequestRecord
       },
       authoritativePullRequest: { uri in
         await recorder.record(authoritativePullRequestURI: uri)
-        return pullRequestRecord
+        if let authoritativePullRequestError {
+          throw authoritativePullRequestError
+        }
+        return authoritativePullRequestRecord
       },
       comments: { uri, _, _ in
         Page(
@@ -637,7 +696,8 @@ extension PRCommandTests {
         return pullRequestRecord
       },
       createComment: { subject, body, roundIndex in
-        TangledRecord(
+        await recorder.recordCommentWrite()
+        return TangledRecord(
           uri: "at://did:plc:reviewer/sh.tangled.feed.comment/3comment",
           cid: "bafycomment",
           value: Comment(
@@ -800,6 +860,7 @@ private actor PRCommandRecorder {
   private var recordedPatchCalls: [PatchCall] = []
   private var recordedCreateCalls: [CreateCall] = []
   private var recordedStatusCalls: [StatusCall] = []
+  private var recordedCommentWriteCount = 0
 
   func record(reference: String) {
     recordedReferences.append(reference)
@@ -833,6 +894,10 @@ private actor PRCommandRecorder {
     recordedStatusCalls.append(.init(uri: statusURI, status: status))
   }
 
+  func recordCommentWrite() {
+    recordedCommentWriteCount += 1
+  }
+
   func references() -> [String] {
     recordedReferences
   }
@@ -849,6 +914,14 @@ private actor PRCommandRecorder {
     recordedViewPullRequestURIs + recordedAuthoritativePullRequestURIs
   }
 
+  func viewPullRequestURIs() -> [String] {
+    recordedViewPullRequestURIs
+  }
+
+  func authoritativePullRequestURIs() -> [String] {
+    recordedAuthoritativePullRequestURIs
+  }
+
   func patchCalls() -> [PatchCall] {
     recordedPatchCalls
   }
@@ -859,5 +932,9 @@ private actor PRCommandRecorder {
 
   func statusCalls() -> [StatusCall] {
     recordedStatusCalls
+  }
+
+  func commentWriteCount() -> Int {
+    recordedCommentWriteCount
   }
 }

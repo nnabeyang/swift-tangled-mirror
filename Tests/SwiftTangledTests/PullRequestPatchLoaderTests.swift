@@ -153,29 +153,44 @@ extension PullRequestPatchLoaderTests {
     blobTransport: PatchTransport,
     resolver: PatchResolver = PatchResolver()
   ) throws -> PullRequestPatchLoader {
-    let bobbinTransport = PatchTransport([
-      .init(statusCode: 200, body: try fixture("pull-request")),
-      .init(statusCode: 200, body: try fixture("pull-request")),
-    ])
     return PullRequestPatchLoader(
-      bobbinClient: BobbinClient(
-        baseURL: URL(string: "https://bobbin.example")!,
-        transport: bobbinTransport,
-        retryPolicy: BobbinRetryPolicy(maxAttempts: 1)
-      ),
+      pullRequest: { _ in try self.pullRequestRecord() },
       resolver: resolver,
       transport: blobTransport
     )
   }
 
-  fileprivate func fixture(_ name: String) throws -> Data {
-    let url = try #require(
-      Bundle.module.url(
-        forResource: name,
-        withExtension: "json",
-        subdirectory: "Fixtures"
-      ))
-    return try Data(contentsOf: url)
+  fileprivate func pullRequestRecord() throws -> TangledRecord<PullRequest> {
+    TangledRecord(
+      uri: pullURI,
+      cid: "bafypull",
+      value: PullRequest(
+        title: "Patch rounds",
+        rounds: [
+          PullRequestRound(
+            createdAt: FormatString<Date>(rawValue: "2026-07-20T00:00:00Z"),
+            patchBlob: BlobReference(
+              cid: "bafkreiroundone",
+              mimeType: "application/gzip",
+              size: 100
+            )
+          ),
+          PullRequestRound(
+            createdAt: FormatString<Date>(rawValue: "2026-07-21T00:00:00Z"),
+            patchBlob: BlobReference(
+              cid: "bafkreiroundtwo",
+              mimeType: "application/gzip",
+              size: 200
+            )
+          ),
+        ],
+        target: PullRequestTarget(
+          branch: "main",
+          repositoryDID: "did:plc:repository"
+        ),
+        createdAt: FormatString<Date>(rawValue: "2026-07-20T00:00:00Z")
+      )
+    )
   }
 
   fileprivate func query(_ name: String, _ request: URLRequest) -> String? {
