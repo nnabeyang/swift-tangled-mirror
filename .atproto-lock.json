@@ -118,13 +118,13 @@
           "path" : "lexicons"
         }
       ],
-      "location" : "https://tangled.org/tangled.org/core",
+      "location" : "https://tangled.org/nnabeyang.tngl.sh/core",
       "state" : {
-        "revision" : "da1953b92c920d3beb2cbd4914387ec3189728ae"
+        "revision" : "a041bf0cc2eb56c3827c79e9e12da4761bda9991"
       }
     }
   ],
   "generator" : "0.42.2",
   "module" : "Sources/TangledLexicons",
-  "originHash" : "c602855beb11e092505d899ff2ecec353ea536d8562f9df23392e6155762e6c1"
+  "originHash" : "4bd25427f06a0dbb4694c4ffc9f160eb0a17f3c3fb19699e1d0e01d8a63b3682"
 }

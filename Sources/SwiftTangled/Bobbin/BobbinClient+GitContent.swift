@@ -159,7 +159,7 @@ extension BobbinClient {
     }
     return GitLanguageReport(
       ref: response.ref,
-      languages: response.languages.map {
+      languages: response.languages?.map {
         GitLanguage(
           name: $0.name,
           size: $0.size,
@@ -168,7 +168,7 @@ extension BobbinClient {
           color: $0.color,
           extensions: $0.extensions
         )
-      },
+      } ?? [],
       totalFiles: response.totalFiles,
       totalSize: response.totalSize
     )
@@ -218,7 +218,7 @@ extension BobbinClient {
     if let limit, !(1 ... 100).contains(limit) {
       throw TangledError.invalidRequest("limit must be between 1 and 100")
     }
-    let data = try await generatedQuery {
+    let response = try await generatedQuery {
       try await RepoLog(
         cursor: cursor,
         limit: limit,
@@ -227,23 +227,18 @@ extension BobbinClient {
         repo: repositoryURI
       )
     }
-    let wire: WireGitLogPage
-    do {
-      wire = try JSONDecoder().decode(WireGitLogPage.self, from: data)
-    } catch {
-      throw TangledError.decoding(error)
-    }
-    let commits = wire.commits.map(\.model)
+    let commits = response.commits?.map(\.gitCommit) ?? []
+    let total = response.total ?? 0
     // Knot currently interprets the cursor as a numeric offset, although the Lexicon
     // describes it as a commit SHA. Keep the public cursor opaque while matching reality.
     let nextOffset = offset + commits.count
-    let nextCursor = nextOffset < wire.total ? String(nextOffset) : nil
+    let nextCursor = nextOffset < total ? String(nextOffset) : nil
     return GitLogPage(
       commits: commits,
       cursor: nextCursor,
-      ref: wire.ref,
-      total: wire.total,
-      page: wire.page
+      ref: response.ref ?? ref,
+      total: total,
+      page: response.page ?? 1
     )
   }
 
@@ -502,41 +497,25 @@ private func gitLastCommit(_ value: Sh.Tangled.RepoBlob_LastCommit) -> GitLastCo
   )
 }
 
-private struct WireGitLogPage: Decodable {
-  let commits: [WireGitCommit]
-  let ref: String
-  let total: Int
-  let page: Int
-}
-
-private struct WireGitCommit: Decodable {
-  let author: WireGitSignature
-  let committer: WireGitSignature
-  let message: String
-  let tree: String
-  let parentHashes: [[UInt8]]
-  let changeID: String?
-  let hash: String
-
-  enum CodingKeys: String, CodingKey {
-    case author, committer, message, tree
-    case parentHashes = "parent_hashes"
-    case changeID = "change_id"
-    case hash = "this"
-  }
-
-  var model: GitCommit {
+private extension Sh.Tangled.RepoLog_Commit {
+  var gitCommit: GitCommit {
     GitCommit(
-      hash: hash,
-      author: author.model,
-      committer: committer.model,
+      hash: self.this,
+      author: author.gitSignature,
+      committer: committer.gitSignature,
       message: message,
       tree: tree,
-      parentHashes: parentHashes.map {
+      parentHashes: parent_hashes?.map {
         $0.map { String(format: "%02x", $0) }.joined()
-      },
-      changeID: changeID
+      } ?? [],
+      changeID: change_id
     )
+  }
+}
+
+private extension Sh.Tangled.RepoLog_Signature {
+  var gitSignature: GitSignature {
+    GitSignature(name: Name, email: Email, when: When)
   }
 }
 

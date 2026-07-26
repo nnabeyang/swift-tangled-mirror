@@ -8976,7 +8976,7 @@ extension Sh.Tangled {
   }
 
   public struct RepoLanguages_Output: Codable, Hashable, Sendable {
-    public var languages: [RepoLanguages_Language]
+    public var languages: [RepoLanguages_Language]?
     /// The git reference used
     public var ref: Swift.String
     /// Total number of files analyzed
@@ -8985,7 +8985,7 @@ extension Sh.Tangled {
     public var totalSize: Swift.Int?
     public let _unknownValues: [Swift.String: AnyCodable]
 
-    public init(languages: [RepoLanguages_Language], ref: Swift.String, totalFiles: Swift.Int? = nil, totalSize: Swift.Int? = nil) {
+    public init(languages: [RepoLanguages_Language]? = nil, ref: Swift.String, totalFiles: Swift.Int? = nil, totalSize: Swift.Int? = nil) {
       self.languages = languages
       self.ref = ref
       self.totalFiles = totalFiles
@@ -9002,7 +9002,7 @@ extension Sh.Tangled {
 
     public init(from decoder: any Decoder) throws {
       let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
-      self.languages = try keyedContainer.decode([RepoLanguages_Language].self, forKey: .languages)
+      self.languages = try keyedContainer.decodeIfPresent([RepoLanguages_Language].self, forKey: .languages)
       self.ref = try keyedContainer.decode(Swift.String.self, forKey: .ref)
       self.totalFiles = try keyedContainer.decodeIfPresent(Swift.Int.self, forKey: .totalFiles)
       self.totalSize = try keyedContainer.decodeIfPresent(Swift.Int.self, forKey: .totalSize)
@@ -9019,7 +9019,7 @@ extension Sh.Tangled {
 
     public func encode(to encoder: any Encoder) throws {
       var container = encoder.container(keyedBy: CodingKeys.self)
-      try container.encode(self.languages, forKey: .languages)
+      try container.encodeIfPresent(self.languages, forKey: .languages)
       try container.encode(self.ref, forKey: .ref)
       try container.encodeIfPresent(self.totalFiles, forKey: .totalFiles)
       try container.encodeIfPresent(self.totalSize, forKey: .totalSize)
@@ -10341,7 +10341,7 @@ extension Sh.Tangled {
   }
   public enum RepoLog: XRPCQuery {
     public static let id = "sh.tangled.repo.log"
-    public typealias ResponseBody = Foundation.Data
+    public typealias ResponseBody = Sh.Tangled.RepoLog_Output
     public struct Input: XRPCQueryInput {
       public struct Query: XRPCInputQuery {
         public var cursor: Swift.String?
@@ -10430,6 +10430,208 @@ extension Sh.Tangled {
           return message
         }
       }
+    }
+  }
+
+  public struct RepoLog_Commit: Codable, Hashable, Sendable {
+    public var author: RepoLog_Signature
+    public var change_id: Swift.String?
+    public var committer: RepoLog_Signature
+    public var hash: [Swift.Int]?
+    public var merge_tag: Swift.String?
+    public var message: Swift.String
+    /// Deprecated first parent hash
+    public var parent: Swift.String?
+    public var parent_hashes: [[Swift.Int]]?
+    public var pgp_signature: Swift.String?
+    /// Hex-encoded commit hash
+    public var this: Swift.String
+    public var tree: Swift.String
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(author: RepoLog_Signature, change_id: Swift.String? = nil, committer: RepoLog_Signature, hash: [Swift.Int]? = nil, merge_tag: Swift.String? = nil, message: Swift.String, parent: Swift.String? = nil, parent_hashes: [[Swift.Int]]? = nil, pgp_signature: Swift.String? = nil, this: Swift.String, tree: Swift.String) {
+      self.author = author
+      self.change_id = change_id
+      self.committer = committer
+      self.hash = hash
+      self.merge_tag = merge_tag
+      self.message = message
+      self.parent = parent
+      self.parent_hashes = parent_hashes
+      self.pgp_signature = pgp_signature
+      self.this = this
+      self.tree = tree
+      self._unknownValues = [:]
+    }
+
+    public static func make(author: RepoLog_Signature, change_id: Swift.String? = nil, committer: RepoLog_Signature, hash: [Swift.Int]? = nil, merge_tag: Swift.String? = nil, message: Swift.String, parent: Swift.String? = nil, parent_hashes: [[Swift.Int]]? = nil, pgp_signature: Swift.String? = nil, this: Swift.String, tree: Swift.String) throws -> Self {
+      if let hash {
+        guard hash.count <= 20 else {
+          throw LexiconConstraintError.arrayTooLong("hash", limit: 20)
+        }
+        guard hash.count >= 20 else {
+          throw LexiconConstraintError.arrayTooShort("hash", minimum: 20)
+        }
+      }
+      return Self.init(author: author, change_id: change_id, committer: committer, hash: hash, merge_tag: merge_tag, message: message, parent: parent, parent_hashes: parent_hashes, pgp_signature: pgp_signature, this: this, tree: tree)
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case author
+      case change_id
+      case committer
+      case hash
+      case merge_tag
+      case message
+      case parent
+      case parent_hashes
+      case pgp_signature
+      case this
+      case tree
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      let author = try keyedContainer.decode(RepoLog_Signature.self, forKey: .author)
+      let change_id = try keyedContainer.decodeIfPresent(Swift.String.self, forKey: .change_id)
+      let committer = try keyedContainer.decode(RepoLog_Signature.self, forKey: .committer)
+      let hash = try keyedContainer.decodeIfPresent([Swift.Int].self, forKey: .hash)
+      let merge_tag = try keyedContainer.decodeIfPresent(Swift.String.self, forKey: .merge_tag)
+      let message = try keyedContainer.decode(Swift.String.self, forKey: .message)
+      let parent = try keyedContainer.decodeIfPresent(Swift.String.self, forKey: .parent)
+      let parent_hashes = try keyedContainer.decodeIfPresent([[Swift.Int]].self, forKey: .parent_hashes)
+      let pgp_signature = try keyedContainer.decodeIfPresent(Swift.String.self, forKey: .pgp_signature)
+      let this = try keyedContainer.decode(Swift.String.self, forKey: .this)
+      let tree = try keyedContainer.decode(Swift.String.self, forKey: .tree)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      if !LexiconDecodingMode.shouldValidateConstraints(in: decoder) {
+        self = Self.init(author: author, change_id: change_id, committer: committer, hash: hash, merge_tag: merge_tag, message: message, parent: parent, parent_hashes: parent_hashes, pgp_signature: pgp_signature, this: this, tree: tree)
+        return
+      }
+      do {
+        self = try Self.make(author: author, change_id: change_id, committer: committer, hash: hash, merge_tag: merge_tag, message: message, parent: parent, parent_hashes: parent_hashes, pgp_signature: pgp_signature, this: this, tree: tree)
+      } catch let error as LexiconConstraintError {
+        throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "\(error)", underlyingError: error))
+      }
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encode(self.author, forKey: .author)
+      try container.encodeIfPresent(self.change_id, forKey: .change_id)
+      try container.encode(self.committer, forKey: .committer)
+      try container.encodeIfPresent(self.hash, forKey: .hash)
+      try container.encodeIfPresent(self.merge_tag, forKey: .merge_tag)
+      try container.encode(self.message, forKey: .message)
+      try container.encodeIfPresent(self.parent, forKey: .parent)
+      try container.encodeIfPresent(self.parent_hashes, forKey: .parent_hashes)
+      try container.encodeIfPresent(self.pgp_signature, forKey: .pgp_signature)
+      try container.encode(self.this, forKey: .this)
+      try container.encode(self.tree, forKey: .tree)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
+
+  public struct RepoLog_Output: Codable, Hashable, Sendable {
+    public var commits: [RepoLog_Commit]?
+    /// One-based page number
+    public var page: Swift.Int?
+    /// The git reference used
+    public var ref: Swift.String?
+    /// Total number of commits
+    public var total: Swift.Int?
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(commits: [RepoLog_Commit]? = nil, page: Swift.Int? = nil, ref: Swift.String? = nil, total: Swift.Int? = nil) {
+      self.commits = commits
+      self.page = page
+      self.ref = ref
+      self.total = total
+      self._unknownValues = [:]
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case commits
+      case page
+      case ref
+      case total
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      self.commits = try keyedContainer.decodeIfPresent([RepoLog_Commit].self, forKey: .commits)
+      self.page = try keyedContainer.decodeIfPresent(Swift.Int.self, forKey: .page)
+      self.ref = try keyedContainer.decodeIfPresent(Swift.String.self, forKey: .ref)
+      self.total = try keyedContainer.decodeIfPresent(Swift.Int.self, forKey: .total)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      self._unknownValues = _unknownValues
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encodeIfPresent(self.commits, forKey: .commits)
+      try container.encodeIfPresent(self.page, forKey: .page)
+      try container.encodeIfPresent(self.ref, forKey: .ref)
+      try container.encodeIfPresent(self.total, forKey: .total)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
+
+  public struct RepoLog_Signature: Codable, Hashable, Sendable {
+    public var Email: Swift.String
+    public var Name: Swift.String
+    public var When: FormatString<Date>
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(Email: Swift.String, Name: Swift.String, When: FormatString<Date>) {
+      self.Email = Email
+      self.Name = Name
+      self.When = When
+      self._unknownValues = [:]
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case Email
+      case Name
+      case When
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      self.Email = try keyedContainer.decode(Swift.String.self, forKey: .Email)
+      self.Name = try keyedContainer.decode(Swift.String.self, forKey: .Name)
+      self.When = try keyedContainer.decode(FormatString<Date>.self, forKey: .When)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      self._unknownValues = _unknownValues
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encode(self.Email, forKey: .Email)
+      try container.encode(self.Name, forKey: .Name)
+      try container.encode(self.When, forKey: .When)
+      try _unknownValues.encode(to: encoder)
     }
   }
   /// Merge a patch into a repository branch

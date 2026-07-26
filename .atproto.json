@@ -26,7 +26,7 @@
       }
     },
     {
-      "location": "https://tangled.org/tangled.org/core",
+      "location": "https://tangled.org/nnabeyang.tngl.sh/core",
       "lexicons": [
         {
           "path": "lexicons",
@@ -120,7 +120,7 @@
         }
       ],
       "state": {
-        "revision": "da1953b92c920d3beb2cbd4914387ec3189728ae"
+        "revision": "a041bf0cc2eb56c3827c79e9e12da4761bda9991"
       }
     }
   ],

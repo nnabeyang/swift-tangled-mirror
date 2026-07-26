@@ -130,7 +130,7 @@ import Testing
   @Test func languagesMapsCompleteAndOptionalMetadata() async throws {
     let transport = GitContentTransport([
       .init(statusCode: 200, body: try fixture("git-languages")),
-      .init(statusCode: 200, body: Data(#"{"ref":"HEAD","languages":[]}"#.utf8)),
+      .init(statusCode: 200, body: Data(#"{"ref":"HEAD","languages":null}"#.utf8)),
     ])
     let client = makeClient(transport)
 
@@ -454,7 +454,7 @@ import Testing
       .init(statusCode: 404, body: Data(#"{"error":"RepoNotFound","message":"missing repo"}"#.utf8)),
       .init(statusCode: 404, body: Data(#"{"error":"RefNotFound","message":"missing ref"}"#.utf8)),
       .init(statusCode: 502, body: Data(#"{"error":"UpstreamFailed","message":"knot unavailable"}"#.utf8)),
-      .init(statusCode: 200, body: Data(#"{"ref":"main"}"#.utf8)),
+      .init(statusCode: 200, body: Data(#"{"languages":null}"#.utf8)),
     ])
     let client = makeClient(transport)
 
@@ -530,7 +530,7 @@ import Testing
         statusCode: 502,
         body: Data(#"{"error":"UpstreamFailed","message":"knot unavailable"}"#.utf8)
       ),
-      .init(statusCode: 200, body: Data(#"{"commits":[]}"#.utf8)),
+      .init(statusCode: 200, body: Data(#"{"commits":"invalid"}"#.utf8)),
     ])
     let client = makeClient(transport)
 
