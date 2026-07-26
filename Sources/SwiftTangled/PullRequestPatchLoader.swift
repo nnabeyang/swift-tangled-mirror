@@ -40,8 +40,21 @@ public struct PullRequestPatchLoader: Sendable {
     pullRequestURI: String,
     roundNumber: Int? = nil
   ) async throws -> PullRequestPatch {
-    let ownerDID = try pullRequestOwnerDID(pullRequestURI)
+    _ = try pullRequestOwnerDID(pullRequestURI)
     let record = try await pullRequest(pullRequestURI)
+    guard record.uri == pullRequestURI else {
+      throw TangledError.upstreamFailed(
+        "PDS returned a different pull request record: \(record.uri)"
+      )
+    }
+    return try await load(record: record, roundNumber: roundNumber)
+  }
+
+  func load(
+    record: TangledRecord<PullRequest>,
+    roundNumber: Int? = nil
+  ) async throws -> PullRequestPatch {
+    let ownerDID = try pullRequestOwnerDID(record.uri)
     let rounds = record.value.rounds
     guard !rounds.isEmpty else {
       throw TangledError.notFound("pull request has no rounds")

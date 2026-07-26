@@ -11,16 +11,22 @@ public struct PullRequestMergeService: Sendable {
     knotClient: KnotClient = KnotClient()
   ) {
     let repositoryLocator = repositoryLocator ?? RepositoryLocator(client: bobbinClient)
-    let patchLoader = patchLoader ?? PullRequestPatchLoader()
+    let pdsRecordClient = PDSRecordClient()
+    let patchLoader = patchLoader ?? PullRequestPatchLoader(pdsRecordClient: pdsRecordClient)
     self.dependencies = PullRequestMergeDependencies(
-      pullRequest: { try await bobbinClient.pullRequest(uri: $0) },
-      pullRequestStatus: { uri in
-        try await bobbinClient.pullRequestStatuses(
+      pullRequest: { try await pdsRecordClient.pullRequest(uri: $0) },
+      indexedState: { uri in
+        async let record = bobbinClient.pullRequest(uri: uri)
+        async let statuses = bobbinClient.pullRequestStatuses(
           pullRequestURI: uri,
           limit: 1
-        ).items.first?.value.status ?? .open
+        )
+        return try await PullRequestIndexedState(
+          record: record,
+          status: statuses.items.first?.value.status ?? .open
+        )
       },
-      patch: { try await patchLoader.load(pullRequestURI: $0).rawPatch },
+      patch: { try await patchLoader.load(record: $0).rawPatch },
       repository: { try await repositoryLocator.resolve($0) },
       mergeCheck: {
         try await knotClient.mergeCheck(
@@ -53,7 +59,10 @@ public struct PullRequestMergeService: Sendable {
   }
 
   public func check(pullRequestURI: String) async throws -> PullRequestMergeCheck {
-    let prepared = try await prepare(pullRequestURI: pullRequestURI)
+    let prepared = try await prepare(
+      pullRequestURI: pullRequestURI,
+      requireFreshIndexedState: false
+    )
     return try await check(prepared)
   }
 
@@ -62,7 +71,10 @@ public struct PullRequestMergeService: Sendable {
     allowStack: Bool,
     pdsClient: PDSClient
   ) async throws -> PullRequestMergeResult {
-    let prepared = try await prepare(pullRequestURI: pullRequestURI)
+    let prepared = try await prepare(
+      pullRequestURI: pullRequestURI,
+      requireFreshIndexedState: true
+    )
     if prepared.pullRequestURIs.count > 1, !allowStack {
       throw TangledError.invalidRequest(
         "merge includes stacked pull requests: "
@@ -80,6 +92,7 @@ public struct PullRequestMergeService: Sendable {
         files.isEmpty ? "pull request has merge conflicts" : "merge conflicts: \(files)"
       )
     }
+    try await validateFreshMergeState(prepared)
 
     let audience = try knotAudience(prepared.repository.value.knot)
     let token = try await pdsClient.serviceAuthToken(
@@ -111,8 +124,8 @@ public struct PullRequestMergeService: Sendable {
 
 struct PullRequestMergeDependencies: Sendable {
   let pullRequest: @Sendable (String) async throws -> TangledRecord<PullRequest>
-  let pullRequestStatus: @Sendable (String) async throws -> PullRequestStatus
-  let patch: @Sendable (String) async throws -> Data
+  let indexedState: @Sendable (String) async throws -> PullRequestIndexedState
+  let patch: @Sendable (TangledRecord<PullRequest>) async throws -> Data
   let repository: @Sendable (String) async throws -> TangledRecord<Repository>
   let mergeCheck:
     @Sendable (String, String, String, String, String, String) async throws ->
@@ -123,8 +136,14 @@ struct PullRequestMergeDependencies: Sendable {
       Void
 }
 
+struct PullRequestIndexedState: Sendable {
+  let record: TangledRecord<PullRequest>
+  let status: PullRequestStatus
+}
+
 private struct PreparedPullRequestMerge: Sendable {
   let pullRequestURIs: [String]
+  let pullRequestCIDs: [String: String]
   let repository: TangledRecord<Repository>
   let ownerDID: String
   let repositoryName: String
@@ -136,7 +155,10 @@ private struct PreparedPullRequestMerge: Sendable {
 }
 
 extension PullRequestMergeService {
-  private func prepare(pullRequestURI: String) async throws -> PreparedPullRequestMerge {
+  private func prepare(
+    pullRequestURI: String,
+    requireFreshIndexedState: Bool
+  ) async throws -> PreparedPullRequestMerge {
     var records: [TangledRecord<PullRequest>] = []
     var nextURI: String? = pullRequestURI
     var seen = Set<String>()
@@ -146,17 +168,20 @@ extension PullRequestMergeService {
         throw TangledError.invalidRequest("circular pull request dependency: \(uri)")
       }
       let record = try await dependencies.pullRequest(uri)
-      let status = try await dependencies.pullRequestStatus(uri)
-      if records.isEmpty {
-        guard status == .open else {
-          throw TangledError.invalidRequest("pull request is not open: \(uri)")
+      if requireFreshIndexedState {
+        let indexedState = try await dependencies.indexedState(uri)
+        try validate(indexedState: indexedState, matches: record)
+        if records.isEmpty {
+          guard indexedState.status == .open else {
+            throw TangledError.invalidRequest("pull request is not open: \(uri)")
+          }
+        } else if indexedState.status == .merged || indexedState.status == .closed {
+          break
+        } else if indexedState.status != .open {
+          throw TangledError.invalidRequest(
+            "unsupported pull request status \(indexedState.status.rawValue): \(uri)"
+          )
         }
-      } else if status == .merged || status == .closed {
-        break
-      } else if status != .open {
-        throw TangledError.invalidRequest(
-          "unsupported pull request status \(status.rawValue): \(uri)"
-        )
       }
       records.append(record)
       nextURI = record.value.dependentOn
@@ -190,7 +215,7 @@ extension PullRequestMergeService {
 
     var patches: [String] = []
     for record in records.reversed() {
-      let data = try await dependencies.patch(record.uri)
+      let data = try await dependencies.patch(record)
       guard let patch = String(data: data, encoding: .utf8) else {
         throw TangledError.decoding(PullRequestMergeServiceError.nonUTF8Patch)
       }
@@ -198,6 +223,16 @@ extension PullRequestMergeService {
     }
     return PreparedPullRequestMerge(
       pullRequestURIs: records.map(\.uri),
+      pullRequestCIDs: try Dictionary(
+        uniqueKeysWithValues: records.map { record in
+          guard let cid = record.cid, !cid.isEmpty else {
+            throw TangledError.invalidRequest(
+              "pull request does not expose a CID: \(record.uri)"
+            )
+          }
+          return (record.uri, cid)
+        }
+      ),
       repository: repository,
       ownerDID: ownerDID.rawValue,
       repositoryName: name,
@@ -207,6 +242,41 @@ extension PullRequestMergeService {
       title: selected.value.title,
       body: selected.value.body
     )
+  }
+
+  private func validateFreshMergeState(_ prepared: PreparedPullRequestMerge) async throws {
+    for uri in prepared.pullRequestURIs {
+      let record = try await dependencies.pullRequest(uri)
+      guard record.cid == prepared.pullRequestCIDs[uri] else {
+        throw TangledError.invalidRequest(
+          "pull request changed during merge check: \(uri); rerun the merge"
+        )
+      }
+      let indexedState = try await dependencies.indexedState(uri)
+      try validate(indexedState: indexedState, matches: record)
+      guard indexedState.status == .open else {
+        throw TangledError.invalidRequest("pull request is not open: \(uri)")
+      }
+    }
+  }
+
+  private func validate(
+    indexedState: PullRequestIndexedState,
+    matches authoritativeRecord: TangledRecord<PullRequest>
+  ) throws {
+    guard let authoritativeCID = authoritativeRecord.cid, !authoritativeCID.isEmpty else {
+      throw TangledError.invalidRequest(
+        "pull request does not expose a CID: \(authoritativeRecord.uri)"
+      )
+    }
+    guard indexedState.record.uri == authoritativeRecord.uri,
+      indexedState.record.cid == authoritativeCID
+    else {
+      throw TangledError.upstreamFailed(
+        "pull request state is not indexed for the latest record: "
+          + "\(authoritativeRecord.uri); retry after Bobbin catches up"
+      )
+    }
   }
 
   private func check(_ prepared: PreparedPullRequestMerge) async throws
