@@ -110,8 +110,10 @@ pipeline log, or artifact.
 - Preserve the dependency direction from clients to `SwiftTangled`, then to
   `swift-atproto` and AT Protocol services.
 - Discuss new third-party dependencies in an issue before adding them.
-- Use Bobbin for reads and authenticated AT Protocol APIs for writes. Do not
-  scrape the Tangled web interface.
+- Prefer authoritative PDS records for current repository, issue, pull request,
+  and artifact state. Use Bobbin for indexed aggregate reads, Spindle for
+  pipelines, Jetstream for live events, and authenticated AT Protocol APIs for
+  writes. Do not scrape the Tangled web interface.
 
 The generated files `Sources/TangledLexicons/XRPCAPIClient.swift` and
 `Sources/TangledLexicons/UnknownATPValue.swift` must not be edited directly.
@@ -137,8 +139,9 @@ tng pr create \
 
 Git `origin` must be the Tangled fork and Tangled must record it as a fork of
 the upstream repository. Both the source and target commits must already exist
-locally. If `tng` is not installed, run `./install.sh` from this repository
-before creating the Pull Request.
+locally. Create the Pull Request with a released `tng` installed globally on
+`PATH`. Do not use this checkout's `.build/debug/tng`, `.build/release/tng`, or
+`swift run tng` for authenticated Tangled writes.
 
 Before opening a Pull Request:
 

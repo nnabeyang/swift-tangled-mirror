@@ -88,11 +88,22 @@ Most repository-aware commands infer the repository from the Git `origin`.
 Pass `--repo OWNER/REPOSITORY` to target one explicitly. Commands intended for
 automation support `--json` where documented by their help.
 
-Repository listings read the owner's PDS directly. Aggregate reads that require
-Bobbin, including issue and pull request lists, comments, and search, report a
-warning on standard error when index coverage is unavailable or incomplete or
-when an initial query returns no results. JSON output on standard output keeps
-the same schema when these diagnostics are present.
+`tng` selects the read source according to the operation:
+
+| Operation | Source |
+| --- | --- |
+| Repository listings | Repository owner's PDS |
+| Repository, issue, and pull request records | Record owner's PDS, with Bobbin fallback for temporary PDS failures |
+| Pull request listings with `--author` | Author and repository owner PDSes |
+| Issue listings, pull request listings without `--author`, comments, and search | Bobbin |
+| Artifact listings | Bobbin, merged with the signed-in account's PDS records |
+| Pipelines | Spindle |
+| Live events | Jetstream |
+
+Bobbin-backed aggregate reads report a warning on standard error when index
+coverage is unavailable or incomplete or when an initial query returns no
+results. JSON output on standard output keeps the same schema when these
+diagnostics are present.
 
 ### Pull Requests
 
@@ -104,6 +115,18 @@ tng pr create --base main --head feature/my-change \
   --title "Describe the change" \
   --body "Why this change is useful"
 ```
+
+To list one author's pull requests without waiting for Bobbin indexing, read
+that author's PDS directly:
+
+```sh
+tng pr list OWNER/REPOSITORY --author AUTHOR_HANDLE
+```
+
+This mode resolves pull request status records from the author and repository
+owner PDSes. Comment counts are not available: the table displays `-`, and
+JSON output uses `-1`. Its pagination cursor is specific to the author,
+repository, filters, and sort order; pass it back unchanged to the same mode.
 
 The source and target commits must already exist locally. `tng` does not run
 `git fetch` or `git push`. Use `tng pr view`, `tng pr diff`, `tng pr comment`,
@@ -191,13 +214,14 @@ for try await event in client.events(
 }
 ```
 
-Use Bobbin to fetch current state; Jetstream is intended for live events.
+Use authoritative PDS records for current record state, Bobbin for indexed
+aggregate reads, Spindle for pipelines, and Jetstream for live events.
 
 ## Agent Skill
 
 The repository includes a reusable [`tng` Agent Skill](skills/tng/SKILL.md)
 for agents that work with Tangled repositories, issues, pull requests, rounds,
-comments, and pipelines.
+comments, artifacts, and Spindle pipelines.
 
 Point an Agent Skills-compatible tool at the complete `skills/tng` directory,
 or copy or symlink it into the tool's skill directory so its workflow reference
