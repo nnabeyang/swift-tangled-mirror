@@ -92,8 +92,10 @@ struct HTTPXRPCClient: XRPCCallable, Sendable {
     switch response.statusCode {
     case 400:
       return .invalidRequest(message)
-    case 401, 403:
+    case 401:
       return .unauthorized
+    case 403:
+      return .forbidden(message)
     case 404:
       return .notFound(message)
     case 409:

@@ -251,6 +251,7 @@ private func jsonErrorCode(for error: any Error) -> String {
     case .invalidRequest: return "invalid_request"
     case .conflict: return "conflict"
     case .unauthorized: return "unauthorized"
+    case .forbidden: return "forbidden"
     case .insufficientScope: return "insufficient_scope"
     case .notFound: return "not_found"
     case .rateLimited: return "rate_limited"
@@ -285,7 +286,7 @@ private func authenticationError(_ error: TangledError) -> Bool {
   case .unauthorized, .insufficientScope, .oauthTimeout, .oauthStateMismatch, .oauthCancelled,
     .portBindFailure, .browserLaunchFailed, .keychainFailure, .sessionStoreFailure:
     true
-  case .notImplemented, .network, .transport, .decoding, .invalidRequest, .conflict,
+  case .forbidden, .notImplemented, .network, .transport, .decoding, .invalidRequest, .conflict,
     .notFound, .rateLimited, .upstreamFailed, .serviceUnavailable,
     .serverStatus, .handleNotResolved:
     false
@@ -328,6 +329,8 @@ func describeTangledError(_ error: TangledError) -> String {
     "conflict: \(message ?? "record changed since it was read; fetch the latest state and retry")"
   case .unauthorized:
     "unauthorized; run 'tng auth login <handle>'"
+  case .forbidden(let message):
+    "forbidden\(message.map { ": \($0)" } ?? "")"
   case .insufficientScope(let scope):
     "missing OAuth scope: \(scope); run 'tng auth login <handle>' again"
   case .notFound(let message):

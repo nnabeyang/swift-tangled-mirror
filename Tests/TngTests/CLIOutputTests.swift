@@ -78,6 +78,17 @@ import Testing
     )
   }
 
+  @Test func reportsForbiddenAsAPIErrorNotAuthentication() {
+    let error = TangledError.forbidden("insufficient permissions")
+    let report = errorReport(for: error)
+    let json = jsonErrorReport(for: error)
+
+    #expect(report.exitCode == .api)
+    #expect(report.diagnostic == "API error: forbidden: insufficient permissions\n")
+    #expect(json.category == "api")
+    #expect(json.code == "forbidden")
+  }
+
   @Test func reportsUsageAndUnexpectedErrors() {
     let usage = errorReport(for: ValidationError("invalid option"))
     let unexpected = errorReport(for: UnexpectedTestError())

@@ -8,6 +8,7 @@ public enum TangledError: Error, Sendable {
   case invalidRequest(String?)
   case conflict(String?)
   case unauthorized
+  case forbidden(String?)
   case insufficientScope(String)
   case notFound(String?)
   case rateLimited(retryAfter: TimeInterval?, message: String?)

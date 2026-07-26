@@ -54,6 +54,31 @@ import Testing
     }
   }
 
+  @Test func merge403IsForbiddenNotUnauthorized() async throws {
+    let transport = KnotTransport(
+      statusCode: 403,
+      body: Data(#"{"error":"Forbidden","message":"not a maintainer"}"#.utf8)
+    )
+    do {
+      try await KnotClient(transport: transport).merge(
+        knot: "knot.example",
+        token: "service-token",
+        ownerDID: "did:plc:owner",
+        repositoryName: "core",
+        repositoryDID: "did:plc:repository",
+        branch: "main",
+        patch: "patch",
+        commitMessage: "Merge title",
+        commitBody: nil
+      )
+      Testing.Issue.record("expected forbidden")
+    } catch TangledError.forbidden(let message) {
+      #expect(message == "not a maintainer")
+    } catch {
+      Testing.Issue.record("unexpected error: \(error)")
+    }
+  }
+
   @Test func mergeMapsGatewayTimeoutToServiceUnavailable() async throws {
     let transport = KnotTransport(statusCode: 504, body: Data("{}".utf8))
     do {
