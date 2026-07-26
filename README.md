@@ -123,10 +123,15 @@ Issue write commands also support commenting, editing, closing, and reopening.
 
 ```sh
 tng pipeline list OWNER/REPOSITORY
+tng pipeline view PIPELINE_ID --spindle spindle.tangled.sh
+tng pipeline status PIPELINE_ID --spindle spindle.tangled.sh
 tng pipeline watch PIPELINE_ID --repo OWNER/REPOSITORY
 ```
 
-`pipeline watch` reports workflow state changes until the pipeline completes.
+Pipeline commands discover the repository's current Spindle by default.
+Use `--spindle` with `list`, `view`, `status`, or `watch` to select an endpoint
+explicitly. `pipeline watch` reports workflow state changes until the pipeline
+completes.
 
 ### Artifacts
 
