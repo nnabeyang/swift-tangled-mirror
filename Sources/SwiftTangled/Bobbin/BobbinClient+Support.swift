@@ -53,33 +53,3 @@ struct BobbinRecord<Value: Decodable & Sendable>: Decodable, Sendable {
   let cid: String?
   let value: Value
 }
-
-struct BobbinWireLink: Decodable, Sendable {
-  let cid: String
-
-  init(from decoder: any Decoder) throws {
-    let singleValue = try decoder.singleValueContainer()
-    if let value = try? singleValue.decode(String.self) {
-      cid = Self.canonicalCID(value)
-      return
-    }
-    let container = try decoder.container(keyedBy: CodingKeys.self)
-    cid = Self.canonicalCID(try container.decode(String.self, forKey: .cid))
-  }
-
-  private static func canonicalCID(_ value: String) -> String {
-    if let link = try? LexLink(value) {
-      return link.toBaseEncodedString
-    }
-    guard let data = Data(base64Encoded: value), data.first == 0,
-      let link = try? LexLink(Data(data.dropFirst()))
-    else {
-      return value
-    }
-    return link.toBaseEncodedString
-  }
-
-  private enum CodingKeys: String, CodingKey {
-    case cid = "$link"
-  }
-}

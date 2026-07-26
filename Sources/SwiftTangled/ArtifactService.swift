@@ -1,6 +1,7 @@
 import Crypto
 import Foundation
 import SwiftAtproto
+import TangledLexicons
 
 #if canImport(FoundationNetworking)
   import FoundationNetworking
@@ -430,23 +431,21 @@ extension ArtifactService {
     } catch {
       throw TangledError.handleNotResolved("PDS not found for \(owner.rawValue)")
     }
-    let endpoint =
-      pdsURL
-      .appendingPathComponent("xrpc", isDirectory: true)
-      .appendingPathComponent("com.atproto.sync.getBlob", isDirectory: false)
-    guard var components = URLComponents(url: endpoint, resolvingAgainstBaseURL: false) else {
-      throw TangledError.invalidRequest("invalid PDS URL")
-    }
-    components.queryItems = [
-      URLQueryItem(name: "did", value: owner.rawValue),
-      URLQueryItem(name: "cid", value: record.value.blob.cid),
-    ]
-    guard let url = components.url else {
-      throw TangledError.invalidRequest("invalid PDS blob request")
-    }
-    var request = URLRequest(url: url)
-    request.httpMethod = "GET"
-    request.setValue("application/octet-stream", forHTTPHeaderField: "Accept")
+    let query = Com.Atproto.SyncGetBlob.Input.Query(
+      cid: FormatString(rawValue: record.value.blob.cid),
+      did: .init(owner)
+    )
+    let components = XRPCRequestComponents(
+      nsId: Com.Atproto.SyncGetBlob.id,
+      queryItems: query.asParameters.map(HTTPXRPCClient.makeParameters) ?? [],
+      headers: .init(),
+      method: .get
+    )
+    let request = try HTTPXRPCClient(
+      baseURL: pdsURL,
+      transport: transport,
+      accept: "application/octet-stream"
+    ).request(for: components)
 
     let body: HTTPBodyStream
     let response: HTTPURLResponse

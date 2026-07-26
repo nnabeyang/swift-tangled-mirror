@@ -5,17 +5,17 @@
     "$type": "sh.tangled.actor.profile",
     "avatar": {
       "$type": "blob",
-      "ref": { "$link": "bafkreiavatar" },
+      "ref": { "$link": "bafkreidie4e7g2mr7u4rbvzuhzrgjxkvcc7qeac7uzidusdy74lvgb2r3a" },
       "mimeType": "image/png",
       "size": 198519
     },
     "bluesky": false,
     "description": "",
-    "links": ["", "https://example.com"],
+    "links": ["https://example.com"],
     "location": "",
     "preferredHandle": "debugman.example",
     "pronouns": "",
-    "stats": ["", "repository-count"],
+    "stats": ["repository-count"],
     "createdAt": "2026-04-20T09:40:15.726032Z"
   }
 }

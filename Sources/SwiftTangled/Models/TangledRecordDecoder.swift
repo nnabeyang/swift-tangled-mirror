@@ -8,7 +8,7 @@ enum TangledRecordDecoder {
     cid: String?,
     value: UnknownATPValue
   ) throws -> TangledRecord<Repository> {
-    let wire: WireRepository = try decode(value)
+    let wire: Sh.Tangled.Repo = try decode(value)
     return TangledRecord(
       uri: uri,
       cid: cid,
@@ -17,11 +17,11 @@ enum TangledRecordDecoder {
         knot: wire.knot,
         spindle: wire.spindle,
         description: wire.description,
-        website: wire.website,
+        website: wire.website?.rawValue,
         topics: wire.topics ?? [],
-        source: wire.source,
-        labels: wire.labels ?? [],
-        repoDID: wire.repoDid,
+        source: wire.source?.rawValue,
+        labels: wire.labels?.map(\.rawValue) ?? [],
+        repoDID: wire.repoDid?.rawValue,
         createdAt: wire.createdAt
       )
     )
@@ -32,17 +32,17 @@ enum TangledRecordDecoder {
     cid: String?,
     value: UnknownATPValue
   ) throws -> TangledRecord<Issue> {
-    let wire: WireIssue = try decode(value)
+    let wire: Sh.Tangled.RepoIssue = try decode(value)
     return TangledRecord(
       uri: uri,
       cid: cid,
       value: Issue(
-        repositoryDID: wire.repo,
+        repositoryDID: wire.repo.rawValue,
         title: wire.title,
         body: wire.body,
         createdAt: wire.createdAt,
-        mentions: wire.mentions ?? [],
-        references: wire.references ?? []
+        mentions: wire.mentions?.map(\.rawValue) ?? [],
+        references: wire.references?.map(\.rawValue) ?? []
       )
     )
   }
@@ -52,7 +52,7 @@ enum TangledRecordDecoder {
     cid: String?,
     value: UnknownATPValue
   ) throws -> TangledRecord<PullRequest> {
-    let wire: WirePullRequest = try decode(value)
+    let wire: Sh.Tangled.RepoPull = try decode(value)
     return TangledRecord(
       uri: uri,
       cid: cid,
@@ -63,23 +63,23 @@ enum TangledRecordDecoder {
           PullRequestRound(
             createdAt: $0.createdAt,
             patchBlob: BlobReference(
-              cid: $0.patchBlob.ref.cid,
+              cid: $0.patchBlob.ref.toBaseEncodedString,
               mimeType: $0.patchBlob.mimeType,
-              size: $0.patchBlob.size
+              size: Int($0.patchBlob.size)
             )
           )
         },
         source: wire.source.map {
-          PullRequestSource(branch: $0.branch, repositoryDID: $0.repo)
+          PullRequestSource(branch: $0.branch, repositoryDID: $0.repo?.rawValue)
         },
         target: PullRequestTarget(
           branch: wire.target.branch,
-          repositoryDID: wire.target.repo
+          repositoryDID: wire.target.repo.rawValue
         ),
         createdAt: wire.createdAt,
-        mentions: wire.mentions ?? [],
-        references: wire.references ?? [],
-        dependentOn: wire.dependentOn
+        mentions: wire.mentions?.map(\.rawValue) ?? [],
+        references: wire.references?.map(\.rawValue) ?? [],
+        dependentOn: wire.dependentOn?.rawValue
       )
     )
   }
@@ -89,13 +89,13 @@ enum TangledRecordDecoder {
     cid: String?,
     value: UnknownATPValue
   ) throws -> TangledRecord<PullRequestStatusChange> {
-    let wire: WirePullRequestStatus = try decode(value)
+    let wire: Sh.Tangled.Repo.PullStatus = try decode(value)
     return TangledRecord(
       uri: uri,
       cid: cid,
       value: PullRequestStatusChange(
-        pullRequestURI: wire.pull,
-        status: PullRequestStatus(wireValue: wire.status),
+        pullRequestURI: wire.pull.rawValue,
+        status: PullRequestStatus(wireValue: wire.status.rawValue),
         createdAt: wire.createdAt
       )
     )
@@ -106,14 +106,14 @@ enum TangledRecordDecoder {
     cid: String?,
     value: UnknownATPValue
   ) throws -> TangledRecord<Artifact> {
-    let wire: WireArtifact = try decode(value)
+    let wire: Sh.Tangled.RepoArtifact = try decode(value)
     guard let repositoryDID = wire.repoDid else {
       throw TangledError.decoding(ArtifactRecordDecodeError.missingRepositoryDID)
     }
     return try artifact(
       uri: uri,
       cid: cid,
-      repositoryDID: repositoryDID,
+      repositoryDID: repositoryDID.rawValue,
       tag: wire.tag,
       name: wire.name,
       blob: BlobReference(
@@ -156,8 +156,10 @@ enum TangledRecordDecoder {
   }
 
   static func recordType(of value: UnknownATPValue) throws -> String {
-    let wire: WireRecordType = try decode(value)
-    return wire.type
+    guard let type = value.type else {
+      throw TangledError.decoding(UnknownRecordTypeError())
+    }
+    return type
   }
 
   private static func decode<Value: Decodable>(_ value: UnknownATPValue) throws -> Value {
@@ -174,84 +176,9 @@ enum TangledRecordDecoder {
   }
 }
 
-private struct WirePullRequestStatus: Decodable {
-  let pull: String
-  let status: String
-  let createdAt: FormatString<Date>
-}
-
-private struct WireRepository: Decodable {
-  let name: String?
-  let knot: String
-  let spindle: String?
-  let description: String?
-  let website: String?
-  let topics: [String]?
-  let source: String?
-  let labels: [String]?
-  let repoDid: String?
-  let createdAt: FormatString<Date>
-}
-
-private struct WireIssue: Decodable {
-  let repo: String
-  let title: String
-  let body: String?
-  let createdAt: FormatString<Date>
-  let mentions: [String]?
-  let references: [String]?
-}
-
-private struct WirePullRequest: Decodable {
-  let title: String
-  let body: String?
-  let rounds: [WirePullRequestRound]
-  let source: WirePullRequestSource?
-  let target: WirePullRequestTarget
-  let createdAt: FormatString<Date>
-  let mentions: [String]?
-  let references: [String]?
-  let dependentOn: String?
-}
-
-private struct WirePullRequestSource: Decodable {
-  let branch: String
-  let repo: String?
-}
-
-private struct WirePullRequestTarget: Decodable {
-  let branch: String
-  let repo: String
-}
-
-private struct WirePullRequestRound: Decodable {
-  let createdAt: FormatString<Date>
-  let patchBlob: WirePullRequestBlob
-}
-
-private struct WirePullRequestBlob: Decodable {
-  let ref: BobbinWireLink
-  let mimeType: String
-  let size: Int
-}
-
-private struct WireArtifact: Decodable {
-  let artifact: LexBlob
-  let createdAt: FormatString<Date>
-  let name: String
-  let repoDid: String?
-  let tag: Data
-}
-
-private struct WireRecordType: Decodable {
-  let type: String
-
-  private enum CodingKeys: String, CodingKey {
-    case type = "$type"
-  }
-}
-
 private enum ArtifactRecordDecodeError: Error {
   case invalidTagLength(Int)
   case missingRepositoryDID
 }
+
+private struct UnknownRecordTypeError: Error {}

@@ -108,47 +108,14 @@ extension RepositoryLocator {
       throw TangledError.invalidRequest("Knot endpoint must use HTTPS")
     }
 
-    let endpoint =
-      knotURL
-      .appendingPathComponent("xrpc", isDirectory: true)
-      .appendingPathComponent(Sh.Tangled.RepoDescribeRepo.id, isDirectory: false)
-    guard var components = URLComponents(url: endpoint, resolvingAgainstBaseURL: false) else {
-      throw TangledError.invalidRequest("invalid Knot endpoint")
-    }
-    components.queryItems = [URLQueryItem(name: "repoDid", value: rawRepoDID)]
-    guard let url = components.url else {
-      throw TangledError.invalidRequest("invalid Knot describeRepo request")
-    }
-    var request = URLRequest(url: url)
-    request.httpMethod = "GET"
-    request.setValue("application/json", forHTTPHeaderField: "Accept")
-
-    let data: Data
-    let response: HTTPURLResponse
-    do {
-      (data, response) = try await knotTransport.send(request)
-    } catch let error as TangledError {
-      throw error
-    } catch let error as URLError {
-      throw TangledError.network(error)
-    } catch {
-      throw TangledError.transport(String(describing: error))
-    }
-    guard (200 ... 299).contains(response.statusCode) else {
-      if response.statusCode == 404 {
-        throw TangledError.notFound("repository not found on its Knot: \(rawRepoDID)")
-      }
-      throw TangledError.serverStatus(response.statusCode, "Knot describeRepo failed")
-    }
-
     let description: Sh.Tangled.RepoDescribeRepo_Output
     do {
-      description = try JSONDecoder().decode(
-        Sh.Tangled.RepoDescribeRepo_Output.self,
-        from: data
-      )
-    } catch {
-      throw TangledError.decoding(error)
+      description = try await HTTPXRPCClient(
+        baseURL: knotURL,
+        transport: knotTransport
+      ).RepoDescribeRepo(repoDid: .init(repoDID))
+    } catch TangledError.notFound {
+      throw TangledError.notFound("repository not found on its Knot: \(rawRepoDID)")
     }
     guard description.repoDid.rawValue == rawRepoDID else {
       throw TangledError.upstreamFailed(

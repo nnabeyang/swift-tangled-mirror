@@ -126,7 +126,7 @@ extension BobbinClient {
 
 private extension BobbinClient {
   func starRecord(_ item: Sh.Tangled.FeedListStars_ListItem) throws -> TangledRecord<Star> {
-    let record: BobbinRecord<WireStar> = try generatedRecord(
+    let record: BobbinRecord<Sh.Tangled.FeedStar> = try generatedRecord(
       uri: item.uri,
       cid: item.cid,
       value: item.value
@@ -134,14 +134,14 @@ private extension BobbinClient {
     return TangledRecord(
       uri: record.uri,
       cid: record.cid,
-      value: Star(subject: record.value.subject, createdAt: record.value.createdAt)
+      value: Star(subject: try record.value.subject.starSubject, createdAt: record.value.createdAt)
     )
   }
 
   func followRecord(
     _ item: Sh.Tangled.GraphListFollows_ListItem
   ) throws -> TangledRecord<Follow> {
-    let record: BobbinRecord<WireFollow> = try generatedRecord(
+    let record: BobbinRecord<Sh.Tangled.GraphFollow> = try generatedRecord(
       uri: item.uri,
       cid: item.cid,
       value: item.value
@@ -149,17 +149,24 @@ private extension BobbinClient {
     return TangledRecord(
       uri: record.uri,
       cid: record.cid,
-      value: Follow(subjectDID: record.value.subject, createdAt: record.value.createdAt)
+      value: Follow(subjectDID: record.value.subject.rawValue, createdAt: record.value.createdAt)
     )
   }
 }
 
-private struct WireStar: Decodable, Sendable {
-  let subject: StarSubject
-  let createdAt: FormatString<Date>
+private extension Sh.Tangled.FeedStar_Subject {
+  var starSubject: StarSubject {
+    get throws {
+      switch self {
+      case .feedStarRepo(let value):
+        return .repository(did: value.did.rawValue)
+      case .feedStarString(let value):
+        return .string(uri: value.uri.rawValue)
+      case ._other:
+        throw TangledError.decoding(UnsupportedStarSubjectError())
+      }
+    }
+  }
 }
 
-private struct WireFollow: Decodable, Sendable {
-  let subject: String
-  let createdAt: FormatString<Date>
-}
+private struct UnsupportedStarSubjectError: Error {}

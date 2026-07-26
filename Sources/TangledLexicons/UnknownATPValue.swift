@@ -12,10 +12,18 @@ public enum UnknownATPValue: UnknownATPValueProtocol {
   case any(any Codable & Hashable & Sendable)
 
   public static let allTypes: [String: any ATProtoRecord.Type] = [
+    "sh.tangled.actor.profile": Sh.Tangled.ActorProfile.self,
+    "sh.tangled.feed.comment": Sh.Tangled.FeedComment.self,
+    "sh.tangled.feed.reaction": Sh.Tangled.FeedReaction.self,
     "sh.tangled.feed.star": Sh.Tangled.FeedStar.self,
+    "sh.tangled.graph.follow": Sh.Tangled.GraphFollow.self,
+    "sh.tangled.label.definition": Sh.Tangled.LabelDefinition.self,
+    "sh.tangled.label.op": Sh.Tangled.LabelOp.self,
+    "sh.tangled.repo": Sh.Tangled.Repo.self,
     "sh.tangled.repo.artifact": Sh.Tangled.RepoArtifact.self,
     "sh.tangled.repo.issue": Sh.Tangled.RepoIssue.self,
     "sh.tangled.repo.issue.state": Sh.Tangled.Repo.IssueState.self,
+    "sh.tangled.repo.pull": Sh.Tangled.RepoPull.self,
     "sh.tangled.repo.pull.status": Sh.Tangled.Repo.PullStatus.self,
   ]
 

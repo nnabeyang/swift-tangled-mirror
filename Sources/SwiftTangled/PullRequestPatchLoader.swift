@@ -1,5 +1,6 @@
 import Foundation
 import SwiftAtproto
+import TangledLexicons
 
 #if canImport(zlib)
   import zlib
@@ -114,44 +115,17 @@ extension PullRequestPatchLoader {
     } catch {
       throw TangledError.handleNotResolved("PDS not found for \(did.rawValue)")
     }
-    let endpoint =
-      pdsURL
-      .appendingPathComponent("xrpc", isDirectory: true)
-      .appendingPathComponent("com.atproto.sync.getBlob", isDirectory: false)
-    guard var components = URLComponents(url: endpoint, resolvingAgainstBaseURL: false) else {
-      throw TangledError.invalidRequest("invalid PDS URL")
-    }
-    components.queryItems = [
-      URLQueryItem(name: "did", value: did.rawValue),
-      URLQueryItem(name: "cid", value: cid),
-    ]
-    guard let url = components.url else {
-      throw TangledError.invalidRequest("invalid PDS blob request")
-    }
-    var request = URLRequest(url: url)
-    request.httpMethod = "GET"
-    request.setValue("application/octet-stream", forHTTPHeaderField: "Accept")
-
-    let data: Data
-    let response: HTTPURLResponse
     do {
-      (data, response) = try await transport.send(request)
-    } catch let error as TangledError {
-      throw error
-    } catch let error as URLError {
-      throw TangledError.network(error)
-    } catch {
-      throw TangledError.transport(String(describing: error))
-    }
-    switch response.statusCode {
-    case 200 ... 299:
-      return data
-    case 401:
-      throw TangledError.unauthorized
-    case 404:
+      return try await HTTPXRPCClient(
+        baseURL: pdsURL,
+        transport: transport,
+        accept: "application/octet-stream"
+      ).SyncGetBlob(
+        cid: FormatString(rawValue: cid),
+        did: .init(did)
+      )
+    } catch TangledError.notFound {
       throw TangledError.notFound("pull request patch blob not found")
-    default:
-      throw TangledError.serverStatus(response.statusCode, "PDS blob request failed")
     }
   }
 }

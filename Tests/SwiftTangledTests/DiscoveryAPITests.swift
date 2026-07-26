@@ -25,12 +25,12 @@ import SwiftTangled
     #expect(
       profile.value.avatar
         == BlobReference(
-          cid: "bafkreiavatar",
+          cid: "bafkreidie4e7g2mr7u4rbvzuhzrgjxkvcc7qeac7uzidusdy74lvgb2r3a",
           mimeType: "image/png",
           size: 198_519
         ))
-    #expect(profile.value.links == ["", "https://example.com"])
-    #expect(profile.value.stats == ["", "repository-count"])
+    #expect(profile.value.links == ["https://example.com"])
+    #expect(profile.value.stats == ["repository-count"])
     #expect(profile.value.preferredHandle == "debugman.example")
     #expect(profiles.count == 1)
     #expect(profiles[0].value.pinnedRepositories == ["did:plc:repo"])

@@ -11,47 +11,51 @@ extension BobbinClient {
   ) async throws -> Page<TangledRecord<Artifact>> {
     try validateArtifactRepositoryDID(repositoryDID)
     try validateLimit(limit)
-    let output: WireArtifactPage = try await get(
-      nsid: Sh.Tangled.RepoListArtifacts.id,
-      queryItems: [
-        URLQueryItem(name: "cursor", value: cursor),
-        URLQueryItem(name: "limit", value: limit.map(String.init)),
-        URLQueryItem(name: "order", value: sort.rawValue),
-        URLQueryItem(name: "subject", value: repositoryDID),
-      ].filter { $0.value != nil }
-    )
+    let output = try await generatedQuery {
+      try await RepoListArtifacts(
+        cursor: cursor,
+        limit: limit,
+        order: Sh.Tangled.RepoListArtifacts_Order(rawValue: sort.rawValue),
+        subject: repositoryDID
+      )
+    }
     return Page(
       items: try output.items.map { item in
-        if let wireRepositoryDID = item.value.repoDid,
+        let record: BobbinRecord<Sh.Tangled.RepoArtifact> = try generatedRecord(
+          uri: item.uri,
+          cid: item.cid,
+          value: item.value
+        )
+        if let wireRepositoryDID = record.value.repoDid?.rawValue,
           wireRepositoryDID != repositoryDID
         {
           throw TangledError.upstreamFailed(
             "artifact \(item.uri) belongs to \(wireRepositoryDID), expected \(repositoryDID)"
           )
         }
-        guard item.value.tag.count == 20 else {
+        guard record.value.tag.count == 20 else {
           throw TangledError.upstreamFailed(
             "artifact \(item.uri) has a tag hash that is not 20 bytes"
           )
         }
-        guard item.value.artifact.size <= Artifact.maximumSize else {
+        guard record.value.artifact.size <= Artifact.maximumSize else {
           throw TangledError.upstreamFailed(
             "artifact \(item.uri) exceeds the 50 MiB limit"
           )
         }
         return TangledRecord(
-          uri: item.uri,
-          cid: item.cid,
+          uri: record.uri,
+          cid: record.cid,
           value: Artifact(
             repositoryDID: repositoryDID,
-            tagObjectHash: item.value.tag.hexString,
-            name: item.value.name,
+            tagObjectHash: record.value.tag.hexString,
+            name: record.value.name,
             blob: BlobReference(
-              cid: item.value.artifact.ref.toBaseEncodedString,
-              mimeType: item.value.artifact.mimeType,
-              size: Int(item.value.artifact.size)
+              cid: record.value.artifact.ref.toBaseEncodedString,
+              mimeType: record.value.artifact.mimeType,
+              size: Int(record.value.artifact.size)
             ),
-            createdAt: item.value.createdAt
+            createdAt: record.value.createdAt
           )
         )
       },
@@ -71,68 +75,6 @@ extension BobbinClient {
     guard FormatString<DID>(rawValue: value).typed != nil else {
       throw TangledError.invalidRequest("repository DID must be a valid DID")
     }
-  }
-}
-
-private struct WireArtifactPage: Decodable {
-  let cursor: String?
-  let items: [WireArtifactItem]
-}
-
-private struct WireArtifactItem: Decodable {
-  let uri: String
-  let cid: String?
-  let value: WireArtifact
-}
-
-private struct WireArtifact: Decodable {
-  let artifact: LexBlob
-  let createdAt: FormatString<Date>
-  let name: String
-  let repoDid: String?
-  let tag: Data
-
-  private enum CodingKeys: String, CodingKey {
-    case artifact, createdAt, name, repoDid, tag
-  }
-
-  init(from decoder: any Decoder) throws {
-    let container = try decoder.container(keyedBy: CodingKeys.self)
-    artifact = try container.decode(LexBlob.self, forKey: .artifact)
-    createdAt = try container.decode(FormatString<Date>.self, forKey: .createdAt)
-    name = try container.decode(String.self, forKey: .name)
-    repoDid = try container.decodeIfPresent(String.self, forKey: .repoDid)
-    tag = try container.decode(ArtifactBytes.self, forKey: .tag).data
-  }
-}
-
-private struct ArtifactBytes: Decodable {
-  let data: Data
-
-  private enum CodingKeys: String, CodingKey {
-    case bytes = "$bytes"
-  }
-
-  init(from decoder: any Decoder) throws {
-    if let value = try? decoder.singleValueContainer().decode(String.self) {
-      data = try Self.decode(value, codingPath: decoder.codingPath)
-      return
-    }
-    let container = try decoder.container(keyedBy: CodingKeys.self)
-    data = try Self.decode(
-      container.decode(String.self, forKey: .bytes),
-      codingPath: decoder.codingPath
-    )
-  }
-
-  private static func decode(_ value: String, codingPath: [any CodingKey]) throws -> Data {
-    let padding = String(repeating: "=", count: (4 - value.count % 4) % 4)
-    guard let data = Data(base64Encoded: value + padding) else {
-      throw DecodingError.dataCorrupted(
-        .init(codingPath: codingPath, debugDescription: "invalid AT Protocol bytes value")
-      )
-    }
-    return data
   }
 }
 

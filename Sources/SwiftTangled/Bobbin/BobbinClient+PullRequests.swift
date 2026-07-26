@@ -138,7 +138,7 @@ extension BobbinClient {
       )
     }
     let items = try response.items.map {
-      let record: BobbinRecord<WirePullRequestStatus> = try generatedRecord(
+      let record: BobbinRecord<Sh.Tangled.Repo.PullStatus> = try generatedRecord(
         uri: $0.uri,
         cid: $0.cid,
         value: $0.value
@@ -165,7 +165,7 @@ extension BobbinClient {
       )
     }
     let items = try response.items.map {
-      let record: BobbinRecord<WirePullRequestStatus> = try generatedRecord(
+      let record: BobbinRecord<Sh.Tangled.Repo.PullStatus> = try generatedRecord(
         uri: $0.uri,
         cid: $0.cid,
         value: $0.value
@@ -220,20 +220,14 @@ extension BobbinClient {
   }
 }
 
-private struct WirePullRequestStatus: Decodable, Sendable {
-  let pull: String
-  let status: String
-  let createdAt: FormatString<Date>
-}
-
-extension BobbinRecord where Value == WirePullRequestStatus {
+extension BobbinRecord where Value == Sh.Tangled.Repo.PullStatus {
   fileprivate var pullRequestStatusRecord: TangledRecord<PullRequestStatusChange> {
     TangledRecord(
       uri: uri,
       cid: cid,
       value: PullRequestStatusChange(
-        pullRequestURI: value.pull,
-        status: PullRequestStatus(wireValue: value.status),
+        pullRequestURI: value.pull.rawValue,
+        status: PullRequestStatus(wireValue: value.status.rawValue),
         createdAt: value.createdAt
       )
     )

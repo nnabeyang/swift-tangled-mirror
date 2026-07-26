@@ -1,5 +1,6 @@
 import Foundation
 import SwiftAtproto
+import TangledLexicons
 
 #if canImport(FoundationNetworking)
   import FoundationNetworking
@@ -52,37 +53,14 @@ public struct URLSessionATPResolver: ATPResolver {
   }
 
   private func resolveWithService(handle: Handle) async throws -> DID? {
-    let endpoint =
-      handleResolver
-      .appendingPathComponent("xrpc", isDirectory: true)
-      .appendingPathComponent("com.atproto.identity.resolveHandle", isDirectory: false)
-    guard var components = URLComponents(url: endpoint, resolvingAgainstBaseURL: false) else {
-      throw TangledError.invalidRequest("invalid handle resolver URL")
-    }
-    components.queryItems = [URLQueryItem(name: "handle", value: handle.rawValue)]
-    guard let url = components.url else {
-      throw TangledError.invalidRequest("invalid handle resolver request")
-    }
-
-    let data: Data
-    let response: URLResponse
     do {
-      (data, response) = try await session.data(for: URLRequest(url: url))
-    } catch let error as URLError {
-      throw TangledError.network(error)
-    }
-    guard let http = response as? HTTPURLResponse else {
-      throw TangledError.serverStatus(-1, "non-HTTP response for handle resolution")
-    }
-    if http.statusCode == 404 { return nil }
-    guard http.statusCode == 200 else {
-      throw TangledError.serverStatus(http.statusCode, "handle resolution failed")
-    }
-    do {
-      let response = try JSONDecoder().decode(HandleResolution.self, from: data)
-      return try DID(string: response.did)
-    } catch {
-      throw TangledError.decoding(error)
+      let response = try await HTTPXRPCClient(
+        baseURL: handleResolver,
+        transport: URLSessionTransport(session: session)
+      ).IdentityResolveHandle(handle: FormatString(rawValue: handle.rawValue))
+      return try DID(string: response.did.rawValue)
+    } catch TangledError.notFound {
+      return nil
     }
   }
 
@@ -124,8 +102,4 @@ public struct URLSessionATPResolver: ATPResolver {
       throw TangledError.handleNotResolved("unsupported DID method: \(did.method)")
     }
   }
-}
-
-private struct HandleResolution: Decodable {
-  let did: String
 }

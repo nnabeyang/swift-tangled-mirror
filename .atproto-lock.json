@@ -13,7 +13,8 @@
             "com.atproto.repo.putRecord",
             "com.atproto.repo.deleteRecord",
             "com.atproto.server.getServiceAuth",
-            "com.atproto.repo.uploadBlob"
+            "com.atproto.repo.uploadBlob",
+            "com.atproto.sync.getBlob"
           ],
           "path" : "lexicons/com/atproto"
         }
@@ -30,6 +31,7 @@
           "nsIds" : [
             "sh.tangled.actor.getProfile",
             "sh.tangled.actor.getProfiles",
+            "sh.tangled.actor.profile",
             "sh.tangled.feed.countComments",
             "sh.tangled.feed.countCommentsBy",
             "sh.tangled.feed.countReactions",
@@ -37,6 +39,7 @@
             "sh.tangled.feed.countStars",
             "sh.tangled.feed.countStarsBy",
             "sh.tangled.feed.comment",
+            "sh.tangled.feed.reaction",
             "sh.tangled.feed.star",
             "sh.tangled.feed.listComments",
             "sh.tangled.feed.listCommentsBy",
@@ -48,12 +51,15 @@
             "sh.tangled.graph.countFollowsBy",
             "sh.tangled.graph.listFollows",
             "sh.tangled.graph.listFollowsBy",
+            "sh.tangled.graph.follow",
             "sh.tangled.label.countDefinitions",
             "sh.tangled.label.countOps",
             "sh.tangled.label.countOpsBy",
             "sh.tangled.label.listDefinitions",
             "sh.tangled.label.listOps",
             "sh.tangled.label.listOpsBy",
+            "sh.tangled.label.definition",
+            "sh.tangled.label.op",
             "sh.tangled.markup.markdown",
             "sh.tangled.ci.getPipeline",
             "sh.tangled.ci.pipeline",
@@ -95,6 +101,7 @@
             "sh.tangled.repo.listPullsBy",
             "sh.tangled.repo.listRepos",
             "sh.tangled.repo.log",
+            "sh.tangled.repo",
             "sh.tangled.repo.pull",
             "sh.tangled.repo.pull.status",
             "sh.tangled.repo.pull.countStatuses",
@@ -117,7 +124,7 @@
       }
     }
   ],
-  "generator" : "0.42.1",
+  "generator" : "0.42.2",
   "module" : "Sources/TangledLexicons",
-  "originHash" : "8fb0ba4c71b59c94632e62dabb051722728c516e2d1a12d8a9399ed31a5bd330"
+  "originHash" : "c602855beb11e092505d899ff2ecec353ea536d8562f9df23392e6155762e6c1"
 }

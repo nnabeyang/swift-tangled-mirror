@@ -15,8 +15,6 @@ public enum Com {
 
 public enum Sh {
   public enum Tangled {
-    public enum Repo {
-    }
   }
 }
 
@@ -1480,6 +1478,85 @@ extension Com.Atproto {
       try _unknownValues.encode(to: encoder)
     }
   }
+  /// Get a blob associated with a given account. Returns the full blob as originally uploaded. Does not require auth; implemented by PDS.
+  public enum SyncGetBlob: XRPCQuery {
+    public static let id = "com.atproto.sync.getBlob"
+    public typealias ResponseBody = Foundation.Data
+    public struct Input: XRPCQueryInput {
+      public struct Query: XRPCInputQuery {
+        public var cid: FormatString<LexLink>
+        public var did: FormatString<DID>
+
+        public init(cid: FormatString<LexLink>, did: FormatString<DID>) {
+          self.cid = cid
+          self.did = did
+        }
+        public var asParameters: Parameters? {
+          ["cid": .string(cid.rawValue), "did": .string(did.rawValue)]
+        }
+      }
+      public var query: Input.Query
+    }
+    public indirect enum Error: XRPCError {
+      case blobnotfound(Swift.String?)
+      case repodeactivated(Swift.String?)
+      case reponotfound(Swift.String?)
+      case reposuspended(Swift.String?)
+      case repotakendown(Swift.String?)
+      case unexpected(error: Swift.String?, message: Swift.String?)
+
+      public init(error: UnExpectedError) {
+        switch error.error {
+        case "BlobNotFound":
+          self = .blobnotfound(error.message)
+        case "RepoNotFound":
+          self = .reponotfound(error.message)
+        case "RepoTakendown":
+          self = .repotakendown(error.message)
+        case "RepoSuspended":
+          self = .reposuspended(error.message)
+        case "RepoDeactivated":
+          self = .repodeactivated(error.message)
+        default:
+          self = .unexpected(error: error.error, message: error.message)
+        }
+      }
+
+      public var error: Swift.String? {
+        switch self {
+        case .blobnotfound:
+          return "BlobNotFound"
+        case .reponotfound:
+          return "RepoNotFound"
+        case .repotakendown:
+          return "RepoTakendown"
+        case .reposuspended:
+          return "RepoSuspended"
+        case .repodeactivated:
+          return "RepoDeactivated"
+        case .unexpected(let error, _):
+          return error
+        }
+      }
+
+      public var message: Swift.String? {
+        switch self {
+        case .blobnotfound(let message):
+          return message
+        case .reponotfound(let message):
+          return message
+        case .repotakendown(let message):
+          return message
+        case .reposuspended(let message):
+          return message
+        case .repodeactivated(let message):
+          return message
+        case .unexpected(_, let message):
+          return message
+        }
+      }
+    }
+  }
 }
 
 extension Sh.Tangled {
@@ -1692,6 +1769,179 @@ extension Sh.Tangled {
       try container.encode(self.uri, forKey: .uri)
       try container.encode(self.value, forKey: .value)
       try _unknownValues.encode(to: encoder)
+    }
+  }
+  public struct ActorProfile: ATProtoRecord {
+    public static let nsId = "sh.tangled.actor.profile"
+    public var type: Swift.String {
+      Self.nsId
+    }
+    public let avatar: LexBlob?
+    /// Include link to this account on Bluesky.
+    public let bluesky: Swift.Bool
+    /// Free-form profile description text.
+    public let description: Swift.String?
+    public let links: [FormatString<URI>]?
+    /// Free-form location text.
+    public let location: Swift.String?
+    /// Pinned repositories. Values are repo DIDs for repos that have them, or AT-URIs for legacy repos.
+    public let pinnedRepositories: [Swift.String]?
+    /// A handle the user prefers to be displayed as.
+    public let preferredHandle: FormatString<Handle>?
+    /// Preferred gender pronouns.
+    public let pronouns: Swift.String?
+    public let stats: [ActorProfile_Stats_Elem]?
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(avatar: LexBlob? = nil, bluesky: Swift.Bool, description: Swift.String? = nil, links: [FormatString<URI>]? = nil, location: Swift.String? = nil, pinnedRepositories: [Swift.String]? = nil, preferredHandle: FormatString<Handle>? = nil, pronouns: Swift.String? = nil, stats: [ActorProfile_Stats_Elem]? = nil) {
+      self.avatar = avatar
+      self.bluesky = bluesky
+      self.description = description
+      self.links = links
+      self.location = location
+      self.pinnedRepositories = pinnedRepositories
+      self.preferredHandle = preferredHandle
+      self.pronouns = pronouns
+      self.stats = stats
+      self._unknownValues = [:]
+    }
+
+    public static func make(avatar: LexBlob? = nil, bluesky: Swift.Bool, description: Swift.String? = nil, links: [FormatString<URI>]? = nil, location: Swift.String? = nil, pinnedRepositories: [Swift.String]? = nil, preferredHandle: FormatString<Handle>? = nil, pronouns: Swift.String? = nil, stats: [ActorProfile_Stats_Elem]? = nil) throws -> Self {
+      if let avatar {
+        guard Swift.Int(avatar.size) <= 1000000 else {
+          throw LexiconConstraintError.blobTooLarge("avatar", limit: 1000000)
+        }
+      }
+      if let description {
+        guard description.utf8.count <= 2560 else {
+          throw LexiconConstraintError.stringTooLong("description", limit: 2560)
+        }
+        guard description.count <= 256 else {
+          throw LexiconConstraintError.tooManyGraphemes("description", limit: 256)
+        }
+      }
+      if let links {
+        guard links.count <= 5 else {
+          throw LexiconConstraintError.arrayTooLong("links", limit: 5)
+        }
+        guard links.count >= 0 else {
+          throw LexiconConstraintError.arrayTooShort("links", minimum: 0)
+        }
+      }
+      if let location {
+        guard location.utf8.count <= 400 else {
+          throw LexiconConstraintError.stringTooLong("location", limit: 400)
+        }
+        guard location.count <= 40 else {
+          throw LexiconConstraintError.tooManyGraphemes("location", limit: 40)
+        }
+      }
+      if let pinnedRepositories {
+        guard pinnedRepositories.count <= 6 else {
+          throw LexiconConstraintError.arrayTooLong("pinnedRepositories", limit: 6)
+        }
+        guard pinnedRepositories.count >= 0 else {
+          throw LexiconConstraintError.arrayTooShort("pinnedRepositories", minimum: 0)
+        }
+      }
+      if let preferredHandle {
+        guard preferredHandle.rawValue.utf8.count <= 253 else {
+          throw LexiconConstraintError.stringTooLong("preferredHandle", limit: 253)
+        }
+      }
+      if let pronouns {
+        guard pronouns.utf8.count <= 40 else {
+          throw LexiconConstraintError.stringTooLong("pronouns", limit: 40)
+        }
+      }
+      if let stats {
+        guard stats.count <= 2 else {
+          throw LexiconConstraintError.arrayTooLong("stats", limit: 2)
+        }
+        guard stats.count >= 0 else {
+          throw LexiconConstraintError.arrayTooShort("stats", minimum: 0)
+        }
+      }
+      return Self.init(avatar: avatar, bluesky: bluesky, description: description, links: links, location: location, pinnedRepositories: pinnedRepositories, preferredHandle: preferredHandle, pronouns: pronouns, stats: stats)
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case type = "$type"
+      case avatar
+      case bluesky
+      case description
+      case links
+      case location
+      case pinnedRepositories
+      case preferredHandle
+      case pronouns
+      case stats
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      let avatar = try keyedContainer.decodeIfPresent(LexBlob.self, forKey: .avatar)
+      let bluesky = try keyedContainer.decode(Swift.Bool.self, forKey: .bluesky)
+      let description = try keyedContainer.decodeIfPresent(Swift.String.self, forKey: .description)
+      let links = try keyedContainer.decodeIfPresent([FormatString<URI>].self, forKey: .links)
+      let location = try keyedContainer.decodeIfPresent(Swift.String.self, forKey: .location)
+      let pinnedRepositories = try keyedContainer.decodeIfPresent([Swift.String].self, forKey: .pinnedRepositories)
+      let preferredHandle = try keyedContainer.decodeIfPresent(FormatString<Handle>.self, forKey: .preferredHandle)
+      let pronouns = try keyedContainer.decodeIfPresent(Swift.String.self, forKey: .pronouns)
+      let stats = try keyedContainer.decodeIfPresent([ActorProfile_Stats_Elem].self, forKey: .stats)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      if !LexiconDecodingMode.shouldValidateConstraints(in: decoder) {
+        self = Self.init(avatar: avatar, bluesky: bluesky, description: description, links: links, location: location, pinnedRepositories: pinnedRepositories, preferredHandle: preferredHandle, pronouns: pronouns, stats: stats)
+        return
+      }
+      do {
+        self = try Self.make(avatar: avatar, bluesky: bluesky, description: description, links: links, location: location, pinnedRepositories: pinnedRepositories, preferredHandle: preferredHandle, pronouns: pronouns, stats: stats)
+      } catch let error as LexiconConstraintError {
+        throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "\(error)", underlyingError: error))
+      }
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encodeIfPresent(self.avatar, forKey: .avatar)
+      try container.encode(self.bluesky, forKey: .bluesky)
+      try container.encodeIfPresent(self.description, forKey: .description)
+      try container.encodeIfPresent(self.links, forKey: .links)
+      try container.encodeIfPresent(self.location, forKey: .location)
+      try container.encodeIfPresent(self.pinnedRepositories, forKey: .pinnedRepositories)
+      try container.encodeIfPresent(self.preferredHandle, forKey: .preferredHandle)
+      try container.encodeIfPresent(self.pronouns, forKey: .pronouns)
+      try container.encodeIfPresent(self.stats, forKey: .stats)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
+  /// Vanity stats.
+  public indirect enum ActorProfile_Stats_Elem: Swift.String, Codable, Hashable, Sendable {
+    case mergedPullRequestCount = "merged-pull-request-count"
+    case closedPullRequestCount = "closed-pull-request-count"
+    case openPullRequestCount = "open-pull-request-count"
+    case openIssueCount = "open-issue-count"
+    case closedIssueCount = "closed-issue-count"
+    case repositoryCount = "repository-count"
+    case starCount = "star-count"
+
+    public init(from decoder: any Decoder) throws {
+      let container = try decoder.singleValueContainer()
+      let rawValue = try container.decode(Swift.String.self)
+      guard let value = Self(rawValue: rawValue) else {
+        throw DecodingError.dataCorrupted(.init(codingPath: container.codingPath, debugDescription: "invalid rawValue: \(rawValue)"))
+      }
+      self = value
+    }
+    public func encode(to encoder: any Encoder) throws {
+      try rawValue.encode(to: encoder)
     }
   }
   public enum CiGetPipeline: XRPCQuery {
@@ -4022,6 +4272,76 @@ extension Sh.Tangled {
       try _unknownValues.encode(to: encoder)
     }
   }
+  public struct FeedReaction: ATProtoRecord {
+    public static let nsId = "sh.tangled.feed.reaction"
+    public var type: Swift.String {
+      Self.nsId
+    }
+    public let createdAt: FormatString<Date>
+    public let reaction: FeedReaction_Reaction
+    public let subject: FormatString<ATURI>
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(createdAt: FormatString<Date>, reaction: FeedReaction_Reaction, subject: FormatString<ATURI>) {
+      self.createdAt = createdAt
+      self.reaction = reaction
+      self.subject = subject
+      self._unknownValues = [:]
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case type = "$type"
+      case createdAt
+      case reaction
+      case subject
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      self.createdAt = try keyedContainer.decode(FormatString<Date>.self, forKey: .createdAt)
+      self.reaction = try keyedContainer.decode(Sh.Tangled.FeedReaction_Reaction.self, forKey: .reaction)
+      self.subject = try keyedContainer.decode(FormatString<ATURI>.self, forKey: .subject)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      self._unknownValues = _unknownValues
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encode(self.createdAt, forKey: .createdAt)
+      try container.encode(self.reaction, forKey: .reaction)
+      try container.encode(self.subject, forKey: .subject)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
+  public indirect enum FeedReaction_Reaction: Swift.String, Codable, Hashable, Sendable {
+    case 👍 = "👍"
+    case 👎 = "👎"
+    case 😆 = "😆"
+    case 🎉 = "🎉"
+    case 🫤 = "🫤"
+    case ️ = "❤️"
+    case 🚀 = "🚀"
+    case 👀 = "👀"
+
+    public init(from decoder: any Decoder) throws {
+      let container = try decoder.singleValueContainer()
+      let rawValue = try container.decode(Swift.String.self)
+      guard let value = Self(rawValue: rawValue) else {
+        throw DecodingError.dataCorrupted(.init(codingPath: container.codingPath, debugDescription: "invalid rawValue: \(rawValue)"))
+      }
+      self = value
+    }
+    public func encode(to encoder: any Encoder) throws {
+      try rawValue.encode(to: encoder)
+    }
+  }
   public struct FeedStar: ATProtoRecord {
     public static let nsId = "sh.tangled.feed.star"
     public var type: Swift.String {
@@ -4367,6 +4687,49 @@ extension Sh.Tangled {
       var container = encoder.container(keyedBy: CodingKeys.self)
       try container.encode(self.count, forKey: .count)
       try container.encode(self.distinctAuthors, forKey: .distinctAuthors)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
+  public struct GraphFollow: ATProtoRecord {
+    public static let nsId = "sh.tangled.graph.follow"
+    public var type: Swift.String {
+      Self.nsId
+    }
+    public let createdAt: FormatString<Date>
+    public let subject: FormatString<DID>
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(createdAt: FormatString<Date>, subject: FormatString<DID>) {
+      self.createdAt = createdAt
+      self.subject = subject
+      self._unknownValues = [:]
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case type = "$type"
+      case createdAt
+      case subject
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      self.createdAt = try keyedContainer.decode(FormatString<Date>.self, forKey: .createdAt)
+      self.subject = try keyedContainer.decode(FormatString<DID>.self, forKey: .subject)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      self._unknownValues = _unknownValues
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encode(self.createdAt, forKey: .createdAt)
+      try container.encode(self.subject, forKey: .subject)
       try _unknownValues.encode(to: encoder)
     }
   }
@@ -4986,6 +5349,176 @@ extension Sh.Tangled {
       try _unknownValues.encode(to: encoder)
     }
   }
+  public struct LabelDefinition: ATProtoRecord {
+    public static let nsId = "sh.tangled.label.definition"
+    public var type: Swift.String {
+      Self.nsId
+    }
+    /// The hex value for the background color for the label. Appviews may choose to respect this.
+    public let color: Swift.String?
+    public let createdAt: FormatString<Date>
+    /// Whether this label can be repeated for a given entity, eg.: [reviewer:foo, reviewer:bar]
+    public let multiple: Swift.Bool?
+    /// The display name of this label.
+    public let name: Swift.String
+    /// The areas of the repo this label may apply to, eg.: sh.tangled.repo.issue. Appviews may choose to respect this.
+    public let scope: [FormatString<NSID>]
+    /// The type definition of this label. Appviews may allow sorting for certain types.
+    public let valueType: LabelDefinition_ValueType
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(color: Swift.String? = nil, createdAt: FormatString<Date>, multiple: Swift.Bool? = nil, name: Swift.String, scope: [FormatString<NSID>], valueType: LabelDefinition_ValueType) {
+      self.color = color
+      self.createdAt = createdAt
+      self.multiple = multiple
+      self.name = name
+      self.scope = scope
+      self.valueType = valueType
+      self._unknownValues = [:]
+    }
+
+    public static func make(color: Swift.String? = nil, createdAt: FormatString<Date>, multiple: Swift.Bool? = nil, name: Swift.String, scope: [FormatString<NSID>], valueType: LabelDefinition_ValueType) throws -> Self {
+      guard name.count <= 40 else {
+        throw LexiconConstraintError.tooManyGraphemes("name", limit: 40)
+      }
+      guard name.count >= 1 else {
+        throw LexiconConstraintError.tooFewGraphemes("name", minimum: 1)
+      }
+      return Self.init(color: color, createdAt: createdAt, multiple: multiple, name: name, scope: scope, valueType: valueType)
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case type = "$type"
+      case color
+      case createdAt
+      case multiple
+      case name
+      case scope
+      case valueType
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      let color = try keyedContainer.decodeIfPresent(Swift.String.self, forKey: .color)
+      let createdAt = try keyedContainer.decode(FormatString<Date>.self, forKey: .createdAt)
+      let multiple = try keyedContainer.decodeIfPresent(Swift.Bool.self, forKey: .multiple)
+      let name = try keyedContainer.decode(Swift.String.self, forKey: .name)
+      let scope = try keyedContainer.decode([FormatString<NSID>].self, forKey: .scope)
+      let valueType = try keyedContainer.decode(LabelDefinition_ValueType.self, forKey: .valueType)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      if !LexiconDecodingMode.shouldValidateConstraints(in: decoder) {
+        self = Self.init(color: color, createdAt: createdAt, multiple: multiple, name: name, scope: scope, valueType: valueType)
+        return
+      }
+      do {
+        self = try Self.make(color: color, createdAt: createdAt, multiple: multiple, name: name, scope: scope, valueType: valueType)
+      } catch let error as LexiconConstraintError {
+        throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "\(error)", underlyingError: error))
+      }
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encodeIfPresent(self.color, forKey: .color)
+      try container.encode(self.createdAt, forKey: .createdAt)
+      try container.encodeIfPresent(self.multiple, forKey: .multiple)
+      try container.encode(self.name, forKey: .name)
+      try container.encode(self.scope, forKey: .scope)
+      try container.encode(self.valueType, forKey: .valueType)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
+
+  public struct LabelDefinition_ValueType: Codable, Hashable, Sendable {
+    /// Closed set of values that this label can take.
+    public var `enum`: [Swift.String]?
+    /// An optional constraint that can be applied on string concrete types.
+    public var format: LabelDefinition_ValueType_Format
+    /// The concrete type of this label's value.
+    public var type: LabelDefinition_ValueType_Type
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(`enum`: [Swift.String]? = nil, format: LabelDefinition_ValueType_Format, type: LabelDefinition_ValueType_Type) {
+      self.`enum` = `enum`
+      self.format = format
+      self.type = type
+      self._unknownValues = [:]
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case `enum`
+      case format
+      case type
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      self.`enum` = try keyedContainer.decodeIfPresent([Swift.String].self, forKey: .`enum`)
+      self.format = try keyedContainer.decode(Sh.Tangled.LabelDefinition_ValueType_Format.self, forKey: .format)
+      self.type = try keyedContainer.decode(Sh.Tangled.LabelDefinition_ValueType_Type.self, forKey: .type)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      self._unknownValues = _unknownValues
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encodeIfPresent(self.`enum`, forKey: .`enum`)
+      try container.encode(self.format, forKey: .format)
+      try container.encode(self.type, forKey: .type)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
+  /// An optional constraint that can be applied on string concrete types.
+  public indirect enum LabelDefinition_ValueType_Format: Swift.String, Codable, Hashable, Sendable {
+    case any = "any"
+    case did = "did"
+    case nsid = "nsid"
+
+    public init(from decoder: any Decoder) throws {
+      let container = try decoder.singleValueContainer()
+      let rawValue = try container.decode(Swift.String.self)
+      guard let value = Self(rawValue: rawValue) else {
+        throw DecodingError.dataCorrupted(.init(codingPath: container.codingPath, debugDescription: "invalid rawValue: \(rawValue)"))
+      }
+      self = value
+    }
+    public func encode(to encoder: any Encoder) throws {
+      try rawValue.encode(to: encoder)
+    }
+  }
+  /// The concrete type of this label's value.
+  public indirect enum LabelDefinition_ValueType_Type: Swift.String, Codable, Hashable, Sendable {
+    case null = "null"
+    case boolean = "boolean"
+    case integer = "integer"
+    case string = "string"
+
+    public init(from decoder: any Decoder) throws {
+      let container = try decoder.singleValueContainer()
+      let rawValue = try container.decode(Swift.String.self)
+      guard let value = Self(rawValue: rawValue) else {
+        throw DecodingError.dataCorrupted(.init(codingPath: container.codingPath, debugDescription: "invalid rawValue: \(rawValue)"))
+      }
+      self = value
+    }
+    public func encode(to encoder: any Encoder) throws {
+      try rawValue.encode(to: encoder)
+    }
+  }
   public enum LabelListDefinitions: XRPCQuery {
     public static let id = "sh.tangled.label.listDefinitions"
     public typealias ResponseBody = Sh.Tangled.LabelListDefinitions_Output
@@ -5482,6 +6015,101 @@ extension Sh.Tangled {
       try _unknownValues.encode(to: encoder)
     }
   }
+  public struct LabelOp: ATProtoRecord {
+    public static let nsId = "sh.tangled.label.op"
+    public var type: Swift.String {
+      Self.nsId
+    }
+    public let add: [LabelOp_Operand]
+    public let delete: [LabelOp_Operand]
+    public let performedAt: FormatString<Date>
+    /// The subject (task, pull or discussion) of this label. Appviews may apply a `scope` check and refuse this op.
+    public let subject: FormatString<ATURI>
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(add: [LabelOp_Operand], delete: [LabelOp_Operand], performedAt: FormatString<Date>, subject: FormatString<ATURI>) {
+      self.add = add
+      self.delete = delete
+      self.performedAt = performedAt
+      self.subject = subject
+      self._unknownValues = [:]
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case type = "$type"
+      case add
+      case delete
+      case performedAt
+      case subject
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      self.add = try keyedContainer.decode([LabelOp_Operand].self, forKey: .add)
+      self.delete = try keyedContainer.decode([LabelOp_Operand].self, forKey: .delete)
+      self.performedAt = try keyedContainer.decode(FormatString<Date>.self, forKey: .performedAt)
+      self.subject = try keyedContainer.decode(FormatString<ATURI>.self, forKey: .subject)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      self._unknownValues = _unknownValues
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encode(self.add, forKey: .add)
+      try container.encode(self.delete, forKey: .delete)
+      try container.encode(self.performedAt, forKey: .performedAt)
+      try container.encode(self.subject, forKey: .subject)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
+
+  public struct LabelOp_Operand: Codable, Hashable, Sendable {
+    /// ATURI to the label definition
+    public var key: FormatString<ATURI>
+    /// Stringified value of the label. This is first unstringed by appviews and then interpreted as a concrete value.
+    public var value: Swift.String
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(key: FormatString<ATURI>, value: Swift.String) {
+      self.key = key
+      self.value = value
+      self._unknownValues = [:]
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case key
+      case value
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      self.key = try keyedContainer.decode(FormatString<ATURI>.self, forKey: .key)
+      self.value = try keyedContainer.decode(Swift.String.self, forKey: .value)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      self._unknownValues = _unknownValues
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encode(self.key, forKey: .key)
+      try container.encode(self.value, forKey: .value)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
   /// Tangled Flavored Markdown format text
   public struct MarkupMarkdown: Codable, Hashable, Sendable {
     /// list of blobs referenced in markdown
@@ -5526,6 +6154,122 @@ extension Sh.Tangled {
       try container.encodeIfPresent(self.blobs, forKey: .blobs)
       try container.encodeIfPresent(self.original, forKey: .original)
       try container.encode(self.text, forKey: .text)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
+  public struct Repo: ATProtoRecord {
+    public static let nsId = "sh.tangled.repo"
+    public var type: Swift.String {
+      Self.nsId
+    }
+    public let createdAt: FormatString<Date>
+    public let description: Swift.String?
+    /// knot where the repo was created
+    public let knot: Swift.String
+    /// List of labels that this repo subscribes to
+    public let labels: [FormatString<ATURI>]?
+    /// Cosmetic name of the repo.
+    public let name: Swift.String?
+    /// DID of the repo itself, if assigned
+    public let repoDid: FormatString<DID>?
+    /// source of the repo
+    public let source: FormatString<URI>?
+    /// CI runner to send jobs to and receive results from
+    public let spindle: Swift.String?
+    /// Topics related to the repo
+    public let topics: [Swift.String]?
+    /// Any URI related to the repo
+    public let website: FormatString<URI>?
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(createdAt: FormatString<Date>, description: Swift.String? = nil, knot: Swift.String, labels: [FormatString<ATURI>]? = nil, name: Swift.String? = nil, repoDid: FormatString<DID>? = nil, source: FormatString<URI>? = nil, spindle: Swift.String? = nil, topics: [Swift.String]? = nil, website: FormatString<URI>? = nil) {
+      self.createdAt = createdAt
+      self.description = description
+      self.knot = knot
+      self.labels = labels
+      self.name = name
+      self.repoDid = repoDid
+      self.source = source
+      self.spindle = spindle
+      self.topics = topics
+      self.website = website
+      self._unknownValues = [:]
+    }
+
+    public static func make(createdAt: FormatString<Date>, description: Swift.String? = nil, knot: Swift.String, labels: [FormatString<ATURI>]? = nil, name: Swift.String? = nil, repoDid: FormatString<DID>? = nil, source: FormatString<URI>? = nil, spindle: Swift.String? = nil, topics: [Swift.String]? = nil, website: FormatString<URI>? = nil) throws -> Self {
+      if let description {
+        guard description.count <= 140 else {
+          throw LexiconConstraintError.tooManyGraphemes("description", limit: 140)
+        }
+        guard description.count >= 1 else {
+          throw LexiconConstraintError.tooFewGraphemes("description", minimum: 1)
+        }
+      }
+      if let topics {
+        guard topics.count <= 50 else {
+          throw LexiconConstraintError.arrayTooLong("topics", limit: 50)
+        }
+      }
+      return Self.init(createdAt: createdAt, description: description, knot: knot, labels: labels, name: name, repoDid: repoDid, source: source, spindle: spindle, topics: topics, website: website)
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case type = "$type"
+      case createdAt
+      case description
+      case knot
+      case labels
+      case name
+      case repoDid
+      case source
+      case spindle
+      case topics
+      case website
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      let createdAt = try keyedContainer.decode(FormatString<Date>.self, forKey: .createdAt)
+      let description = try keyedContainer.decodeIfPresent(Swift.String.self, forKey: .description)
+      let knot = try keyedContainer.decode(Swift.String.self, forKey: .knot)
+      let labels = try keyedContainer.decodeIfPresent([FormatString<ATURI>].self, forKey: .labels)
+      let name = try keyedContainer.decodeIfPresent(Swift.String.self, forKey: .name)
+      let repoDid = try keyedContainer.decodeIfPresent(FormatString<DID>.self, forKey: .repoDid)
+      let source = try keyedContainer.decodeIfPresent(FormatString<URI>.self, forKey: .source)
+      let spindle = try keyedContainer.decodeIfPresent(Swift.String.self, forKey: .spindle)
+      let topics = try keyedContainer.decodeIfPresent([Swift.String].self, forKey: .topics)
+      let website = try keyedContainer.decodeIfPresent(FormatString<URI>.self, forKey: .website)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      if !LexiconDecodingMode.shouldValidateConstraints(in: decoder) {
+        self = Self.init(createdAt: createdAt, description: description, knot: knot, labels: labels, name: name, repoDid: repoDid, source: source, spindle: spindle, topics: topics, website: website)
+        return
+      }
+      do {
+        self = try Self.make(createdAt: createdAt, description: description, knot: knot, labels: labels, name: name, repoDid: repoDid, source: source, spindle: spindle, topics: topics, website: website)
+      } catch let error as LexiconConstraintError {
+        throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "\(error)", underlyingError: error))
+      }
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encode(self.createdAt, forKey: .createdAt)
+      try container.encodeIfPresent(self.description, forKey: .description)
+      try container.encode(self.knot, forKey: .knot)
+      try container.encodeIfPresent(self.labels, forKey: .labels)
+      try container.encodeIfPresent(self.name, forKey: .name)
+      try container.encodeIfPresent(self.repoDid, forKey: .repoDid)
+      try container.encodeIfPresent(self.source, forKey: .source)
+      try container.encodeIfPresent(self.spindle, forKey: .spindle)
+      try container.encodeIfPresent(self.topics, forKey: .topics)
+      try container.encodeIfPresent(self.website, forKey: .website)
       try _unknownValues.encode(to: encoder)
     }
   }
@@ -12051,6 +12795,8 @@ public protocol XRPCCallable: _XRPCCallable {
   func RepoUploadBlob(input: SwiftAtproto.XRPCBlobUpload) async throws -> Com.Atproto.RepoUploadBlob.ResponseBody
   /// Get a signed token on behalf of the requesting DID for the requested service.
   func ServerGetServiceAuth(aud: Swift.String, exp: Swift.Int?, lxm: FormatString<NSID>?) async throws -> Com.Atproto.ServerGetServiceAuth.ResponseBody
+  /// Get a blob associated with a given account. Returns the full blob as originally uploaded. Does not require auth; implemented by PDS.
+  func SyncGetBlob(cid: FormatString<LexLink>, did: FormatString<DID>) async throws -> Com.Atproto.SyncGetBlob.ResponseBody
   func ActorGetProfile(actor: FormatString<ATURI>) async throws -> Sh.Tangled.ActorGetProfile.ResponseBody
   func ActorGetProfiles(actors: [FormatString<ATURI>]) async throws -> Sh.Tangled.ActorGetProfiles.ResponseBody
   func CiGetPipeline(pipeline: FormatString<TID>) async throws -> Sh.Tangled.CiGetPipeline.ResponseBody
@@ -12158,6 +12904,10 @@ extension XRPCCallable {
   /// Get a signed token on behalf of the requesting DID for the requested service.
   public func ServerGetServiceAuth(aud: Swift.String, exp: Swift.Int? = nil, lxm: FormatString<NSID>? = nil) async throws -> Com.Atproto.ServerGetServiceAuth.ResponseBody {
     try await call(Com.Atproto.ServerGetServiceAuth.self, input: .init(aud: aud, exp: exp, lxm: lxm))
+  }
+  /// Get a blob associated with a given account. Returns the full blob as originally uploaded. Does not require auth; implemented by PDS.
+  public func SyncGetBlob(cid: FormatString<LexLink>, did: FormatString<DID>) async throws -> Com.Atproto.SyncGetBlob.ResponseBody {
+    try await call(Com.Atproto.SyncGetBlob.self, input: .init(cid: cid, did: did))
   }
   public func ActorGetProfile(actor: FormatString<ATURI>) async throws -> Sh.Tangled.ActorGetProfile.ResponseBody {
     try await call(Sh.Tangled.ActorGetProfile.self, input: .init(actor: actor))

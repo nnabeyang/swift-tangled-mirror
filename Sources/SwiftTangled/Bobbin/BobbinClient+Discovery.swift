@@ -8,7 +8,7 @@ extension BobbinClient {
     let response = try await generatedQuery {
       try await ActorGetProfile(actor: FormatString<ATURI>(rawValue: uri))
     }
-    let record: BobbinRecord<WireProfile> = try generatedRecord(
+    let record: BobbinRecord<Sh.Tangled.ActorProfile> = try generatedRecord(
       uri: response.uri,
       cid: response.cid,
       value: response.value
@@ -23,7 +23,7 @@ extension BobbinClient {
       try await ActorGetProfiles(actors: uris.map { FormatString<ATURI>(rawValue: $0) })
     }
     return try response.items.map {
-      let record: BobbinRecord<WireProfile> = try generatedRecord(
+      let record: BobbinRecord<Sh.Tangled.ActorProfile> = try generatedRecord(
         uri: $0.uri,
         cid: $0.cid,
         value: $0.value
@@ -140,49 +140,27 @@ extension BobbinClient {
   }
 }
 
-private struct WireLink: Decodable, Sendable {
-  let cid: String
-
-  enum CodingKeys: String, CodingKey {
-    case cid = "$link"
-  }
-}
-
-private struct WireBlob: Decodable, Sendable {
-  let ref: WireLink
-  let mimeType: String
-  let size: Int
-}
-
-private struct WireProfile: Decodable, Sendable {
-  let avatar: WireBlob?
-  let bluesky: Bool
-  let description: String?
-  let links: [String]?
-  let location: String?
-  let pinnedRepositories: [String]?
-  let preferredHandle: String?
-  let pronouns: String?
-  let stats: [String]?
-}
-
-extension BobbinRecord where Value == WireProfile {
+extension BobbinRecord where Value == Sh.Tangled.ActorProfile {
   fileprivate var profileRecord: TangledRecord<Profile> {
     TangledRecord(
       uri: uri,
       cid: cid,
       value: Profile(
         avatar: value.avatar.map {
-          BlobReference(cid: $0.ref.cid, mimeType: $0.mimeType, size: $0.size)
+          BlobReference(
+            cid: $0.ref.toBaseEncodedString,
+            mimeType: $0.mimeType,
+            size: Int($0.size)
+          )
         },
         bluesky: value.bluesky,
         description: value.description,
-        links: value.links ?? [],
+        links: value.links?.map(\.rawValue) ?? [],
         location: value.location,
         pinnedRepositories: value.pinnedRepositories ?? [],
-        preferredHandle: value.preferredHandle,
+        preferredHandle: value.preferredHandle?.rawValue,
         pronouns: value.pronouns,
-        stats: value.stats ?? []
+        stats: value.stats?.map(\.rawValue) ?? []
       )
     )
   }

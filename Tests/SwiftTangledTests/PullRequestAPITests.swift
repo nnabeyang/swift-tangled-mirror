@@ -35,10 +35,16 @@ import SwiftTangled
     #expect(pullRequest.value.dependentOn?.hasSuffix("/3mr3itr7lb722") == true)
     #expect(pullRequest.value.rounds.count == 2)
     #expect(pullRequest.value.rounds[0].createdAt.rawValue == "2026-07-20T17:27:07Z")
-    #expect(pullRequest.value.rounds[0].patchBlob.cid == "bafkreiroundone")
+    #expect(
+      pullRequest.value.rounds[0].patchBlob.cid
+        == "bafkreihwfggzslhujqfjm3pxk2xffi64owlgfxsjmmplvurkljsouqifty"
+    )
     #expect(pullRequest.value.rounds[0].patchBlob.mimeType == "application/gzip")
     #expect(pullRequest.value.rounds[0].patchBlob.size == 1_751)
-    #expect(pullRequest.value.rounds[1].patchBlob.cid == "bafkreiroundtwo")
+    #expect(
+      pullRequest.value.rounds[1].patchBlob.cid
+        == "bafkreidie4e7g2mr7u4rbvzuhzrgjxkvcc7qeac7uzidusdy74lvgb2r3a"
+    )
     #expect(pullRequests.count == 1)
     #expect(pullRequests[0].value.body == nil)
     #expect(pullRequests[0].value.source?.repositoryDID == "did:plc:source")

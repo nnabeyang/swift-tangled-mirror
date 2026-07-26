@@ -20,7 +20,7 @@
             "createdAt": "2026-07-21T17:29:06+03:00",
             "patchBlob": {
               "$type": "blob",
-              "ref": { "$link": "bafkreiopentwo" },
+              "ref": { "$link": "bafkreidie4e7g2mr7u4rbvzuhzrgjxkvcc7qeac7uzidusdy74lvgb2r3a" },
               "mimeType": "application/gzip",
               "size": 13826
             }
@@ -44,7 +44,7 @@
             "createdAt": "2026-07-20T17:27:07+03:00",
             "patchBlob": {
               "$type": "blob",
-              "ref": { "$link": "bafkreimerged" },
+              "ref": { "$link": "bafkreihwfggzslhujqfjm3pxk2xffi64owlgfxsjmmplvurkljsouqifty" },
               "mimeType": "application/gzip",
               "size": 1751
             }

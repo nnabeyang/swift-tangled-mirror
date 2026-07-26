@@ -26,6 +26,10 @@ import Testing
 
 @Test func generatedPullRecordNamespaceCompiles() {
   #expect(Sh.Tangled.RepoPull.nsId == "sh.tangled.repo.pull")
+  #expect(Com.Atproto.SyncGetBlob.id == "com.atproto.sync.getBlob")
+  #expect(UnknownATPValue.allTypes[Sh.Tangled.RepoPull.nsId] != nil)
+  #expect(UnknownATPValue.allTypes[Sh.Tangled.FeedComment.nsId] != nil)
+  #expect(UnknownATPValue.allTypes[Sh.Tangled.ActorProfile.nsId] != nil)
 }
 
 @Test func generatedArtifactNamespaceCompiles() {
@@ -36,7 +40,7 @@ import Testing
 
 @Test func generatedUnknownValueDecodesScalarSearchScore() throws {
   let data = Data(
-    #"{"hits":[{"nsid":"sh.tangled.repo","score":32.5,"uri":"at://did:plc:owner/sh.tangled.repo/core","value":{"$type":"sh.tangled.repo","knot":"knot.example"}}]}"#
+    #"{"hits":[{"nsid":"sh.tangled.repo","score":32.5,"uri":"at://did:plc:owner/sh.tangled.repo/core","value":{"$type":"sh.tangled.repo","knot":"knot.example","createdAt":"2026-07-26T00:00:00Z"}}]}"#
       .utf8
   )
 
@@ -44,4 +48,47 @@ import Testing
   let score = try JSONEncoder().encode(response.hits[0].score)
 
   #expect(String(decoding: score, as: UTF8.self) == "32.5")
+}
+
+@Test func generatedPullDecodesLegacyAndModernBlobLinks() throws {
+  let legacy = "AAFVEiD2KY2ZLPRMCpZt91auUqPcdZZi3kljHrrSKlpk6kEFng=="
+  let modern = "bafkreidie4e7g2mr7u4rbvzuhzrgjxkvcc7qeac7uzidusdy74lvgb2r3a"
+  let data = Data(
+    """
+    {
+      "$type": "sh.tangled.repo.pull",
+      "title": "Generated links",
+      "rounds": [
+        {
+          "createdAt": "2026-07-26T00:00:00Z",
+          "patchBlob": {
+            "$type": "blob",
+            "ref": "\(legacy)",
+            "mimeType": "application/gzip",
+            "size": 1
+          }
+        },
+        {
+          "createdAt": "2026-07-26T00:01:00Z",
+          "patchBlob": {
+            "$type": "blob",
+            "ref": {"$link": "\(modern)"},
+            "mimeType": "application/gzip",
+            "size": 2
+          }
+        }
+      ],
+      "target": {"branch": "main", "repo": "did:plc:repository"},
+      "createdAt": "2026-07-26T00:00:00Z"
+    }
+    """.utf8
+  )
+
+  let pull = try JSONDecoder().decode(Sh.Tangled.RepoPull.self, from: data)
+
+  #expect(
+    pull.rounds[0].patchBlob.ref.toBaseEncodedString
+      == "bafkreihwfggzslhujqfjm3pxk2xffi64owlgfxsjmmplvurkljsouqifty"
+  )
+  #expect(pull.rounds[1].patchBlob.ref.toBaseEncodedString == modern)
 }

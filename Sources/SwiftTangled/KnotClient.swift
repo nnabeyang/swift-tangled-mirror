@@ -28,13 +28,7 @@ public struct KnotClient: Sendable {
       patch: patch,
       repo: FormatString(rawValue: repositoryDID)
     )
-    let data = try await send(
-      knot: knot,
-      nsid: Sh.Tangled.RepoMergeCheck.id,
-      body: input,
-      authorization: nil
-    )
-    let output: Sh.Tangled.RepoMergeCheck_Output = try decode(data)
+    let output = try await client(knot: knot).RepoMergeCheck(input: input)
     return PullRequestMergeCheckResponse(
       isConflicted: output.is_conflicted,
       conflicts: (output.conflicts ?? []).map {
@@ -65,12 +59,7 @@ public struct KnotClient: Sendable {
       patch: patch,
       repo: FormatString(rawValue: repositoryDID)
     )
-    _ = try await send(
-      knot: knot,
-      nsid: Sh.Tangled.RepoMerge.id,
-      body: input,
-      authorization: token
-    )
+    _ = try await client(knot: knot, token: token).RepoMerge(input: input)
   }
 }
 
@@ -94,56 +83,15 @@ public struct PullRequestMergeCheckResponse: Equatable, Sendable {
 }
 
 extension KnotClient {
-  fileprivate func send<Body: Encodable>(
+  fileprivate func client(
     knot: String,
-    nsid: String,
-    body: Body,
-    authorization: String?
-  ) async throws -> Data {
-    let baseURL = try knotBaseURL(knot)
-    let endpoint =
-      baseURL
-      .appendingPathComponent("xrpc", isDirectory: true)
-      .appendingPathComponent(nsid, isDirectory: false)
-    var request = URLRequest(url: endpoint, timeoutInterval: 20)
-    request.httpMethod = "POST"
-    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-    request.setValue("application/json", forHTTPHeaderField: "Accept")
-    if let authorization {
-      request.setValue("Bearer \(authorization)", forHTTPHeaderField: "Authorization")
-    }
-    let encoder = JSONEncoder()
-    encoder.outputFormatting = [.withoutEscapingSlashes]
-    request.httpBody = try encoder.encode(body)
-
-    let data: Data
-    let response: HTTPURLResponse
-    do {
-      (data, response) = try await transport.send(request)
-    } catch let error as TangledError {
-      throw error
-    } catch let error as URLError {
-      throw TangledError.network(error)
-    } catch {
-      throw TangledError.transport(String(describing: error))
-    }
-    guard (200 ... 299).contains(response.statusCode) else {
-      let failure = try? JSONDecoder().decode(KnotFailure.self, from: data)
-      let message = failure?.message ?? failure?.error
-      switch response.statusCode {
-      case 401, 403:
-        throw TangledError.unauthorized
-      case 404:
-        throw TangledError.notFound(message)
-      case 409:
-        throw TangledError.invalidRequest(message ?? "merge conflict")
-      case 429:
-        throw TangledError.rateLimited(retryAfter: nil, message: message)
-      default:
-        throw TangledError.serverStatus(response.statusCode, message)
-      }
-    }
-    return data
+    token: String? = nil
+  ) throws -> HTTPXRPCClient {
+    HTTPXRPCClient(
+      baseURL: try knotBaseURL(knot),
+      transport: transport,
+      bearerToken: token
+    )
   }
 
   fileprivate func knotBaseURL(_ value: String) throws -> URL {
@@ -156,17 +104,4 @@ extension KnotClient {
     }
     return url
   }
-
-  fileprivate func decode<Value: Decodable>(_ data: Data) throws -> Value {
-    do {
-      return try JSONDecoder().decode(Value.self, from: data)
-    } catch {
-      throw TangledError.decoding(error)
-    }
-  }
-}
-
-private struct KnotFailure: Decodable {
-  let error: String?
-  let message: String?
 }

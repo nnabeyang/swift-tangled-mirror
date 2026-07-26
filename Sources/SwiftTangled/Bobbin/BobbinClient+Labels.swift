@@ -20,7 +20,7 @@ extension BobbinClient {
       )
     }
     let items = try response.items.map {
-      let record: BobbinRecord<WireLabelDefinition> = try generatedRecord(
+      let record: BobbinRecord<Sh.Tangled.LabelDefinition> = try generatedRecord(
         uri: $0.uri,
         cid: $0.cid,
         value: $0.value
@@ -55,7 +55,7 @@ extension BobbinClient {
       )
     }
     let items = try response.items.map {
-      let record: BobbinRecord<WireLabelOperation> = try generatedRecord(
+      let record: BobbinRecord<Sh.Tangled.LabelOp> = try generatedRecord(
         uri: $0.uri,
         cid: $0.cid,
         value: $0.value
@@ -82,7 +82,7 @@ extension BobbinClient {
       )
     }
     let items = try response.items.map {
-      let record: BobbinRecord<WireLabelOperation> = try generatedRecord(
+      let record: BobbinRecord<Sh.Tangled.LabelOp> = try generatedRecord(
         uri: $0.uri,
         cid: $0.cid,
         value: $0.value
@@ -109,40 +109,7 @@ extension BobbinClient {
   }
 }
 
-private struct WireLabelDefinition: Decodable, Sendable {
-  let name: String
-  let valueType: WireLabelValueType
-  let scope: [String]
-  let color: String?
-  let createdAt: FormatString<Date>
-  let multiple: Bool?
-}
-
-private struct WireLabelValueType: Decodable, Sendable {
-  let kind: String
-  let format: String
-  let allowedValues: [String]?
-
-  enum CodingKeys: String, CodingKey {
-    case kind = "type"
-    case format
-    case allowedValues = "enum"
-  }
-}
-
-private struct WireLabelOperation: Decodable, Sendable {
-  let subject: String
-  let add: [WireLabelOperand]
-  let delete: [WireLabelOperand]
-  let performedAt: FormatString<Date>
-}
-
-private struct WireLabelOperand: Decodable, Sendable {
-  let key: String
-  let value: String
-}
-
-extension BobbinRecord where Value == WireLabelDefinition {
+extension BobbinRecord where Value == Sh.Tangled.LabelDefinition {
   fileprivate var labelDefinitionRecord: TangledRecord<LabelDefinition> {
     TangledRecord(
       uri: uri,
@@ -150,11 +117,11 @@ extension BobbinRecord where Value == WireLabelDefinition {
       value: LabelDefinition(
         name: value.name,
         valueType: LabelValueType(
-          kind: LabelValueKind(rawValue: value.valueType.kind),
-          format: LabelValueFormat(rawValue: value.valueType.format),
-          allowedValues: value.valueType.allowedValues ?? []
+          kind: LabelValueKind(rawValue: value.valueType.type.rawValue),
+          format: LabelValueFormat(rawValue: value.valueType.format.rawValue),
+          allowedValues: value.valueType.enum ?? []
         ),
-        scope: value.scope,
+        scope: value.scope.map(\.rawValue),
         color: value.color,
         createdAt: value.createdAt,
         allowsMultipleValues: value.multiple
@@ -163,13 +130,13 @@ extension BobbinRecord where Value == WireLabelDefinition {
   }
 }
 
-extension BobbinRecord where Value == WireLabelOperation {
+extension BobbinRecord where Value == Sh.Tangled.LabelOp {
   fileprivate var labelOperationRecord: TangledRecord<LabelOperation> {
     TangledRecord(
       uri: uri,
       cid: cid,
       value: LabelOperation(
-        subjectURI: value.subject,
+        subjectURI: value.subject.rawValue,
         additions: value.add.map(\.labelOperand),
         deletions: value.delete.map(\.labelOperand),
         performedAt: value.performedAt
@@ -178,8 +145,8 @@ extension BobbinRecord where Value == WireLabelOperation {
   }
 }
 
-extension WireLabelOperand {
+extension Sh.Tangled.LabelOp_Operand {
   fileprivate var labelOperand: LabelOperand {
-    LabelOperand(definitionURI: key, value: value)
+    LabelOperand(definitionURI: key.rawValue, value: value)
   }
 }

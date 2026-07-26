@@ -20,12 +20,12 @@ extension BobbinClient {
       )
     }
     let items = try response.items.map {
-      let record: BobbinRecord<WireComment> = try generatedRecord(
+      let record: BobbinRecord<Sh.Tangled.FeedComment> = try generatedRecord(
         uri: $0.uri,
         cid: $0.cid,
         value: $0.value
       )
-      return record.commentRecord
+      return try record.commentRecord
     }
     return Page(items: items, cursor: response.cursor)
   }
@@ -47,12 +47,12 @@ extension BobbinClient {
       )
     }
     let items = try response.items.map {
-      let record: BobbinRecord<WireComment> = try generatedRecord(
+      let record: BobbinRecord<Sh.Tangled.FeedComment> = try generatedRecord(
         uri: $0.uri,
         cid: $0.cid,
         value: $0.value
       )
-      return record.commentRecord
+      return try record.commentRecord
     }
     return Page(items: items, cursor: response.cursor)
   }
@@ -90,7 +90,7 @@ extension BobbinClient {
       )
     }
     let items = try response.items.map {
-      let record: BobbinRecord<WireReaction> = try generatedRecord(
+      let record: BobbinRecord<Sh.Tangled.FeedReaction> = try generatedRecord(
         uri: $0.uri,
         cid: $0.cid,
         value: $0.value
@@ -117,7 +117,7 @@ extension BobbinClient {
       )
     }
     let items = try response.items.map {
-      let record: BobbinRecord<WireReaction> = try generatedRecord(
+      let record: BobbinRecord<Sh.Tangled.FeedReaction> = try generatedRecord(
         uri: $0.uri,
         cid: $0.cid,
         value: $0.value
@@ -144,82 +144,60 @@ extension BobbinClient {
   }
 }
 
-private struct WireComment: Decodable, Sendable {
-  let subject: WireRecordReference
-  let body: WireMarkdownContent
-  let createdAt: FormatString<Date>
-  let replyTo: WireRecordReference?
-  let pullRoundIdx: Int?
-}
-
-private struct WireRecordReference: Decodable, Sendable {
-  let uri: String
-  let cid: String
-}
-
-private struct WireMarkdownContent: Decodable, Sendable {
-  let text: String
-  let original: String?
-  let blobs: [WireBlobReference]?
-}
-
-private struct WireBlobReference: Decodable, Sendable {
-  let ref: BobbinWireLink
-  let mimeType: String
-  let size: Int
-}
-
-private struct WireReaction: Decodable, Sendable {
-  let subject: String
-  let reaction: String
-  let createdAt: FormatString<Date>
-}
-
-extension BobbinRecord where Value == WireComment {
+extension BobbinRecord where Value == Sh.Tangled.FeedComment {
   fileprivate var commentRecord: TangledRecord<Comment> {
-    TangledRecord(
-      uri: uri,
-      cid: cid,
-      value: Comment(
-        context: CommentContext(
-          subject: value.subject.recordReference,
-          replyTo: value.replyTo?.recordReference,
-          pullRequestRoundIndex: value.pullRoundIdx
-        ),
-        body: value.body.markdownContent,
-        createdAt: value.createdAt
+    get throws {
+      guard case .markupMarkdown(let body) = value.body else {
+        throw TangledError.upstreamFailed("unsupported comment body")
+      }
+      return TangledRecord(
+        uri: uri,
+        cid: cid,
+        value: Comment(
+          context: CommentContext(
+            subject: value.subject.recordReference,
+            replyTo: value.replyTo?.recordReference,
+            pullRequestRoundIndex: value.pullRoundIdx
+          ),
+          body: body.markdownContent,
+          createdAt: value.createdAt
+        )
       )
-    )
+    }
   }
 }
 
-extension BobbinRecord where Value == WireReaction {
+extension BobbinRecord where Value == Sh.Tangled.FeedReaction {
   fileprivate var reactionRecord: TangledRecord<Reaction> {
     TangledRecord(
       uri: uri,
       cid: cid,
       value: Reaction(
-        subjectURI: value.subject,
-        value: ReactionValue(rawValue: value.reaction),
+        subjectURI: value.subject.rawValue,
+        value: ReactionValue(rawValue: value.reaction.rawValue),
         createdAt: value.createdAt
       )
     )
   }
 }
 
-extension WireRecordReference {
+extension Com.Atproto.RepoStrongRef {
   fileprivate var recordReference: RecordReference {
-    RecordReference(uri: uri, cid: cid)
+    RecordReference(uri: uri.rawValue, cid: cid.rawValue)
   }
 }
 
-extension WireMarkdownContent {
+extension Sh.Tangled.MarkupMarkdown {
   fileprivate var markdownContent: MarkdownContent {
     MarkdownContent(
       text: text,
       original: original,
       blobs: (blobs ?? []).map {
-        BlobReference(cid: $0.ref.cid, mimeType: $0.mimeType, size: $0.size)
+        BlobReference(
+          cid: $0.ref.toBaseEncodedString,
+          mimeType: $0.mimeType,
+          size: Int($0.size)
+        )
       }
     )
   }
