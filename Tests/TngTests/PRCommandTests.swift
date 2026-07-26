@@ -575,8 +575,12 @@ extension PRCommandTests {
           cursor: "next-page"
         )
       },
-      pullRequest: { uri in
-        await recorder.record(pullRequestURI: uri)
+      viewPullRequest: { uri in
+        await recorder.record(viewPullRequestURI: uri)
+        return pullRequestRecord
+      },
+      authoritativePullRequest: { uri in
+        await recorder.record(authoritativePullRequestURI: uri)
         return pullRequestRecord
       },
       comments: { uri, _, _ in
@@ -791,7 +795,8 @@ private actor PRCommandRecorder {
   private var recordedReferences: [String] = []
   private var recordedOwners: [String] = []
   private var recordedListCalls: [ListCall] = []
-  private var recordedPullRequestURIs: [String] = []
+  private var recordedViewPullRequestURIs: [String] = []
+  private var recordedAuthoritativePullRequestURIs: [String] = []
   private var recordedPatchCalls: [PatchCall] = []
   private var recordedCreateCalls: [CreateCall] = []
   private var recordedStatusCalls: [StatusCall] = []
@@ -808,8 +813,12 @@ private actor PRCommandRecorder {
     recordedListCalls.append(list)
   }
 
-  func record(pullRequestURI: String) {
-    recordedPullRequestURIs.append(pullRequestURI)
+  func record(viewPullRequestURI: String) {
+    recordedViewPullRequestURIs.append(viewPullRequestURI)
+  }
+
+  func record(authoritativePullRequestURI: String) {
+    recordedAuthoritativePullRequestURIs.append(authoritativePullRequestURI)
   }
 
   func record(patchURI: String, roundNumber: Int?) {
@@ -837,7 +846,7 @@ private actor PRCommandRecorder {
   }
 
   func pullRequestURIs() -> [String] {
-    recordedPullRequestURIs
+    recordedViewPullRequestURIs + recordedAuthoritativePullRequestURIs
   }
 
   func patchCalls() -> [PatchCall] {

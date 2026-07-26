@@ -7,7 +7,8 @@ struct PRCommandDependencies: Sendable {
   let pullRequests:
     @Sendable (String, String?, PullRequestStatus?, String?, Int, BobbinSortOrder) async throws ->
       Page<PullRequestListItem>
-  let pullRequest: @Sendable (String) async throws -> TangledRecord<PullRequest>
+  let viewPullRequest: @Sendable (String) async throws -> TangledRecord<PullRequest>
+  let authoritativePullRequest: @Sendable (String) async throws -> TangledRecord<PullRequest>
   let comments: @Sendable (String, String?, Int) async throws -> Page<TangledRecord<Comment>>
   let pullRequestPatch: @Sendable (String, Int?) async throws -> PullRequestPatch
   let originURL: @Sendable () throws -> String
@@ -37,7 +38,8 @@ struct PRCommandDependencies: Sendable {
           order: order
         )
       },
-      pullRequest: { try await client.pullRequest(uri: $0) },
+      viewPullRequest: { try await client.pullRequest(uri: $0) },
+      authoritativePullRequest: { try await client.pullRequest(uri: $0) },
       comments: { uri, cursor, limit in
         try await client.comments(subjectURI: uri, cursor: cursor, limit: limit)
       },
@@ -145,7 +147,7 @@ struct PRCommandService: Sendable {
     commentCursor: String? = nil,
     json: Bool
   ) async throws -> CLICommandOutput {
-    let record = try await dependencies.pullRequest(pullRequestURI)
+    let record = try await dependencies.viewPullRequest(pullRequestURI)
     guard comments else {
       return CLICommandOutput(stdout: try json ? formatter.json(record) : format(record))
     }
@@ -164,7 +166,7 @@ struct PRCommandService: Sendable {
     roundNumber: Int?,
     json: Bool
   ) async throws -> CLICommandOutput {
-    let pullRequest = try await dependencies.pullRequest(pullRequestURI)
+    let pullRequest = try await dependencies.authoritativePullRequest(pullRequestURI)
     guard let cid = pullRequest.cid, !cid.isEmpty else {
       throw TangledError.invalidRequest("pull request does not expose a CID")
     }
