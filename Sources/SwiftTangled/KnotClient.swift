@@ -90,7 +90,8 @@ extension KnotClient {
     HTTPXRPCClient(
       baseURL: try knotBaseURL(knot),
       transport: transport,
-      bearerToken: token
+      bearerToken: token,
+      conflictMessage: "merge conflict"
     )
   }
 

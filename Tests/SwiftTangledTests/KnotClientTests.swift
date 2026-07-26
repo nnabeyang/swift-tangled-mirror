@@ -35,6 +35,47 @@ import Testing
     #expect(String(decoding: body, as: UTF8.self).contains("\"repo\":\"did:plc:repository\""))
   }
 
+  @Test func mergeCheckFallsBackToMergeConflictMessageOn409() async throws {
+    let transport = KnotTransport(statusCode: 409, body: Data("{}".utf8))
+    do {
+      _ = try await KnotClient(transport: transport).mergeCheck(
+        knot: "knot.example",
+        ownerDID: "did:plc:owner",
+        repositoryName: "core",
+        repositoryDID: "did:plc:repository",
+        branch: "main",
+        patch: "patch"
+      )
+      Testing.Issue.record("expected invalidRequest")
+    } catch TangledError.invalidRequest(let message) {
+      #expect(message == "merge conflict")
+    } catch {
+      Testing.Issue.record("unexpected error: \(error)")
+    }
+  }
+
+  @Test func mergeMapsGatewayTimeoutToServiceUnavailable() async throws {
+    let transport = KnotTransport(statusCode: 504, body: Data("{}".utf8))
+    do {
+      try await KnotClient(transport: transport).merge(
+        knot: "knot.example",
+        token: "service-token",
+        ownerDID: "did:plc:owner",
+        repositoryName: "core",
+        repositoryDID: "did:plc:repository",
+        branch: "main",
+        patch: "patch",
+        commitMessage: "Merge title",
+        commitBody: nil
+      )
+      Testing.Issue.record("expected serviceUnavailable")
+    } catch TangledError.serviceUnavailable {
+      // Expected.
+    } catch {
+      Testing.Issue.record("unexpected error: \(error)")
+    }
+  }
+
   @Test func mergeSendsServiceToken() async throws {
     let transport = KnotTransport(statusCode: 200, body: Data("{}".utf8))
     try await KnotClient(transport: transport).merge(

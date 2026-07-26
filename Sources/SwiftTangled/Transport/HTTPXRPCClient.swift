@@ -11,17 +11,23 @@ struct HTTPXRPCClient: XRPCCallable, Sendable {
   let transport: any HTTPTransport
   var bearerToken: String?
   var accept: String?
+  /// Fallback message used when a 409 response has no error body. Callers that
+  /// operate on a specific semantic domain (Knot merges, etc.) can supply a
+  /// more descriptive string than the generic default.
+  var conflictMessage: String
 
   init(
     baseURL: URL,
     transport: any HTTPTransport,
     bearerToken: String? = nil,
-    accept: String? = nil
+    accept: String? = nil,
+    conflictMessage: String = "conflict"
   ) {
     self.baseURL = baseURL
     self.transport = transport
     self.bearerToken = bearerToken
     self.accept = accept
+    self.conflictMessage = conflictMessage
   }
 
   func getProxy(nsid _: String) -> String? {
@@ -91,13 +97,13 @@ struct HTTPXRPCClient: XRPCCallable, Sendable {
     case 404:
       return .notFound(message)
     case 409:
-      return .invalidRequest(message ?? "conflict")
+      return .invalidRequest(message ?? conflictMessage)
     case 429:
       return .rateLimited(
         retryAfter: response.value(forHTTPHeaderField: "Retry-After").flatMap(TimeInterval.init),
         message: message
       )
-    case 502, 503:
+    case 502, 503, 504:
       return .serviceUnavailable(message)
     default:
       return .serverStatus(response.statusCode, message)
