@@ -76,6 +76,19 @@ public struct PullRequestStatus: RawRepresentable, Codable, Equatable, Hashable,
   public static let closed = PullRequestStatus(rawValue: "closed")
   public static let merged = PullRequestStatus(rawValue: "merged")
 
+  init(wireValue: String) {
+    switch wireValue {
+    case Self.open.rawValue, "sh.tangled.repo.pull.status.open":
+      self = .open
+    case Self.closed.rawValue, "sh.tangled.repo.pull.status.closed":
+      self = .closed
+    case Self.merged.rawValue, "sh.tangled.repo.pull.status.merged":
+      self = .merged
+    default:
+      self.init(rawValue: wireValue)
+    }
+  }
+
   public init(from decoder: any Decoder) throws {
     self.init(rawValue: try String(from: decoder))
   }

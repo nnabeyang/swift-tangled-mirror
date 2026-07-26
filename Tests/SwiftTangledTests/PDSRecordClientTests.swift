@@ -138,6 +138,58 @@ import Testing
     #expect(query(named: "reverse", request: request) == "true")
   }
 
+  @Test func listsPullRequestsAndStatusesFromOwnerPDS() async throws {
+    let pullURI = uri(collection: "sh.tangled.repo.pull")
+    let statusURI = uri(collection: "sh.tangled.repo.pull.status")
+    let transport = PDSRecordTransport([
+      .init(
+        statusCode: 200,
+        body: Data(
+          """
+          {"cursor":"next-pull","records":[{"uri":"\(pullURI)","cid":"bafkreidie4e7g2mr7u4rbvzuhzrgjxkvcc7qeac7uzidusdy74lvgb2r3a","value":{"$type":"sh.tangled.repo.pull","title":"Fresh pull","rounds":[{"createdAt":"2026-07-26T00:02:00Z","patchBlob":{"$type":"blob","ref":{"$link":"bafkreidie4e7g2mr7u4rbvzuhzrgjxkvcc7qeac7uzidusdy74lvgb2r3a"},"mimeType":"application/gzip","size":42}}],"target":{"branch":"main","repo":"\(repositoryDID)"},"createdAt":"2026-07-26T00:02:00Z"}}]}
+          """.utf8
+        )
+      ),
+      .init(
+        statusCode: 200,
+        body: Data(
+          """
+          {"cursor":"next-status","records":[{"uri":"\(statusURI)","cid":"bafkreidie4e7g2mr7u4rbvzuhzrgjxkvcc7qeac7uzidusdy74lvgb2r3a","value":{"$type":"sh.tangled.repo.pull.status","pull":"\(pullURI)","status":"sh.tangled.repo.pull.status.closed","createdAt":"2026-07-26T00:03:00Z"}}]}
+          """.utf8
+        )
+      ),
+    ])
+    let client = makeClient(transport: transport)
+
+    let pulls = try await client.pullRequests(
+      ownerDID: ownerDID,
+      cursor: "pull-cursor",
+      limit: 25,
+      reverse: true
+    )
+    let statuses = try await client.pullRequestStatuses(
+      ownerDID: ownerDID,
+      cursor: "status-cursor",
+      limit: 10
+    )
+
+    #expect(pulls.cursor == "next-pull")
+    #expect(pulls.items.first?.value.title == "Fresh pull")
+    #expect(statuses.cursor == "next-status")
+    #expect(statuses.items.first?.value.pullRequestURI == pullURI)
+    #expect(statuses.items.first?.value.status == .closed)
+
+    let requests = await transport.recordedRequests()
+    #expect(query(named: "collection", request: requests[0]) == "sh.tangled.repo.pull")
+    #expect(query(named: "cursor", request: requests[0]) == "pull-cursor")
+    #expect(query(named: "reverse", request: requests[0]) == "true")
+    #expect(
+      query(named: "collection", request: requests[1])
+        == "sh.tangled.repo.pull.status"
+    )
+    #expect(query(named: "cursor", request: requests[1]) == "status-cursor")
+  }
+
   @Test func repositoryListingRejectsInvalidInputsBeforeResolution() async {
     let transport = PDSRecordTransport([])
     let resolver = PDSRecordResolver(document: nil)
@@ -151,6 +203,12 @@ import Testing
     }
     await #expect(throws: TangledError.self) {
       _ = try await client.repositories(ownerDID: ownerDID, limit: 101)
+    }
+    await #expect(throws: TangledError.self) {
+      _ = try await client.pullRequests(ownerDID: ownerDID, limit: 0)
+    }
+    await #expect(throws: TangledError.self) {
+      _ = try await client.pullRequestStatuses(ownerDID: "invalid")
     }
     #expect(await resolver.resolutionCount() == 0)
     #expect(await transport.recordedRequests().isEmpty)

@@ -239,22 +239,3 @@ extension BobbinRecord where Value == WirePullRequestStatus {
     )
   }
 }
-
-extension PullRequestStatus {
-  fileprivate static let openNSID = "sh.tangled.repo.pull.status.open"
-  fileprivate static let closedNSID = "sh.tangled.repo.pull.status.closed"
-  fileprivate static let mergedNSID = "sh.tangled.repo.pull.status.merged"
-
-  fileprivate init(wireValue: String) {
-    switch wireValue {
-    case Self.open.rawValue, Self.openNSID:
-      self = .open
-    case Self.closed.rawValue, Self.closedNSID:
-      self = .closed
-    case Self.merged.rawValue, Self.mergedNSID:
-      self = .merged
-    default:
-      self.init(rawValue: wireValue)
-    }
-  }
-}

@@ -33,28 +33,13 @@ public struct PDSRecordClient: Sendable {
     limit: Int? = nil,
     reverse: Bool = false
   ) async throws -> Page<TangledRecord<Repository>> {
-    let ownerDID: DID
-    do {
-      ownerDID = try DID(string: rawOwnerDID)
-    } catch {
-      throw TangledError.invalidRequest("invalid repository owner DID: \(rawOwnerDID)")
-    }
-    if let limit, !(1 ... 100).contains(limit) {
-      throw TangledError.invalidRequest("repository record limit must be between 1 and 100")
-    }
-    let pdsURL = try await pdsURL(for: ownerDID)
-    let output = try await decode {
-      try await PDSRecordXRPCClient(
-        baseURL: pdsURL,
-        transport: transport
-      ).RepoListRecords(
-        collection: FormatString(rawValue: "sh.tangled.repo"),
-        cursor: cursor,
-        limit: limit,
-        repo: FormatString(rawValue: ownerDID.rawValue),
-        reverse: reverse
-      )
-    }
+    let (ownerDID, output) = try await records(
+      ownerDID: rawOwnerDID,
+      collection: "sh.tangled.repo",
+      cursor: cursor,
+      limit: limit,
+      reverse: reverse
+    )
     return Page(
       items: try output.records.map { record in
         try validate(
@@ -69,6 +54,80 @@ public struct PDSRecordClient: Sendable {
           )
         }
         return try TangledRecordDecoder.repository(
+          uri: record.uri.rawValue,
+          cid: record.cid.rawValue,
+          value: record.value
+        )
+      },
+      cursor: output.cursor
+    )
+  }
+
+  public func pullRequests(
+    ownerDID rawOwnerDID: String,
+    cursor: String? = nil,
+    limit: Int? = nil,
+    reverse: Bool = false
+  ) async throws -> Page<TangledRecord<PullRequest>> {
+    let collection = Sh.Tangled.RepoPull.nsId
+    let (ownerDID, output) = try await records(
+      ownerDID: rawOwnerDID,
+      collection: collection,
+      cursor: cursor,
+      limit: limit,
+      reverse: reverse
+    )
+    return Page(
+      items: try output.records.map { record in
+        try validate(
+          uri: record.uri.rawValue,
+          ownerDID: ownerDID,
+          collection: collection
+        )
+        let returnedType = try TangledRecordDecoder.recordType(of: record.value)
+        guard returnedType == collection else {
+          throw TangledError.upstreamFailed(
+            "PDS returned record type \(returnedType), expected \(collection)"
+          )
+        }
+        return try TangledRecordDecoder.pullRequest(
+          uri: record.uri.rawValue,
+          cid: record.cid.rawValue,
+          value: record.value
+        )
+      },
+      cursor: output.cursor
+    )
+  }
+
+  public func pullRequestStatuses(
+    ownerDID rawOwnerDID: String,
+    cursor: String? = nil,
+    limit: Int? = nil,
+    reverse: Bool = false
+  ) async throws -> Page<TangledRecord<PullRequestStatusChange>> {
+    let collection = Sh.Tangled.Repo.PullStatus.nsId
+    let (ownerDID, output) = try await records(
+      ownerDID: rawOwnerDID,
+      collection: collection,
+      cursor: cursor,
+      limit: limit,
+      reverse: reverse
+    )
+    return Page(
+      items: try output.records.map { record in
+        try validate(
+          uri: record.uri.rawValue,
+          ownerDID: ownerDID,
+          collection: collection
+        )
+        let returnedType = try TangledRecordDecoder.recordType(of: record.value)
+        guard returnedType == collection else {
+          throw TangledError.upstreamFailed(
+            "PDS returned record type \(returnedType), expected \(collection)"
+          )
+        }
+        return try TangledRecordDecoder.pullRequestStatus(
           uri: record.uri.rawValue,
           cid: record.cid.rawValue,
           value: record.value
@@ -107,6 +166,38 @@ public struct PDSRecordClient: Sendable {
 }
 
 extension PDSRecordClient {
+  private func records(
+    ownerDID rawOwnerDID: String,
+    collection: String,
+    cursor: String?,
+    limit: Int?,
+    reverse: Bool
+  ) async throws -> (DID, Com.Atproto.RepoListRecords_Output) {
+    let ownerDID: DID
+    do {
+      ownerDID = try DID(string: rawOwnerDID)
+    } catch {
+      throw TangledError.invalidRequest("invalid record owner DID: \(rawOwnerDID)")
+    }
+    if let limit, !(1 ... 100).contains(limit) {
+      throw TangledError.invalidRequest("PDS record limit must be between 1 and 100")
+    }
+    let pdsURL = try await pdsURL(for: ownerDID)
+    let output = try await decode {
+      try await PDSRecordXRPCClient(
+        baseURL: pdsURL,
+        transport: transport
+      ).RepoListRecords(
+        collection: FormatString(rawValue: collection),
+        cursor: cursor,
+        limit: limit,
+        repo: FormatString(rawValue: ownerDID.rawValue),
+        reverse: reverse
+      )
+    }
+    return (ownerDID, output)
+  }
+
   private struct RecordTarget {
     let uri: ATURI
     let ownerDID: DID

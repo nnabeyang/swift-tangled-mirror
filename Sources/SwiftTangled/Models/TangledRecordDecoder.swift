@@ -84,6 +84,23 @@ enum TangledRecordDecoder {
     )
   }
 
+  static func pullRequestStatus(
+    uri: String,
+    cid: String?,
+    value: UnknownATPValue
+  ) throws -> TangledRecord<PullRequestStatusChange> {
+    let wire: WirePullRequestStatus = try decode(value)
+    return TangledRecord(
+      uri: uri,
+      cid: cid,
+      value: PullRequestStatusChange(
+        pullRequestURI: wire.pull,
+        status: PullRequestStatus(wireValue: wire.status),
+        createdAt: wire.createdAt
+      )
+    )
+  }
+
   static func artifact(
     uri: String,
     cid: String?,
@@ -155,6 +172,12 @@ enum TangledRecordDecoder {
       throw TangledError.decoding(error)
     }
   }
+}
+
+private struct WirePullRequestStatus: Decodable {
+  let pull: String
+  let status: String
+  let createdAt: FormatString<Date>
 }
 
 private struct WireRepository: Decodable {
