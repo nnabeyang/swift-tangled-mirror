@@ -19,13 +19,14 @@ extension BobbinClient {
         subject: FormatString<ATURI>(rawValue: subjectURI)
       )
     }
-    let items = try response.items.map {
-      let record: BobbinRecord<Sh.Tangled.FeedComment> = try generatedRecord(
+    let items = response.items.compactMap {
+      tolerantGeneratedRecord(
         uri: $0.uri,
         cid: $0.cid,
-        value: $0.value
+        value: $0.value,
+        as: Sh.Tangled.FeedComment.self,
+        transform: { try $0.commentRecord }
       )
-      return try record.commentRecord
     }
     return Page(items: items, cursor: response.cursor)
   }
@@ -46,13 +47,14 @@ extension BobbinClient {
         subject: FormatString<DID>(rawValue: authorDID)
       )
     }
-    let items = try response.items.map {
-      let record: BobbinRecord<Sh.Tangled.FeedComment> = try generatedRecord(
+    let items = response.items.compactMap {
+      tolerantGeneratedRecord(
         uri: $0.uri,
         cid: $0.cid,
-        value: $0.value
+        value: $0.value,
+        as: Sh.Tangled.FeedComment.self,
+        transform: { try $0.commentRecord }
       )
-      return try record.commentRecord
     }
     return Page(items: items, cursor: response.cursor)
   }
@@ -89,13 +91,14 @@ extension BobbinClient {
         subject: FormatString<ATURI>(rawValue: subjectURI)
       )
     }
-    let items = try response.items.map {
-      let record: BobbinRecord<Sh.Tangled.FeedReaction> = try generatedRecord(
+    let items = response.items.compactMap {
+      tolerantGeneratedRecord(
         uri: $0.uri,
         cid: $0.cid,
-        value: $0.value
+        value: $0.value,
+        as: Sh.Tangled.FeedReaction.self,
+        transform: \.reactionRecord
       )
-      return record.reactionRecord
     }
     return Page(items: items, cursor: response.cursor)
   }
@@ -116,13 +119,14 @@ extension BobbinClient {
         subject: FormatString<DID>(rawValue: authorDID)
       )
     }
-    let items = try response.items.map {
-      let record: BobbinRecord<Sh.Tangled.FeedReaction> = try generatedRecord(
+    let items = response.items.compactMap {
+      tolerantGeneratedRecord(
         uri: $0.uri,
         cid: $0.cid,
-        value: $0.value
+        value: $0.value,
+        as: Sh.Tangled.FeedReaction.self,
+        transform: \.reactionRecord
       )
-      return record.reactionRecord
     }
     return Page(items: items, cursor: response.cursor)
   }

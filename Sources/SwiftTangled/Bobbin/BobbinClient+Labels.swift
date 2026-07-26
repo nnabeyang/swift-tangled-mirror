@@ -19,13 +19,14 @@ extension BobbinClient {
         subject: scope
       )
     }
-    let items = try response.items.map {
-      let record: BobbinRecord<Sh.Tangled.LabelDefinition> = try generatedRecord(
+    let items = response.items.compactMap {
+      tolerantGeneratedRecord(
         uri: $0.uri,
         cid: $0.cid,
-        value: $0.value
+        value: $0.value,
+        as: Sh.Tangled.LabelDefinition.self,
+        transform: \.labelDefinitionRecord
       )
-      return record.labelDefinitionRecord
     }
     return Page(items: items, cursor: response.cursor)
   }

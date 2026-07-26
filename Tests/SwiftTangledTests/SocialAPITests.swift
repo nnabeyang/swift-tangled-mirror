@@ -144,20 +144,15 @@ import SwiftTangled
     #expect(await transport.requestCount() == 0)
   }
 
-  @Test func malformedEmbeddedRecordMapsToTangledDecodingError() async {
+  @Test func malformedEmbeddedRecordIsSkippedByListEndpoints() async throws {
     let malformed = Data(
       #"{"items":[{"uri":"at://did:plc:test/sh.tangled.feed.star/1","value":{"subject":{"$type":"unknown"},"createdAt":"2026-07-20T18:20:00Z"}}]}"#.utf8
     )
     let transport = SocialTransport([.init(statusCode: 200, body: malformed)])
 
-    do {
-      _ = try await makeClient(transport: transport).stars(repositoryDID: repositoryDID)
-      Testing.Issue.record("Expected decoding error")
-    } catch TangledError.decoding {
-      // Expected.
-    } catch {
-      Testing.Issue.record("Unexpected error: \(error)")
-    }
+    let page = try await makeClient(transport: transport).stars(repositoryDID: repositoryDID)
+
+    #expect(page.items.isEmpty)
   }
 }
 

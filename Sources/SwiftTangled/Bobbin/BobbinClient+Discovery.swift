@@ -22,13 +22,14 @@ extension BobbinClient {
     let response = try await generatedQuery {
       try await ActorGetProfiles(actors: uris.map { FormatString<ATURI>(rawValue: $0) })
     }
-    return try response.items.map {
-      let record: BobbinRecord<Sh.Tangled.ActorProfile> = try generatedRecord(
+    return response.items.compactMap {
+      tolerantGeneratedRecord(
         uri: $0.uri,
         cid: $0.cid,
-        value: $0.value
+        value: $0.value,
+        as: Sh.Tangled.ActorProfile.self,
+        transform: \.profileRecord
       )
-      return record.profileRecord
     }
   }
 

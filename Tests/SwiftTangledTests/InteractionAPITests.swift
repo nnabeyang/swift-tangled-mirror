@@ -226,20 +226,34 @@ import SwiftTangled
     #expect(await transport.requestCount() == 0)
   }
 
-  @Test func malformedEmbeddedRecordMapsToTangledDecodingError() async {
+  @Test func malformedEmbeddedRecordIsSkippedByListEndpoints() async throws {
     let malformed = Data(
       #"{"items":[{"uri":"at://did:plc:test/sh.tangled.feed.comment/1","value":{"body":{}}}]}"#.utf8
     )
     let transport = InteractionTransport([.init(statusCode: 200, body: malformed)])
 
-    do {
-      _ = try await makeClient(transport: transport).comments(subjectURI: issueURI)
-      Testing.Issue.record("Expected decoding error")
-    } catch TangledError.decoding {
-      // Expected.
-    } catch {
-      Testing.Issue.record("Unexpected error: \(error)")
-    }
+    let page = try await makeClient(transport: transport).comments(subjectURI: issueURI)
+
+    #expect(page.items.isEmpty)
+  }
+
+  @Test func closedEnumViolationsAreSkippedByListEndpoints() async throws {
+    let unknownReaction = Data(
+      #"{"items":[{"uri":"at://did:plc:test/sh.tangled.feed.reaction/1","value":{"subject":"at://did:plc:commenter/sh.tangled.feed.comment/3mrcomment","reaction":"🔥","createdAt":"2026-07-20T18:10:00Z"}}]}"#.utf8
+    )
+    let unknownLabelValueType = Data(
+      #"{"items":[{"uri":"at://did:plc:test/sh.tangled.label.definition/priority","value":{"name":"priority","valueType":{"type":"decimal","format":"handle"},"scope":["sh.tangled.repo.issue"],"createdAt":"2026-07-20T17:00:00Z","multiple":false}}]}"#.utf8
+    )
+    let transport = InteractionTransport([
+      .init(statusCode: 200, body: unknownReaction),
+      .init(statusCode: 200, body: unknownLabelValueType),
+    ])
+    let client = makeClient(transport: transport)
+
+    #expect(try await client.reactions(subjectURI: commentURI).items.isEmpty)
+    #expect(
+      try await client.labelDefinitions(scope: "at://did:plc:owner").items.isEmpty
+    )
   }
 }
 

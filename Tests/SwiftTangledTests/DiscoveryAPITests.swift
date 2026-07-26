@@ -183,6 +183,45 @@ import SwiftTangled
     #expect(await transport.requestCount() == 0)
   }
 
+  @Test func profilesSkipClosedEnumViolations() async throws {
+    let body = Data(
+      #"""
+      {
+        "items": [
+          {
+            "uri": "at://did:web:valid.example/sh.tangled.actor.profile/self",
+            "value": {
+              "$type": "sh.tangled.actor.profile",
+              "bluesky": false
+            }
+          },
+          {
+            "uri": "at://did:web:invalid.example/sh.tangled.actor.profile/self",
+            "value": {
+              "$type": "sh.tangled.actor.profile",
+              "bluesky": false,
+              "stats": ["future-stat"]
+            }
+          }
+        ]
+      }
+      """#.utf8
+    )
+    let transport = DiscoveryTransport([.init(statusCode: 200, body: body)])
+
+    let profiles = try await makeClient(transport: transport).profiles(
+      uris: [
+        "at://did:web:valid.example/sh.tangled.actor.profile/self",
+        "at://did:web:invalid.example/sh.tangled.actor.profile/self",
+      ]
+    )
+
+    #expect(
+      profiles.map(\.uri) == [
+        "at://did:web:valid.example/sh.tangled.actor.profile/self"
+      ])
+  }
+
   @Test func notFoundAndMalformedDomainResponseStayTyped() async throws {
     let transport = DiscoveryTransport([
       .init(

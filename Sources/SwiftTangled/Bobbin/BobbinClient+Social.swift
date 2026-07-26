@@ -20,7 +20,7 @@ extension BobbinClient {
       )
     }
     return Page(
-      items: try response.items.map(starRecord),
+      items: response.items.compactMap(starRecord),
       cursor: response.cursor
     )
   }
@@ -42,7 +42,7 @@ extension BobbinClient {
       )
     }
     return Page(
-      items: try response.items.map(starRecord),
+      items: response.items.compactMap(starRecord),
       cursor: response.cursor
     )
   }
@@ -80,7 +80,7 @@ extension BobbinClient {
       )
     }
     return Page(
-      items: try response.items.map(followRecord),
+      items: response.items.compactMap(followRecord),
       cursor: response.cursor
     )
   }
@@ -102,7 +102,7 @@ extension BobbinClient {
       )
     }
     return Page(
-      items: try response.items.map(followRecord),
+      items: response.items.compactMap(followRecord),
       cursor: response.cursor
     )
   }
@@ -125,32 +125,42 @@ extension BobbinClient {
 }
 
 private extension BobbinClient {
-  func starRecord(_ item: Sh.Tangled.FeedListStars_ListItem) throws -> TangledRecord<Star> {
-    let record: BobbinRecord<Sh.Tangled.FeedStar> = try generatedRecord(
+  func starRecord(_ item: Sh.Tangled.FeedListStars_ListItem) -> TangledRecord<Star>? {
+    tolerantGeneratedRecord(
       uri: item.uri,
       cid: item.cid,
-      value: item.value
-    )
-    return TangledRecord(
-      uri: record.uri,
-      cid: record.cid,
-      value: Star(subject: try record.value.subject.starSubject, createdAt: record.value.createdAt)
-    )
+      value: item.value,
+      as: Sh.Tangled.FeedStar.self
+    ) { record in
+      TangledRecord(
+        uri: record.uri,
+        cid: record.cid,
+        value: Star(
+          subject: try record.value.subject.starSubject,
+          createdAt: record.value.createdAt
+        )
+      )
+    }
   }
 
   func followRecord(
     _ item: Sh.Tangled.GraphListFollows_ListItem
-  ) throws -> TangledRecord<Follow> {
-    let record: BobbinRecord<Sh.Tangled.GraphFollow> = try generatedRecord(
+  ) -> TangledRecord<Follow>? {
+    tolerantGeneratedRecord(
       uri: item.uri,
       cid: item.cid,
-      value: item.value
-    )
-    return TangledRecord(
-      uri: record.uri,
-      cid: record.cid,
-      value: Follow(subjectDID: record.value.subject.rawValue, createdAt: record.value.createdAt)
-    )
+      value: item.value,
+      as: Sh.Tangled.GraphFollow.self
+    ) { record in
+      TangledRecord(
+        uri: record.uri,
+        cid: record.cid,
+        value: Follow(
+          subjectDID: record.value.subject.rawValue,
+          createdAt: record.value.createdAt
+        )
+      )
+    }
   }
 }
 
