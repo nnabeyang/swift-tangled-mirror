@@ -23,6 +23,43 @@ public struct MarkdownContent: Codable, Equatable, Hashable, Sendable {
   }
 }
 
+public enum CommentBody: Codable, Equatable, Hashable, Sendable {
+  case markdown(MarkdownContent)
+  case unknown(type: String, fields: [String: JSONValue])
+
+  public var markdown: MarkdownContent? {
+    guard case .markdown(let value) = self else { return nil }
+    return value
+  }
+
+  public init(from decoder: any Decoder) throws {
+    let fields = try [String: JSONValue](from: decoder)
+    let type: String?
+    if case .string(let value) = fields["$type"] {
+      type = value
+    } else {
+      type = nil
+    }
+    if type == nil || type == "sh.tangled.markup.markdown" {
+      self = .markdown(try MarkdownContent(from: decoder))
+    } else {
+      var unknownFields = fields
+      unknownFields.removeValue(forKey: "$type")
+      self = .unknown(type: type!, fields: unknownFields)
+    }
+  }
+
+  public func encode(to encoder: any Encoder) throws {
+    switch self {
+    case .markdown(let value):
+      try value.encode(to: encoder)
+    case .unknown(let type, var fields):
+      fields["$type"] = .string(type)
+      try fields.encode(to: encoder)
+    }
+  }
+}
+
 public struct CommentContext: Codable, Equatable, Hashable, Sendable {
   public let subject: RecordReference
   public let replyTo: RecordReference?
@@ -41,17 +78,25 @@ public struct CommentContext: Codable, Equatable, Hashable, Sendable {
 
 public struct Comment: Codable, Equatable, Hashable, Sendable {
   public let context: CommentContext
-  public let body: MarkdownContent
+  public let body: CommentBody
   public let createdAt: FormatString<Date>
+
+  public init(
+    context: CommentContext,
+    body: CommentBody,
+    createdAt: FormatString<Date>
+  ) {
+    self.context = context
+    self.body = body
+    self.createdAt = createdAt
+  }
 
   public init(
     context: CommentContext,
     body: MarkdownContent,
     createdAt: FormatString<Date>
   ) {
-    self.context = context
-    self.body = body
-    self.createdAt = createdAt
+    self.init(context: context, body: .markdown(body), createdAt: createdAt)
   }
 }
 

@@ -473,7 +473,7 @@ extension PRCommandService {
       [
         record.uri,
         record.value.context.pullRequestRoundIndex.map(String.init) ?? "",
-        record.value.body.text,
+        record.value.body.displayText,
         record.value.createdAt.rawValue,
       ]
     }
@@ -490,7 +490,7 @@ extension PRCommandService {
       ("CID", record.cid),
       ("Subject", record.value.context.subject.uri),
       ("Round", record.value.context.pullRequestRoundIndex.map(String.init)),
-      ("Body", record.value.body.text),
+      ("Body", record.value.body.displayText),
       ("Created", record.value.createdAt.rawValue),
     ])
   }

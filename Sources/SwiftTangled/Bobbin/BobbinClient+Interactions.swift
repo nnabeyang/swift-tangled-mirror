@@ -151,8 +151,15 @@ extension BobbinClient {
 extension BobbinRecord where Value == Sh.Tangled.FeedComment {
   fileprivate var commentRecord: TangledRecord<Comment> {
     get throws {
-      guard case .markupMarkdown(let body) = value.body else {
-        throw TangledError.upstreamFailed("unsupported comment body")
+      let body: CommentBody
+      switch value.body {
+      case .markupMarkdown(let markdown):
+        body = .markdown(markdown.markdownContent)
+      case ._other(let record):
+        let data = try JSONEncoder().encode(record)
+        var fields = try JSONDecoder().decode([String: JSONValue].self, from: data)
+        fields.removeValue(forKey: "$type")
+        body = .unknown(type: record.type, fields: fields)
       }
       return TangledRecord(
         uri: uri,
@@ -163,7 +170,7 @@ extension BobbinRecord where Value == Sh.Tangled.FeedComment {
             replyTo: value.replyTo?.recordReference,
             pullRequestRoundIndex: value.pullRoundIdx
           ),
-          body: body.markdownContent,
+          body: body,
           createdAt: value.createdAt
         )
       )

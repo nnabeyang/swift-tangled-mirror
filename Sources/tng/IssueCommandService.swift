@@ -275,7 +275,7 @@ extension IssueCommandService {
     let rows = comments.map { record in
       [
         record.uri,
-        record.value.body.text,
+        record.value.body.displayText,
         record.value.createdAt.rawValue,
       ]
     }
@@ -288,7 +288,7 @@ extension IssueCommandService {
       ("URI", record.uri),
       ("CID", record.cid),
       ("Subject", record.value.context.subject.uri),
-      ("Body", record.value.body.text),
+      ("Body", record.value.body.displayText),
       ("Created", record.value.createdAt.rawValue),
     ])
   }
