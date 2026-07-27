@@ -6,6 +6,7 @@ import Testing
 #endif
 
 import SwiftTangled
+import TangledLexicons
 
 @Suite struct IssueAPITests {
   @Test func issueAndBatchIssuesMapPublicModels() async throws {
@@ -201,6 +202,70 @@ import SwiftTangled
     #expect(await transport.requestCount() == 0)
   }
 
+  @Test func issueListEndpointsIsolateMalformedRecords() async throws {
+    let batch = Data(
+      #"""
+      {"items":[
+        {"cid":"bafyreivalid","uri":"at://did:plc:author/sh.tangled.repo.issue/valid","value":{"$type":"sh.tangled.repo.issue","repo":"did:plc:repository","title":"Valid","createdAt":"2026-07-20T17:44:38Z"}},
+        {"cid":"bafyreibroken","uri":"at://did:plc:author/sh.tangled.repo.issue/broken","value":{"$type":"sh.tangled.repo.issue","title":"Missing repo","createdAt":"2026-07-20T17:44:38Z"}}
+      ]}
+      """#.utf8
+    )
+    let repoPage = Data(
+      #"""
+      {"items":[
+        {"cid":"bafyreiokrec","uri":"at://did:plc:author/sh.tangled.repo.issue/ok","value":{"$type":"sh.tangled.repo.issue","repo":"did:plc:repository","title":"OK","createdAt":"2026-07-20T17:44:38Z"},"state":"open","commentCount":0},
+        {"cid":"bafyreibadrec","uri":"at://did:plc:author/sh.tangled.repo.issue/bad","value":{"$type":"sh.tangled.repo.issue","title":"Broken","createdAt":"2026-07-20T17:44:38Z"},"state":"open","commentCount":0}
+      ],"cursor":"c1"}
+      """#.utf8
+    )
+    let authorPage = Data(
+      #"""
+      {"items":[
+        {"cid":"bafyreiokrec","uri":"at://did:plc:author/sh.tangled.repo.issue/ok","value":{"$type":"sh.tangled.repo.issue","repo":"did:plc:repository","title":"OK","createdAt":"2026-07-20T17:44:38Z"},"state":"open","commentCount":0},
+        {"cid":"bafyreibadrec","uri":"at://did:plc:author/sh.tangled.repo.issue/bad","value":{"$type":"sh.tangled.repo.issue","title":"Broken","createdAt":"2026-07-20T17:44:38Z"},"state":"open","commentCount":0}
+      ],"cursor":"c2"}
+      """#.utf8
+    )
+    let statesPage = Data(
+      #"""
+      {"items":[
+        {"cid":"bafyreisokay","uri":"at://did:plc:author/sh.tangled.repo.issue.state/ok","value":{"$type":"sh.tangled.repo.issue.state","issue":"at://did:plc:author/sh.tangled.repo.issue/x","state":"sh.tangled.repo.issue.state.closed","createdAt":"2026-07-20T17:44:38Z"}},
+        {"cid":"bafyreisbadd","uri":"at://did:plc:author/sh.tangled.repo.issue.state/bad","value":{"$type":"sh.tangled.repo.issue.state","state":"sh.tangled.repo.issue.state.closed","createdAt":"2026-07-20T17:44:38Z"}}
+      ]}
+      """#.utf8
+    )
+    let transport = IssueTransport([
+      .init(statusCode: 200, body: batch),
+      .init(statusCode: 200, body: repoPage),
+      .init(statusCode: 200, body: authorPage),
+      .init(statusCode: 200, body: statesPage),
+      .init(statusCode: 200, body: statesPage),
+    ])
+    let client = makeClient(transport: transport)
+
+    let uris = try await client.issues(uris: [
+      "at://did:plc:author/sh.tangled.repo.issue/valid",
+      "at://did:plc:author/sh.tangled.repo.issue/broken",
+    ])
+    let repoResult = try await client.issues(repositoryDID: "did:plc:repository")
+    let authorResult = try await client.issues(authorDID: "did:plc:author")
+    let issueStates = try await client.issueStates(
+      issueURI: "at://did:plc:author/sh.tangled.repo.issue/x"
+    )
+    let authorStates = try await client.issueStates(authorDID: "did:plc:author")
+
+    #expect(uris.count == 1)
+    #expect(uris[0].value.title == "Valid")
+    #expect(repoResult.items.count == 1)
+    #expect(repoResult.items[0].record.value.title == "OK")
+    #expect(authorResult.items.count == 1)
+    #expect(authorResult.items[0].record.value.title == "OK")
+    #expect(issueStates.items.count == 1)
+    #expect(issueStates.items[0].value.state == .closed)
+    #expect(authorStates.items.count == 1)
+  }
+
   @Test func notFoundAndMalformedIssueResponseStayTyped() async {
     let transport = IssueTransport([
       .init(
@@ -217,7 +282,8 @@ import SwiftTangled
     do {
       _ = try await client.issue(uri: "at://missing/issue")
       Testing.Issue.record("Expected notFound")
-    } catch TangledError.notFound(let message) {
+    } catch Sh.Tangled.RepoGetIssue.Error.unexpected(let code, let message) {
+      #expect(code == "RecordNotFound")
       #expect(message == "issue not found")
     } catch {
       Testing.Issue.record("Unexpected error: \(error)")

@@ -1,5 +1,6 @@
 import Foundation
 import SwiftTangled
+import TangledLexicons
 import Testing
 
 #if canImport(FoundationNetworking)
@@ -101,6 +102,159 @@ import Testing
     }
   }
 
+  @Test func merge429PropagatesRateLimitWithParsedRetryAfter() async throws {
+    let transport = KnotTransport(
+      statusCode: 429,
+      body: Data(#"{"error":"RateLimited","message":"slow down"}"#.utf8),
+      headers: ["Retry-After": "90"]
+    )
+    do {
+      try await KnotClient(transport: transport).merge(
+        knot: "knot.example",
+        token: "service-token",
+        ownerDID: "did:plc:owner",
+        repositoryName: "core",
+        repositoryDID: "did:plc:repository",
+        branch: "main",
+        patch: "patch",
+        commitMessage: "Merge title",
+        commitBody: nil
+      )
+      Testing.Issue.record("expected rateLimited")
+    } catch TangledError.rateLimited(let retryAfter, let message) {
+      #expect(retryAfter == 90)
+      #expect(message == "slow down")
+    } catch {
+      Testing.Issue.record("unexpected error: \(error)")
+    }
+  }
+
+  @Test func merge429HandlesHTTPDateRetryAfter() async throws {
+    let future = Date().addingTimeInterval(120)
+    let formatter = DateFormatter()
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.timeZone = TimeZone(secondsFromGMT: 0)
+    formatter.dateFormat = "EEE',' dd MMM yyyy HH':'mm':'ss z"
+    let httpDate = formatter.string(from: future)
+
+    let transport = KnotTransport(
+      statusCode: 429,
+      body: Data("{}".utf8),
+      headers: ["Retry-After": httpDate]
+    )
+    do {
+      try await KnotClient(transport: transport).merge(
+        knot: "knot.example",
+        token: "service-token",
+        ownerDID: "did:plc:owner",
+        repositoryName: "core",
+        repositoryDID: "did:plc:repository",
+        branch: "main",
+        patch: "patch",
+        commitMessage: "Merge title",
+        commitBody: nil
+      )
+      Testing.Issue.record("expected rateLimited")
+    } catch TangledError.rateLimited(let retryAfter, _) {
+      #expect(retryAfter != nil)
+      #expect((retryAfter ?? 0) <= 121)  // upper bound guards against runaway parse
+    } catch {
+      Testing.Issue.record("unexpected error: \(error)")
+    }
+  }
+
+  @Test func applicationErrorsPreserveCodeAndMessageSeparately() async throws {
+    let both = KnotTransport(
+      statusCode: 404,
+      body: Data(#"{"error":"BlobNotFound","message":"blob is gone"}"#.utf8)
+    )
+    let onlyError = KnotTransport(
+      statusCode: 404,
+      body: Data(#"{"error":"BlobNotFound"}"#.utf8)
+    )
+    let onlyMessage = KnotTransport(
+      statusCode: 404,
+      body: Data(#"{"message":"blob is gone"}"#.utf8)
+    )
+
+    func mergeError(_ transport: KnotTransport) async -> (String?, String?) {
+      do {
+        try await KnotClient(transport: transport).merge(
+          knot: "knot.example",
+          token: "service-token",
+          ownerDID: "did:plc:owner",
+          repositoryName: "core",
+          repositoryDID: "did:plc:repository",
+          branch: "main",
+          patch: "patch",
+          commitMessage: "Merge title",
+          commitBody: nil
+        )
+        Testing.Issue.record("expected an error")
+        return (nil, nil)
+      } catch let error as Sh.Tangled.RepoMerge.Error {
+        return (error.error, error.message)
+      } catch TangledError.notFound(let message) {
+        return (nil, message)
+      } catch {
+        Testing.Issue.record("unexpected error: \(error)")
+        return (nil, nil)
+      }
+    }
+
+    let bothResult = await mergeError(both)
+    #expect(bothResult.0 == "BlobNotFound")
+    #expect(bothResult.1 == "blob is gone")
+    let onlyErrorResult = await mergeError(onlyError)
+    #expect(onlyErrorResult.0 == "BlobNotFound")
+    #expect(onlyErrorResult.1 == nil)
+    let onlyMessageResult = await mergeError(onlyMessage)
+    #expect(onlyMessageResult.0 == nil)
+    #expect(onlyMessageResult.1 == "blob is gone")
+  }
+
+  @Test func merge401IsUnauthorized() async throws {
+    let transport = KnotTransport(
+      statusCode: 401,
+      body: Data(#"{"error":"Unauthorized","message":"expired token"}"#.utf8)
+    )
+    do {
+      try await KnotClient(transport: transport).merge(
+        knot: "knot.example",
+        token: "service-token",
+        ownerDID: "did:plc:owner",
+        repositoryName: "core",
+        repositoryDID: "did:plc:repository",
+        branch: "main",
+        patch: "patch",
+        commitMessage: "Merge title",
+        commitBody: nil
+      )
+      Testing.Issue.record("expected unauthorized")
+    } catch TangledError.unauthorized {
+      // Expected.
+    } catch {
+      Testing.Issue.record("unexpected error: \(error)")
+    }
+  }
+
+  @Test func mergeSetsDeterministicJSONAcceptHeader() async throws {
+    let transport = KnotTransport(statusCode: 200, body: Data("{}".utf8))
+    try await KnotClient(transport: transport).merge(
+      knot: "knot.example",
+      token: "t",
+      ownerDID: "did:plc:owner",
+      repositoryName: "core",
+      repositoryDID: "did:plc:repository",
+      branch: "main",
+      patch: "patch",
+      commitMessage: "m",
+      commitBody: nil
+    )
+    let request = try #require(await transport.request())
+    #expect(request.value(forHTTPHeaderField: "Accept") == "application/json")
+  }
+
   @Test func mergeSendsServiceToken() async throws {
     let transport = KnotTransport(statusCode: 200, body: Data("{}".utf8))
     try await KnotClient(transport: transport).merge(
@@ -124,11 +278,13 @@ import Testing
 private actor KnotTransport: HTTPTransport {
   private let statusCode: Int
   private let body: Data
+  private let headers: [String: String]
   private var recordedRequest: URLRequest?
 
-  init(statusCode: Int, body: Data) {
+  init(statusCode: Int, body: Data, headers: [String: String] = [:]) {
     self.statusCode = statusCode
     self.body = body
+    self.headers = headers
   }
 
   func send(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
@@ -139,7 +295,7 @@ private actor KnotTransport: HTTPTransport {
         url: request.url!,
         statusCode: statusCode,
         httpVersion: "HTTP/1.1",
-        headerFields: [:]
+        headerFields: headers
       )!
     )
   }

@@ -27,13 +27,13 @@ import SwiftTangled
     #expect(page.items[0].value.context.subject.uri == issueURI)
     #expect(page.items[0].value.context.subject.cid == "bafyreissue")
     #expect(page.items[0].value.context.replyTo == nil)
-    #expect(page.items[0].value.body.text == "Rendered **comment**")
-    #expect(page.items[0].value.body.original == "Original **comment**")
+    #expect(page.items[0].value.body.markdown?.text == "Rendered **comment**")
+    #expect(page.items[0].value.body.markdown?.original == "Original **comment**")
     #expect(
-      page.items[0].value.body.blobs.first?.cid
+      page.items[0].value.body.markdown?.blobs.first?.cid
         == "bafkreihwfggzslhujqfjm3pxk2xffi64owlgfxsjmmplvurkljsouqifty"
     )
-    #expect(page.items[0].value.body.blobs.first?.mimeType == "image/png")
+    #expect(page.items[0].value.body.markdown?.blobs.first?.mimeType == "image/png")
     #expect(page.items[0].value.createdAt.typed != nil)
     #expect(page.items[1].value.context.replyTo?.cid == "bafyrecomment")
     #expect(page.items[1].value.context.pullRequestRoundIndex == 2)
@@ -44,6 +44,38 @@ import SwiftTangled
     #expect(queryValues(named: "cursor", in: request) == ["previous-comment-page"])
     #expect(queryValues(named: "limit", in: request) == ["25"])
     #expect(queryValues(named: "order", in: request) == ["asc"])
+  }
+
+  @Test func commentsPreserveUnknownBodyVariants() async throws {
+    let body = Data(
+      #"""
+      {"items":[{
+        "uri":"at://did:plc:commenter/sh.tangled.feed.comment/future",
+        "value":{
+          "$type":"sh.tangled.feed.comment",
+          "subject":{"uri":"\#(issueURI)","cid":"bafyreissue"},
+          "body":{"$type":"sh.tangled.markup.future","text":"future","version":2},
+          "createdAt":"2026-07-20T18:00:00Z"
+        }
+      }]}
+      """#.utf8
+    )
+    let page = try await makeClient(
+      transport: InteractionTransport([.init(statusCode: 200, body: body)])
+    ).comments(subjectURI: issueURI)
+
+    let comment = try #require(page.items.first?.value)
+    guard case .unknown(let type, let fields) = comment.body else {
+      Issue.record("Expected an unknown comment body")
+      return
+    }
+    #expect(type == "sh.tangled.markup.future")
+    #expect(fields["text"] == .string("future"))
+    #expect(fields["version"] == .integer(2))
+
+    let encoded = try JSONEncoder().encode(comment.body)
+    let decoded = try JSONDecoder().decode(CommentBody.self, from: encoded)
+    #expect(decoded == comment.body)
   }
 
   @Test func commentAuthorListAndCountsUseByEndpoints() async throws {
@@ -235,6 +267,39 @@ import SwiftTangled
     let page = try await makeClient(transport: transport).comments(subjectURI: issueURI)
 
     #expect(page.items.isEmpty)
+  }
+
+  @Test func labelOperationListsIsolateMalformedRecords() async throws {
+    let validOp = #"{"$type":"sh.tangled.label.op","subject":"at://did:plc:author/sh.tangled.repo.issue/x","add":[{"key":"at://did:plc:author/sh.tangled.label.definition/priority","value":"high"}],"delete":[],"performedAt":"2026-07-20T18:10:00Z"}"#
+    let brokenOp = #"{"$type":"sh.tangled.label.op","add":[],"delete":[]}"#
+
+    let subjectPage = Data(
+      #"""
+      {"items":[
+        {"cid":"bafyreiokop","uri":"at://did:plc:author/sh.tangled.label.op/ok","value":\#(validOp)},
+        {"cid":"bafyreibop","uri":"at://did:plc:author/sh.tangled.label.op/bad","value":\#(brokenOp)}
+      ]}
+      """#.utf8
+    )
+    let authorPage = Data(
+      #"""
+      {"items":[
+        {"cid":"bafyreiokop","uri":"at://did:plc:author/sh.tangled.label.op/ok","value":\#(validOp)},
+        {"cid":"bafyreibop","uri":"at://did:plc:author/sh.tangled.label.op/bad","value":\#(brokenOp)}
+      ]}
+      """#.utf8
+    )
+    let transport = InteractionTransport([
+      .init(statusCode: 200, body: subjectPage),
+      .init(statusCode: 200, body: authorPage),
+    ])
+    let client = makeClient(transport: transport)
+
+    let subject = try await client.labelOperations(subjectURI: issueURI)
+    let author = try await client.labelOperations(authorDID: "did:plc:author")
+
+    #expect(subject.items.count == 1)
+    #expect(author.items.count == 1)
   }
 
   @Test func closedEnumViolationsAreSkippedByListEndpoints() async throws {

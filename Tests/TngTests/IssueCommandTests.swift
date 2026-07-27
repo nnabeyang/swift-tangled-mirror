@@ -208,7 +208,7 @@ import struct SwiftTangled.Issue
       from: Data(json.stdout.utf8)
     )
     #expect(result.issue.uri == sampleIssueURI)
-    #expect(result.comments.items.first?.value.body.text == "Please add a test.")
+    #expect(result.comments.items.first?.value.body.markdown?.text == "Please add a test.")
     #expect(result.comments.cursor == "comments-next")
     #expect(json.stderr.isEmpty)
     #expect(

@@ -1,4 +1,5 @@
 import Foundation
+import TangledLexicons
 import Testing
 
 #if canImport(FoundationNetworking)
@@ -131,11 +132,13 @@ import Testing
     let transport = GitContentTransport([
       .init(statusCode: 200, body: try fixture("git-languages")),
       .init(statusCode: 200, body: Data(#"{"ref":"HEAD","languages":null}"#.utf8)),
+      .init(statusCode: 200, body: Data(#"{"ref":"HEAD","languages":[]}"#.utf8)),
     ])
     let client = makeClient(transport)
 
     let report = try await client.languages(repositoryURI: repositoryURI, ref: "main")
     let empty = try await client.languages(repositoryURI: repositoryURI)
+    let emptyArray = try await client.languages(repositoryURI: repositoryURI)
 
     #expect(report.ref == "main")
     #expect(report.totalFiles == 14)
@@ -155,6 +158,7 @@ import Testing
     #expect(empty.ref == "HEAD")
     #expect(empty.languages.isEmpty)
     #expect(empty.totalFiles == nil)
+    #expect(emptyArray.languages.isEmpty)
 
     let requests = await transport.recordedRequests()
     #expect(requests[0].url?.lastPathComponent == "sh.tangled.repo.languages")
@@ -280,7 +284,7 @@ import Testing
     #expect(await transport.requestCount() == 0)
   }
 
-  @Test func archiveFailuresUseExistingTypedErrors() async {
+  @Test func archiveFailuresPreserveGeneratedErrors() async {
     let transport = GitContentTransport([
       .init(statusCode: 404, body: Data(#"{"error":"RepoNotFound","message":"missing repo"}"#.utf8)),
       .init(statusCode: 502, body: Data(#"{"error":"UpstreamFailed","message":"knot unavailable"}"#.utf8)),
@@ -292,7 +296,7 @@ import Testing
     do {
       _ = try await client.archive(repositoryURI: repositoryURI, ref: "main")
       Issue.record("Expected notFound")
-    } catch TangledError.notFound(let message) {
+    } catch Sh.Tangled.RepoArchive.Error.reponotfound(let message) {
       #expect(message == "missing repo")
     } catch { Issue.record("Unexpected error: \(error)") }
 
@@ -433,7 +437,7 @@ import Testing
     do {
       _ = try await client.branches(repositoryURI: repositoryURI)
       Issue.record("Expected notFound")
-    } catch TangledError.notFound(let message) {
+    } catch Sh.Tangled.RepoBranches.Error.reponotfound(let message) {
       #expect(message == "missing repo")
     } catch {
       Issue.record("Unexpected error: \(error)")
@@ -464,7 +468,7 @@ import Testing
         repositoryDID: "did:plc:repository"
       )
       Issue.record("Expected notFound")
-    } catch TangledError.notFound(let message) {
+    } catch Sh.Tangled.RepoDescribeRepo.Error.reponotfound(let message) {
       #expect(message == "missing repo")
     } catch {
       Issue.record("Unexpected error: \(error)")
@@ -473,7 +477,7 @@ import Testing
     do {
       _ = try await client.languages(repositoryURI: repositoryURI, ref: "missing")
       Issue.record("Expected notFound")
-    } catch TangledError.notFound(let message) {
+    } catch Sh.Tangled.RepoLanguages.Error.refnotfound(let message) {
       #expect(message == "missing ref")
     } catch {
       Issue.record("Unexpected error: \(error)")
@@ -517,10 +521,51 @@ import Testing
     do {
       _ = try await client.blob(repositoryURI: repositoryURI, ref: "main", path: "missing")
       Issue.record("Expected notFound")
-    } catch TangledError.notFound(let message) {
+    } catch Sh.Tangled.RepoBlob.Error.filenotfound(let message) {
       #expect(message == "missing file")
     } catch {
       Issue.record("Unexpected error: \(error)")
+    }
+  }
+
+  @Test func logAcceptsEmptyCommitsArrayAsExhaustedPage() async throws {
+    let transport = GitContentTransport([
+      .init(statusCode: 200, body: Data(#"{"commits":[],"total":0,"page":1,"ref":"main"}"#.utf8))
+    ])
+    let page = try await makeClient(transport).log(
+      repositoryURI: repositoryURI,
+      ref: "main"
+    )
+
+    #expect(page.commits.isEmpty)
+    #expect(page.total == 0)
+    #expect(page.cursor == nil)
+    #expect(page.ref == "main")
+  }
+
+  @Test func logRejectsResponsesMissingRequiredFields() async {
+    let bodies = [
+      #"{"ref":"main","total":0,"page":1}"#,
+      #"{"commits":[],"total":0,"page":1}"#,
+      #"{"commits":[],"ref":"main","page":1}"#,
+      #"{"commits":[],"ref":"main","total":0}"#,
+    ]
+
+    for body in bodies {
+      let transport = GitContentTransport([
+        .init(statusCode: 200, body: Data(body.utf8))
+      ])
+      do {
+        _ = try await makeClient(transport).log(
+          repositoryURI: repositoryURI,
+          ref: "main"
+        )
+        Issue.record("Expected decoding failure for missing log field")
+      } catch TangledError.decoding {
+        // Expected.
+      } catch {
+        Issue.record("Unexpected error: \(error)")
+      }
     }
   }
 
@@ -680,7 +725,7 @@ import Testing
     do {
       _ = try await client.diff(repositoryURI: repositoryURI, ref: "missing")
       Issue.record("Expected notFound")
-    } catch TangledError.notFound(let message) {
+    } catch Sh.Tangled.RepoDiff.Error.refnotfound(let message) {
       #expect(message == "missing ref")
     } catch {
       Issue.record("Unexpected error: \(error)")

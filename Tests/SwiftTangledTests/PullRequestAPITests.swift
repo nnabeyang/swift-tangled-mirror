@@ -6,6 +6,7 @@ import Testing
 #endif
 
 import SwiftTangled
+import TangledLexicons
 
 @Suite struct PullRequestAPITests {
   @Test func pullRequestAndBatchPreserveRoundsInWireOrder() async throws {
@@ -231,6 +232,71 @@ import SwiftTangled
     #expect(await transport.requestCount() == 0)
   }
 
+  @Test func pullRequestListEndpointsIsolateMalformedRecords() async throws {
+    let validValue = #"{"$type":"sh.tangled.repo.pull","title":"Valid","rounds":[{"createdAt":"2026-07-20T17:27:07Z","patchBlob":{"$type":"blob","ref":{"$link":"bafkreidie4e7g2mr7u4rbvzuhzrgjxkvcc7qeac7uzidusdy74lvgb2r3a"},"mimeType":"application/gzip","size":10}}],"target":{"branch":"main","repo":"did:plc:repository"},"createdAt":"2026-07-20T17:27:07Z"}"#
+    let brokenValue = #"{"$type":"sh.tangled.repo.pull","title":"Broken","rounds":[]}"#
+
+    let batch = Data(
+      #"""
+      {"items":[
+        {"cid":"bafyrepullok","uri":"at://did:plc:author/sh.tangled.repo.pull/ok","value":\#(validValue)},
+        {"cid":"bafyrepullbad","uri":"at://did:plc:author/sh.tangled.repo.pull/bad","value":\#(brokenValue)}
+      ]}
+      """#.utf8
+    )
+    let repoPage = Data(
+      #"""
+      {"items":[
+        {"cid":"bafyrepullok","uri":"at://did:plc:author/sh.tangled.repo.pull/ok","value":\#(validValue),"state":"open","commentCount":0},
+        {"cid":"bafyrepullbad","uri":"at://did:plc:author/sh.tangled.repo.pull/bad","value":\#(brokenValue),"state":"open","commentCount":0}
+      ],"cursor":"c1"}
+      """#.utf8
+    )
+    let authorPage = Data(
+      #"""
+      {"items":[
+        {"cid":"bafyrepullok","uri":"at://did:plc:author/sh.tangled.repo.pull/ok","value":\#(validValue),"state":"open","commentCount":0},
+        {"cid":"bafyrepullbad","uri":"at://did:plc:author/sh.tangled.repo.pull/bad","value":\#(brokenValue),"state":"open","commentCount":0}
+      ]}
+      """#.utf8
+    )
+    let statusPage = Data(
+      #"""
+      {"items":[
+        {"cid":"bafyrepstok","uri":"at://did:plc:author/sh.tangled.repo.pull.status/ok","value":{"$type":"sh.tangled.repo.pull.status","pull":"at://did:plc:author/sh.tangled.repo.pull/ok","status":"sh.tangled.repo.pull.status.closed","createdAt":"2026-07-20T17:27:07Z"}},
+        {"cid":"bafyrepstbad","uri":"at://did:plc:author/sh.tangled.repo.pull.status/bad","value":{"$type":"sh.tangled.repo.pull.status","status":"sh.tangled.repo.pull.status.closed","createdAt":"2026-07-20T17:27:07Z"}}
+      ]}
+      """#.utf8
+    )
+    let transport = PullRequestTransport([
+      .init(statusCode: 200, body: batch),
+      .init(statusCode: 200, body: repoPage),
+      .init(statusCode: 200, body: authorPage),
+      .init(statusCode: 200, body: statusPage),
+      .init(statusCode: 200, body: statusPage),
+    ])
+    let client = makeClient(transport: transport)
+
+    let batchResult = try await client.pullRequests(uris: [
+      "at://did:plc:author/sh.tangled.repo.pull/ok",
+      "at://did:plc:author/sh.tangled.repo.pull/bad",
+    ])
+    let repoResult = try await client.pullRequests(repositoryDID: "did:plc:repository")
+    let authorResult = try await client.pullRequests(authorDID: "did:plc:author")
+    let statuses = try await client.pullRequestStatuses(
+      pullRequestURI: "at://did:plc:author/sh.tangled.repo.pull/ok"
+    )
+    let authorStatuses = try await client.pullRequestStatuses(authorDID: "did:plc:author")
+
+    #expect(batchResult.count == 1)
+    #expect(batchResult[0].value.title == "Valid")
+    #expect(repoResult.items.count == 1)
+    #expect(repoResult.items[0].record.value.title == "Valid")
+    #expect(authorResult.items.count == 1)
+    #expect(statuses.items.count == 1)
+    #expect(authorStatuses.items.count == 1)
+  }
+
   @Test func notFoundAndMalformedPullRequestResponseStayTyped() async {
     let transport = PullRequestTransport([
       .init(
@@ -247,7 +313,8 @@ import SwiftTangled
     do {
       _ = try await client.pullRequest(uri: "at://missing/pull")
       Testing.Issue.record("Expected notFound")
-    } catch TangledError.notFound(let message) {
+    } catch Sh.Tangled.RepoGetPull.Error.unexpected(let code, let message) {
+      #expect(code == "RecordNotFound")
       #expect(message == "pull not found")
     } catch {
       Testing.Issue.record("Unexpected error: \(error)")

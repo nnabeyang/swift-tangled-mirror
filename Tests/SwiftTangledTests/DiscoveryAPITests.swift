@@ -7,6 +7,7 @@ import Testing
 #endif
 
 import SwiftTangled
+import TangledLexicons
 
 @Suite struct DiscoveryAPITests {
   @Test func profileAndBatchProfilesPreserveLegacyValues() async throws {
@@ -29,7 +30,7 @@ import SwiftTangled
           mimeType: "image/png",
           size: 198_519
         ))
-    #expect(profile.value.links == ["https://example.com"])
+    #expect(profile.value.links == ["https://example.com", ""])
     #expect(profile.value.stats == ["repository-count"])
     #expect(profile.value.preferredHandle == "debugman.example")
     #expect(profiles.count == 1)
@@ -235,7 +236,8 @@ import SwiftTangled
     do {
       _ = try await client.profile(uri: "at://missing/profile")
       Issue.record("Expected notFound")
-    } catch TangledError.notFound(let message) {
+    } catch Sh.Tangled.ActorGetProfile.Error.unexpected(let code, let message) {
+      #expect(code == "RecordNotFound")
       #expect(message == "record not found")
     } catch {
       Issue.record("Unexpected error: \(error)")

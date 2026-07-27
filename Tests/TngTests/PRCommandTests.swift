@@ -256,7 +256,7 @@ import Testing
       from: Data(output.stdout.utf8)
     )
     #expect(result.pullRequest.uri == samplePullRequestURI)
-    #expect(result.comments.items.first?.value.body.text == "Review comment")
+    #expect(result.comments.items.first?.value.body.markdown?.text == "Review comment")
     #expect(result.comments.cursor == "comment-next")
   }
 

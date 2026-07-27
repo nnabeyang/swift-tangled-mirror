@@ -11,7 +11,7 @@
     },
     "bluesky": false,
     "description": "",
-    "links": ["https://example.com"],
+    "links": ["https://example.com", ""],
     "location": "",
     "preferredHandle": "debugman.example",
     "pronouns": "",
