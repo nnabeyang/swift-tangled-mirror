@@ -248,8 +248,19 @@ extension BobbinClient {
         repo: repositoryURI
       )
     }
-    let commits = response.commits?.map(\.gitCommit) ?? []
-    let total = response.total ?? 0
+    guard let rawCommits = response.commits else {
+      throw TangledError.decoding(GitContentError.missingLogField("commits"))
+    }
+    guard let responseRef = response.ref else {
+      throw TangledError.decoding(GitContentError.missingLogField("ref"))
+    }
+    guard let total = response.total else {
+      throw TangledError.decoding(GitContentError.missingLogField("total"))
+    }
+    guard let page = response.page else {
+      throw TangledError.decoding(GitContentError.missingLogField("page"))
+    }
+    let commits = rawCommits.map(\.gitCommit)
     // Knot currently interprets the cursor as a numeric offset, although the Lexicon
     // describes it as a commit SHA. Keep the public cursor opaque while matching reality.
     let nextOffset = offset + commits.count
@@ -257,9 +268,9 @@ extension BobbinClient {
     return GitLogPage(
       commits: commits,
       cursor: nextCursor,
-      ref: response.ref ?? ref,
+      ref: responseRef,
       total: total,
-      page: response.page ?? 1
+      page: page
     )
   }
 
@@ -560,4 +571,5 @@ private func gitHash(_ bytes: [UInt8]) -> String {
 
 private enum GitContentError: Error {
   case invalidBase64
+  case missingLogField(String)
 }
