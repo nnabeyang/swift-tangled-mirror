@@ -217,6 +217,36 @@ unfiltered result does not prove absence. If creation was interrupted before a
 URI was returned, do not retry until PDS state has been checked and the user
 explicitly authorizes another write.
 
+## Resubmit a pull request
+
+Inspect the Pull Request and verify its exact AT URI, current status, source
+branch, target branch, and rounds. The source branch must be committed and
+already pushed at its current commit:
+
+```sh
+tng pr view PULL_AT_URI --json
+git status --short
+git ls-remote --heads origin refs/heads/FEATURE_BRANCH
+tng pr resubmit PULL_AT_URI --json
+```
+
+The command currently supports open, non-stacked pull requests whose source
+branch is in the target repository. It reports patch-based, fork-based, and
+stacked pull requests as unsupported instead of applying different Tangled
+semantics implicitly.
+
+Report the returned Pull Request URI, CID, and zero-based round number. Verify
+the exact record and new round directly rather than assuming Bobbin or the Web
+UI has indexed the update:
+
+```sh
+tng pr view PULL_AT_URI --json
+tng pr diff PULL_AT_URI --round NEW_ROUND
+```
+
+Do not retry a CID conflict automatically. Read the current record and let the
+user decide whether the new source state should be submitted.
+
 ## Paginate JSON results
 
 List operations return a page object with `items` and an optional `cursor`.

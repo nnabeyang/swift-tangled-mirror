@@ -78,7 +78,7 @@ requirement, and supported platforms.
 | `tng auth` | Sign in, inspect the current session, or sign out |
 | `tng repo` | View and browse repositories, branches, tags, files, and commits |
 | `tng issue` | List, view, create, comment on, edit, close, and reopen issues |
-| `tng pr` | List, view, diff, create, review, close, reopen, and merge pull requests |
+| `tng pr` | List, view, diff, create, resubmit, review, close, reopen, and merge pull requests |
 | `tng pipeline` | List, inspect, and watch Spindle CI pipelines |
 | `tng artifact` | Publish and download artifacts attached to annotated Git tags |
 | `tng events` | Watch live Tangled records through Jetstream |
@@ -118,6 +118,18 @@ tng pr create --base main --head feature/my-change \
   --title "Describe the change" \
   --body "Why this change is useful"
 ```
+
+After pushing more commits to the source branch, add a new review round:
+
+```sh
+git push origin feature/my-change
+tng pr resubmit PULL_REQUEST_AT_URI
+```
+
+Resubmission currently supports open, non-stacked pull requests whose source
+branch is in the target repository. Patch-based, fork-based, and stacked pull
+requests are Tangled concepts that require separate resubmission workflows and
+are reported as unsupported by this command for now.
 
 To list one author's pull requests without waiting for Bobbin indexing, read
 that author's PDS directly:

@@ -36,8 +36,8 @@ handling pagination and failures.
   before selecting a round; use the latest round unless the user identifies a
   specific round.
 - Perform `issue create`, `issue comment`, `issue edit`, `issue close`,
-  `issue reopen`, `pr create`, `pr comment`, `pr close`, `pr reopen`, or
-  `pr merge` only when the user's request authorizes that write. Before
+  `issue reopen`, `pr create`, `pr resubmit`, `pr comment`, `pr close`,
+  `pr reopen`, or `pr merge` only when the user's request authorizes that write. Before
   writing, verify the exact repository or pull request, branch or round, title,
   body, and requested final state as applicable.
 - Perform `artifact upload` or `artifact delete` only when the user authorizes

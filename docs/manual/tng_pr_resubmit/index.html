@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Show a file from a repository">
-  <title>tng repo blob manual · tng CLI</title>
+  <meta name="description" content="Add a round from an updated pushed branch">
+  <title>tng pr resubmit manual · tng CLI</title>
   <link rel="stylesheet" href="../../assets/manual.css">
   <script src="../../assets/manual.js" defer></script>
 </head>
@@ -43,7 +43,7 @@
   </li>  <li data-command-item data-search="tng repo archive download a repository archive">
     <a href="../../manual/tng_repo_archive/">tng repo archive</a>
   </li>  <li data-command-item data-search="tng repo blob show a file from a repository">
-    <a href="../../manual/tng_repo_blob/" aria-current="page">tng repo blob</a>
+    <a href="../../manual/tng_repo_blob/">tng repo blob</a>
   </li>  <li data-command-item data-search="tng repo branch work with repository branches">
     <a href="../../manual/tng_repo_branch/">tng repo branch</a>
   </li>  <li data-command-item data-search="tng repo languages show language statistics for a repository">
@@ -120,7 +120,7 @@
   </li>  <li data-command-item data-search="tng pr reopen reopen a tangled pull request">
     <a href="../../manual/tng_pr_reopen/">tng pr reopen</a>
   </li>  <li data-command-item data-search="tng pr resubmit add a round from an updated pushed branch">
-    <a href="../../manual/tng_pr_resubmit/">tng pr resubmit</a>
+    <a href="../../manual/tng_pr_resubmit/" aria-current="page">tng pr resubmit</a>
   </li>  <li data-command-item data-search="tng pr view view a tangled pull request">
     <a href="../../manual/tng_pr_view/">tng pr view</a>
   </li>      </ul>
@@ -174,11 +174,11 @@
   </nav>
     <main id="content" tabindex="-1">
         <nav class="breadcrumbs" aria-label="Breadcrumb">
-    <a href="../tng/">tng</a><span aria-hidden="true">/</span><a href="../tng_repo/">repo</a><span aria-hidden="true">/</span><span aria-current="page">blob</span>
-  </nav><h1><code>tng repo blob</code></h1><p class="lead">Show a file from a repository</p>  <section>
+    <a href="../tng/">tng</a><span aria-hidden="true">/</span><a href="../tng_pr/">pr</a><span aria-hidden="true">/</span><span aria-current="page">resubmit</span>
+  </nav><h1><code>tng pr resubmit</code></h1><p class="lead">Add a round from an updated pushed branch</p>  <section>
     <h2>Usage</h2>
-    <pre class="usage"><code>tng repo blob &lt;path&gt; [&lt;repository&gt;] [--ref &lt;ref&gt;] [--json] [--version] [--help]</code></pre>
-  </section><section><h2>Arguments</h2><dl class="arguments"><div><dt><code>&lt;path&gt;</code></dt><dd><p>File path within the repository</p></dd></div><div><dt><code>&lt;repository&gt;</code></dt><dd><p>Repository AT URI, repo DID, handle/name, or clone URL (defaults to Git origin)</p></dd></div></dl></section><section><h2>Options</h2><dl class="arguments"><div><dt><code>--ref &lt;ref&gt;</code></dt><dd><p>Git branch, tag, or commit (defaults to the repository default branch)</p></dd></div><div><dt><code>--json</code></dt><dd><p>Output blob content and metadata as JSON</p></dd></div><div><dt><code>--version</code></dt><dd><p>Show the version.</p></dd></div><div><dt><code>-h, --help</code></dt><dd><p>Show help information.</p></dd></div></dl></section>  <p class="root-reference">
+    <pre class="usage"><code>tng pr resubmit &lt;pull-request-uri&gt; [--json] [--version] [--help]</code></pre>
+  </section><section><h2>Arguments</h2><dl class="arguments"><div><dt><code>&lt;pull-request-uri&gt;</code></dt><dd><p>Pull request AT URI</p></dd></div></dl></section><section><h2>Options</h2><dl class="arguments"><div><dt><code>--json</code></dt><dd><p>Output the updated pull request and round as JSON</p></dd></div><div><dt><code>--version</code></dt><dd><p>Show the version.</p></dd></div><div><dt><code>-h, --help</code></dt><dd><p>Show help information.</p></dd></div></dl></section>  <p class="root-reference">
     See also <a href="../tng/"><code>tng</code></a>.
   </p>
       <footer>
