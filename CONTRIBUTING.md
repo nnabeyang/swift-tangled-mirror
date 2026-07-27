@@ -148,6 +148,7 @@ Before opening a Pull Request:
 - Keep the change focused and explain the user-visible reason for it.
 - Add focused Swift Testing coverage for changed public SDK or CLI behavior.
 - Run the formatter, build, and complete test suite.
+- Regenerate the CLI manual when command help changes.
 - Include generated source changes only when their Lexicon inputs changed.
 - Avoid unrelated formatting, generated-by text, and co-author signatures.
 
@@ -157,3 +158,26 @@ scope and approach can be agreed on first.
 Tangled reviews are organized into immutable rounds. After addressing review
 feedback, push the updated branch and explicitly resubmit it as a new round in
 Tangled. Pushing commits alone does not replace the round already under review.
+
+## CLI Manual
+
+The static CLI manual under `docs/` is generated from ArgumentParser's command
+tree. It includes the getting-started page, navigation, and one reference page
+for every visible command.
+
+Regenerate it after changing command names, help text, arguments, options, or
+subcommands:
+
+```sh
+./generate-manual-site.sh
+```
+
+Verify that the committed output is current without rewriting files:
+
+```sh
+./generate-manual-site.sh --check
+```
+
+The generator requires only the Swift toolchain already used by the package.
+Do not edit generated files in `docs/` directly. Update the English source
+content and assets in `Documentation/Manual/`, then regenerate the site.

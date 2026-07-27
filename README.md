@@ -64,6 +64,9 @@ tng pr --help
 tng capabilities --json
 ```
 
+The complete command reference, installation guide, and quick start are
+available in the [tng CLI manual](https://nnabeyang.tngl.sh/swift-tangled/).
+
 `capabilities` returns a versioned description of every executable command,
 including its arguments, options, read/write classification, authentication
 requirement, and supported platforms.
