@@ -72,14 +72,10 @@ struct HTTPXRPCClient: XRPCCallable, Sendable {
     var request = URLRequest(url: url, timeoutInterval: 20)
     request.httpMethod = components.method.rawValue
     request.httpBody = components.body
-    for field in components.headers {
+    for field in components.headers where field.name != .accept {
       request.addValue(field.value, forHTTPHeaderField: field.name.rawName)
     }
-    if let accept {
-      request.setValue(accept, forHTTPHeaderField: "Accept")
-    } else if request.value(forHTTPHeaderField: "Accept") != "*/*" {
-      request.setValue("application/json", forHTTPHeaderField: "Accept")
-    }
+    request.setValue(accept ?? "application/json", forHTTPHeaderField: "Accept")
     if let bearerToken {
       request.setValue("Bearer \(bearerToken)", forHTTPHeaderField: "Authorization")
     }
