@@ -220,8 +220,8 @@ explicitly authorizes another write.
 ## Resubmit a pull request
 
 Inspect the Pull Request and verify its exact AT URI, current status, source
-branch, target branch, and rounds. The source branch must be committed and
-already pushed at its current commit:
+branch, target branch, and rounds. For a branch in the target repository, the
+source branch must be committed and already pushed at its current commit:
 
 ```sh
 tng pr view PULL_AT_URI --json
@@ -229,6 +229,20 @@ git status --short
 git ls-remote --heads origin refs/heads/FEATURE_BRANCH
 tng pr resubmit PULL_AT_URI --json
 ```
+
+For a fork-based Pull Request, run the command from a checkout whose `origin`
+is the Pull Request's source repository:
+
+```sh
+tng pr view PULL_AT_URI --json
+tng repo view --json
+tng pr resubmit PULL_AT_URI --json
+```
+
+The command verifies the source repository against Git `origin`, asks the
+source Knot to refresh `hidden/SOURCE_BRANCH/TARGET_BRANCH`, and compares that
+tracking ref with the source branch on the Knot. It does not generate the fork
+patch from local Git state.
 
 For a patch-based Pull Request, prepare a cumulative patch containing the
 complete change from the target branch. Both `git diff` and
@@ -239,10 +253,10 @@ tng pr resubmit PULL_AT_URI --patch-file changes.patch --json
 ```
 
 `--patch-file` is required for patch-based Pull Requests and rejected for
-branch-based Pull Requests. The command currently supports open, non-stacked
-Pull Requests that are branch-based in the target repository or patch-based.
-It reports fork-based and stacked Pull Requests as unsupported instead of
-applying different Tangled semantics implicitly.
+branch-based and fork-based Pull Requests. The command supports open,
+non-stacked Pull Requests that are branch-based, fork-based, or patch-based.
+It reports stacked Pull Requests as unsupported instead of applying their
+multi-record semantics implicitly.
 
 Report the returned Pull Request URI, CID, and zero-based round number. Verify
 the exact record and new round directly rather than assuming Bobbin or the Web

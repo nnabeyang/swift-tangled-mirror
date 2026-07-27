@@ -133,10 +133,13 @@ For a patch-based pull request, provide a cumulative `git diff` or
 tng pr resubmit PULL_REQUEST_AT_URI --patch-file changes.patch
 ```
 
-Resubmission currently supports open, non-stacked pull requests whose source
-branch is in the target repository, and open, non-stacked patch-based pull
-requests. Fork-based and stacked pull requests require separate resubmission
-workflows and are reported as unsupported for now.
+For a fork-based pull request, run the command from a checkout whose `origin`
+is the source fork. `tng` refreshes the fork's hidden tracking ref from the
+target branch and prepares the new round on the fork's Knot.
+
+Resubmission supports open, non-stacked pull requests that are branch-based,
+fork-based, or patch-based. Stacked pull requests require a separate
+resubmission workflow and are reported as unsupported for now.
 
 To list one author's pull requests without waiting for Bobbin indexing, read
 that author's PDS directly:
