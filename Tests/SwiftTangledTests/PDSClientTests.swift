@@ -629,6 +629,153 @@ import Testing
     #expect(source["repo"] as? String == sourceRepositoryDID)
   }
 
+  @Test func appendPullRequestRoundPreservesRawRecordAndUsesCurrentCID() async throws {
+    let uri = "at://\(sessionDID)/sh.tangled.repo.pull/\(recordKey)"
+    let mock = try PDSXRPCMock(
+      listPages: [],
+      putOutput: .init(
+        cid: FormatString(rawValue: "bafyupdated"),
+        uri: FormatString(rawValue: uri)
+      )
+    )
+    let client = PDSClient(
+      client: mock,
+      repoDID: sessionDID,
+      authorizedScopes: ["atproto", "repo:sh.tangled.repo.pull", "blob:*/*"],
+      now: { Date(timeIntervalSince1970: 1_753_200_000) }
+    )
+    let rawData = Data(
+      """
+      {
+        "$type":"sh.tangled.repo.pull",
+        "title":"Keep metadata",
+        "body":"Body",
+        "createdAt":"2026-07-20T00:00:00Z",
+        "mentions":["did:plc:mentioned"],
+        "references":["at://did:plc:other/sh.tangled.repo.issue/related"],
+        "futureField":{"enabled":true},
+        "rounds":[{
+          "createdAt":"2026-07-20T00:00:00Z",
+          "patchBlob":{"$type":"blob","ref":{"$link":"bafkreidie4e7g2mr7u4rbvzuhzrgjxkvcc7qeac7uzidusdy74lvgb2r3a"},"mimeType":"application/gzip","size":20}
+        }],
+        "source":{"branch":"feature"},
+        "target":{"branch":"main","repo":"\(repositoryDID)"}
+      }
+      """.utf8
+    )
+    let decoder = JSONDecoder()
+    decoder.userInfo[.atprotoLexiconDecodingMode] = LexiconDecodingMode.permissive
+    let raw = try decoder.decode(UnknownATPValue.self, from: rawData)
+    let current = PullRequestRecordSnapshot(
+      record: try TangledRecordDecoder.pullRequest(
+        uri: uri,
+        cid: "bafycurrent",
+        value: raw
+      ),
+      rawValue: raw
+    )
+
+    let result = try await client.appendPullRequestRound(
+      current: current,
+      patch: Data("From updated\n\ndiff --git a/a b/a\n".utf8)
+    )
+
+    #expect(result.uri == uri)
+    #expect(result.cid == "bafyupdated")
+    #expect(result.value.rounds.count == 2)
+    let requests = await mock.recordedRequests()
+    #expect(
+      requests.map(\.nsID)
+        == ["com.atproto.repo.uploadBlob", "com.atproto.repo.putRecord"]
+    )
+    let requestBody = try #require(requests.last?.body)
+    let input = try #require(
+      JSONSerialization.jsonObject(with: requestBody) as? [String: Any]
+    )
+    #expect(input["rkey"] as? String == recordKey)
+    #expect(input["swapRecord"] as? String == "bafycurrent")
+    let record = try #require(input["record"] as? [String: Any])
+    #expect((record["futureField"] as? [String: Bool])?["enabled"] == true)
+    #expect(record["title"] as? String == "Keep metadata")
+    #expect((record["rounds"] as? [Any])?.count == 2)
+  }
+
+  @Test func appendPullRequestRoundRejectsOwnerCIDAndScopeBeforeUpload() async throws {
+    let rawData = Data(
+      """
+      {
+        "$type":"sh.tangled.repo.pull",
+        "title":"Title",
+        "createdAt":"2026-07-20T00:00:00Z",
+        "rounds":[{
+          "createdAt":"2026-07-20T00:00:00Z",
+          "patchBlob":{"$type":"blob","ref":{"$link":"bafkreidie4e7g2mr7u4rbvzuhzrgjxkvcc7qeac7uzidusdy74lvgb2r3a"},"mimeType":"application/gzip","size":20}
+        }],
+        "source":{"branch":"feature"},
+        "target":{"branch":"main","repo":"\(repositoryDID)"}
+      }
+      """.utf8
+    )
+    let decoder = JSONDecoder()
+    decoder.userInfo[.atprotoLexiconDecodingMode] = LexiconDecodingMode.permissive
+    let raw = try decoder.decode(UnknownATPValue.self, from: rawData)
+    let value = try TangledRecordDecoder.pullRequest(
+      uri: "at://\(sessionDID)/sh.tangled.repo.pull/\(recordKey)",
+      cid: "bafycurrent",
+      value: raw
+    ).value
+    let mock = try PDSXRPCMock(listPages: [])
+    let scoped = PDSClient(
+      client: mock,
+      repoDID: sessionDID,
+      authorizedScopes: ["repo:sh.tangled.repo.pull"]
+    )
+    let unscoped = PDSClient(
+      client: mock,
+      repoDID: sessionDID,
+      authorizedScopes: ["atproto"]
+    )
+
+    for snapshot in [
+      PullRequestRecordSnapshot(
+        record: TangledRecord(
+          uri: "at://did:plc:other/sh.tangled.repo.pull/\(recordKey)",
+          cid: "bafycurrent",
+          value: value
+        ),
+        rawValue: raw
+      ),
+      PullRequestRecordSnapshot(
+        record: TangledRecord(
+          uri: "at://\(sessionDID)/sh.tangled.repo.pull/\(recordKey)",
+          value: value
+        ),
+        rawValue: raw
+      ),
+    ] {
+      await #expect(throws: TangledError.self) {
+        _ = try await scoped.appendPullRequestRound(
+          current: snapshot,
+          patch: Data("patch".utf8)
+        )
+      }
+    }
+    await #expect(throws: TangledError.self) {
+      _ = try await unscoped.appendPullRequestRound(
+        current: PullRequestRecordSnapshot(
+          record: TangledRecord(
+            uri: "at://\(sessionDID)/sh.tangled.repo.pull/\(recordKey)",
+            cid: "bafycurrent",
+            value: value
+          ),
+          rawValue: raw
+        ),
+        patch: Data("patch".utf8)
+      )
+    }
+    #expect(await mock.recordedRequests().isEmpty)
+  }
+
   @Test func createCommentWritesMarkdownForPullRequestRound() async throws {
     let mock = try PDSXRPCMock(
       listPages: [],

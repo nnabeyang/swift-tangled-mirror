@@ -147,12 +147,7 @@ public struct PDSRecordClient: Sendable {
   }
 
   public func pullRequest(uri: String) async throws -> TangledRecord<PullRequest> {
-    let output = try await record(uri: uri, collection: Sh.Tangled.RepoPull.nsId)
-    return try TangledRecordDecoder.pullRequest(
-      uri: output.uri.rawValue,
-      cid: output.cid?.rawValue,
-      value: output.value
-    )
+    try await pullRequestSnapshot(uri: uri).record
   }
 
   public func artifact(uri: String) async throws -> TangledRecord<Artifact> {
@@ -165,7 +160,24 @@ public struct PDSRecordClient: Sendable {
   }
 }
 
+struct PullRequestRecordSnapshot: Sendable {
+  let record: TangledRecord<PullRequest>
+  let rawValue: UnknownATPValue
+}
+
 extension PDSRecordClient {
+  func pullRequestSnapshot(uri: String) async throws -> PullRequestRecordSnapshot {
+    let output = try await record(uri: uri, collection: Sh.Tangled.RepoPull.nsId)
+    return PullRequestRecordSnapshot(
+      record: try TangledRecordDecoder.pullRequest(
+        uri: output.uri.rawValue,
+        cid: output.cid?.rawValue,
+        value: output.value
+      ),
+      rawValue: output.value
+    )
+  }
+
   private func records(
     ownerDID rawOwnerDID: String,
     collection: String,

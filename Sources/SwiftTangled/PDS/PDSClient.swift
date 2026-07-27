@@ -331,6 +331,70 @@ public struct PDSClient: Sendable {
     )
   }
 
+  func appendPullRequestRound(
+    current: PullRequestRecordSnapshot,
+    patch: Data
+  ) async throws -> TangledRecord<PullRequest> {
+    let uri: ATURI
+    do {
+      uri = try ATURI(string: current.record.uri)
+    } catch {
+      throw TangledError.invalidRequest("invalid pull request AT URI")
+    }
+    guard case .did(let ownerDID) = uri.authority,
+      ownerDID.rawValue == repoDID
+    else {
+      throw TangledError.invalidRequest(
+        "only the Pull Request owner can resubmit it"
+      )
+    }
+    guard uri.collection?.rawValue == Self.pullCollection,
+      let rkey = uri.rkey
+    else {
+      throw TangledError.invalidRequest(
+        "pull request URI must identify a \(Self.pullCollection) record"
+      )
+    }
+    guard let currentCID = current.record.cid, !currentCID.isEmpty else {
+      throw TangledError.invalidRequest("pull request does not expose a CID")
+    }
+    try requirePullScope()
+
+    let compressedPatch = try GzipCompressor.compress(patch)
+    let upload = try await perform {
+      try await client.RepoUploadBlob(
+        input: XRPCBlobUpload(data: compressedPatch, mimeType: "application/gzip")
+      )
+    }
+    let createdAt = FormatString(now())
+    let rawRecord = try appendingRound(
+      to: current.rawValue,
+      createdAt: createdAt,
+      blob: upload.blob
+    )
+    let input = Com.Atproto.RepoPutRecord_Input(
+      collection: FormatString(rawValue: Self.pullCollection),
+      record: rawRecord,
+      repo: FormatString(rawValue: repoDID),
+      rkey: FormatString(rkey),
+      swapRecord: FormatString(rawValue: currentCID),
+      validate: nil
+    )
+    let output = try await perform {
+      try await client.RepoPutRecord(input: input)
+    }
+    guard output.uri.rawValue == current.record.uri else {
+      throw TangledError.upstreamFailed(
+        "PDS returned a different pull request record: \(output.uri.rawValue)"
+      )
+    }
+    return try TangledRecordDecoder.pullRequest(
+      uri: output.uri.rawValue,
+      cid: output.cid.rawValue,
+      value: rawRecord
+    )
+  }
+
   public func createComment(
     subject: RecordReference,
     body: String,
@@ -523,6 +587,29 @@ public struct PDSClient: Sendable {
 }
 
 extension PDSClient {
+  private func appendingRound(
+    to record: UnknownATPValue,
+    createdAt: FormatString<Date>,
+    blob: LexBlob
+  ) throws -> UnknownATPValue {
+    let data = try JSONEncoder().encode(record)
+    guard var object = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+      var rounds = object["rounds"] as? [Any]
+    else {
+      throw TangledError.decoding(PDSClientError.invalidPullRequestRecord)
+    }
+    let blobObject = try JSONSerialization.jsonObject(with: JSONEncoder().encode(blob))
+    rounds.append([
+      "createdAt": createdAt.rawValue,
+      "patchBlob": blobObject,
+    ])
+    object["rounds"] = rounds
+    let updated = try JSONSerialization.data(withJSONObject: object)
+    let decoder = JSONDecoder()
+    decoder.userInfo[.atprotoLexiconDecodingMode] = LexiconDecodingMode.permissive
+    return try decoder.decode(UnknownATPValue.self, from: updated)
+  }
+
   private func validatedDID(_ value: String) throws -> String {
     do {
       return try DID(string: value).rawValue
@@ -673,4 +760,5 @@ private final class SessionStoreBox: @unchecked Sendable {
 private enum PDSClientError: Error, Sendable {
   case invalidRecordURI(String)
   case invalidApplyWritesResult
+  case invalidPullRequestRecord
 }
