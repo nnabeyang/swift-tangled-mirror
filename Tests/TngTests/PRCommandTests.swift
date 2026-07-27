@@ -59,6 +59,14 @@ import Testing
     #expect(create.title == "Create PR")
     #expect(create.body == "Details")
     #expect(create.json)
+    let createStack = try PRCreateCommand.parse([
+      "--base", "main", "--head", "feature/stack", "--stack", "--json",
+    ])
+    #expect(createStack.stack)
+    #expect(createStack.json)
+    #expect(throws: (any Error).self) {
+      _ = try PRCreateCommand.parse(["--stack", "--title", "Ambiguous"])
+    }
     let resubmit = try PRResubmitCommand.parse([samplePullRequestURI, "--json"])
     #expect(resubmit.pullRequestURI == samplePullRequestURI)
     #expect(resubmit.patchFile == nil)
@@ -403,6 +411,47 @@ import Testing
     #expect(await recorder.references() == ["git@tangled.org:alice.example/core.git"])
   }
 
+  @Test func createStackFormatsEveryPullAndPreservesForkSource() async throws {
+    let recorder = PRCommandRecorder()
+    let origin = "git@tangled.org:norikey.example/core.git"
+    let targetReference = "alice.example/core"
+    let target = sampleRepositoryRecord(repositoryDID: "did:plc:target")
+    let fork = sampleRepositoryRecord(
+      repositoryDID: "did:plc:fork",
+      ownerDID: "did:plc:fork-owner",
+      source: "did:plc:target"
+    )
+    let service = PRCommandService(
+      dependencies: dependencies(
+        recorder: recorder,
+        resolvedRepositories: [
+          origin: fork,
+          targetReference: target,
+          "did:plc:target": target,
+        ],
+        originURL: { origin }
+      )
+    )
+
+    let output = try await service.create(
+      repository: targetReference,
+      base: "main",
+      head: "feature/stack",
+      title: nil,
+      body: nil,
+      bodyFile: nil,
+      stack: true,
+      json: false
+    )
+
+    #expect(output.stdout.contains("Created 2 pull requests:"))
+    #expect(output.stdout.contains("3stack1 (depends on"))
+    let call = try #require(await recorder.createStackCalls().first)
+    #expect(call.sourceRepositoryDID == "did:plc:fork")
+    #expect(call.commits.map(\.changeID) == ["first-change", "second-change"])
+    #expect(await recorder.createCalls().isEmpty)
+  }
+
   @Test func resubmitUsesRecordBranchesAndFormatsNewRound() async throws {
     let recorder = PRCommandRecorder()
     let branchPull = samplePullRequestRecord(
@@ -711,6 +760,62 @@ import Testing
     #expect(result.patch == Data("From \(localHead)\n".utf8))
   }
 
+  @Test func gitPreparerBuildsOrderedStackFromChangeIDHeaders() throws {
+    let first = "1111111111111111111111111111111111111111"
+    let second = "2222222222222222222222222222222222222222"
+    let base = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    let series = """
+      From \(first) Mon Sep 17 00:00:00 2001
+      From: Test <test@example.com>
+      Subject: [PATCH 1/2] First
+
+      diff --git a/one b/one
+      --- a/one
+      +++ b/one
+      @@ -0,0 +1 @@
+      +one
+      From \(second) Mon Sep 17 00:00:00 2001
+      From: Test <test@example.com>
+      Subject: [PATCH 2/2] Second
+
+      diff --git a/two b/two
+      --- a/two
+      +++ b/two
+      @@ -0,0 +1 @@
+      +two
+      """
+    let preparer = GitPullRequestPreparer { arguments in
+      switch arguments {
+      case ["rev-parse", "--verify", "refs/heads/feature/stack"]:
+        return Data("\(second)\n".utf8)
+      case ["ls-remote", "--heads", "origin", "refs/heads/feature/stack"]:
+        return Data("\(second)\trefs/heads/feature/stack\n".utf8)
+      case ["ls-remote", "--heads", "origin", "refs/heads/main"]:
+        return Data("\(base)\trefs/heads/main\n".utf8)
+      case ["cat-file", "-e", "\(base)^{commit}"]:
+        return Data()
+      case ["log", "-z", "--reverse", "--format=%H%x00%s%x00%b", "\(base)..\(second)"]:
+        return Data("\(first)\0First title\0First body\0\(second)\0Second title\0\0".utf8)
+      case ["format-patch", "--stdout", "--binary", "--no-cover-letter", "\(base)..\(second)"]:
+        return Data("\(series)\n".utf8)
+      case ["cat-file", "commit", first]:
+        return Data("tree a\nchange-id change-one\n\nFirst title\n".utf8)
+      case ["cat-file", "commit", second]:
+        return Data("tree b\nchange-id change-two\n\nSecond title\n".utf8)
+      default:
+        throw CLICommandError.git("unexpected command: \(arguments)")
+      }
+    }
+
+    let result = try preparer.prepareStack(base: "main", head: "feature/stack")
+
+    #expect(result.commits.map(\.title) == ["First title", "Second title"])
+    #expect(result.commits.map(\.changeID) == ["change-one", "change-two"])
+    #expect(result.commits[0].body == "First body")
+    #expect(result.commits[1].body == nil)
+    #expect(String(decoding: result.commits[1].patch, as: UTF8.self).hasPrefix("From \(second)"))
+  }
+
   @Test func gitPreparerUsesTargetRemoteForForkBase() throws {
     let localHead = "1111111111111111111111111111111111111111"
     let baseHead = "2222222222222222222222222222222222222222"
@@ -874,6 +979,26 @@ extension PRCommandTests {
           patch: Data("patch".utf8)
         )
       },
+      prepareStack: { base, head, _ in
+        PreparedPullRequestStack(
+          base: base,
+          head: head ?? "feature",
+          sourceRevision: "2222222222222222222222222222222222222222",
+          commits: [
+            PullRequestStackCommit(
+              title: "First commit",
+              changeID: "first-change",
+              patch: Data("first patch".utf8)
+            ),
+            PullRequestStackCommit(
+              title: "Second commit",
+              body: "Second body",
+              changeID: "second-change",
+              patch: Data("second patch".utf8)
+            ),
+          ]
+        )
+      },
       create: { targetDID, sourceDID, base, head, title, body, patch in
         await recorder.record(
           create: .init(
@@ -887,6 +1012,38 @@ extension PRCommandTests {
           )
         )
         return pullRequestRecord
+      },
+      createStack: { targetDID, sourceDID, base, head, commits in
+        await recorder.record(
+          createStack: .init(
+            targetRepositoryDID: targetDID,
+            sourceRepositoryDID: sourceDID,
+            base: base,
+            head: head,
+            commits: commits
+          )
+        )
+        let owner = "did:plc:author"
+        let uris = commits.indices.map {
+          "at://\(owner)/sh.tangled.repo.pull/3stack\($0)"
+        }
+        return PullRequestStackCreationResult(
+          pullRequests: commits.indices.map { index in
+            TangledRecord(
+              uri: uris[index],
+              cid: "bafystack\(index)",
+              value: PullRequest(
+                title: commits[index].title,
+                body: commits[index].body,
+                rounds: [pullRequestRecord.value.rounds[0]],
+                source: PullRequestSource(branch: head, repositoryDID: sourceDID),
+                target: PullRequestTarget(branch: base, repositoryDID: targetDID),
+                createdAt: FormatString<Date>(rawValue: "2026-07-24T10:00:00Z"),
+                dependentOn: index == 0 ? nil : uris[index - 1]
+              )
+            )
+          }
+        )
       },
       prepareResubmission: { _ in
         PreparedPRResubmission(
@@ -1100,6 +1257,14 @@ private actor PRCommandRecorder {
     let patch: Data
   }
 
+  struct CreateStackCall: Equatable, Sendable {
+    let targetRepositoryDID: String
+    let sourceRepositoryDID: String?
+    let base: String
+    let head: String
+    let commits: [PullRequestStackCommit]
+  }
+
   struct StatusCall: Equatable, Sendable {
     let uri: String
     let status: PullRequestStatus
@@ -1118,6 +1283,7 @@ private actor PRCommandRecorder {
   private var recordedAuthoritativePullRequestURIs: [String] = []
   private var recordedPatchCalls: [PatchCall] = []
   private var recordedCreateCalls: [CreateCall] = []
+  private var recordedCreateStackCalls: [CreateStackCall] = []
   private var recordedStatusCalls: [StatusCall] = []
   private var recordedResubmitCalls: [ResubmitCall] = []
   private var recordedForkResubmitCount = 0
@@ -1153,6 +1319,10 @@ private actor PRCommandRecorder {
 
   func record(create: CreateCall) {
     recordedCreateCalls.append(create)
+  }
+
+  func record(createStack: CreateStackCall) {
+    recordedCreateStackCalls.append(createStack)
   }
 
   func record(statusURI: String, status: PullRequestStatus) {
@@ -1205,6 +1375,10 @@ private actor PRCommandRecorder {
 
   func createCalls() -> [CreateCall] {
     recordedCreateCalls
+  }
+
+  func createStackCalls() -> [CreateStackCall] {
+    recordedCreateStackCalls
   }
 
   func statusCalls() -> [StatusCall] {

@@ -18,9 +18,13 @@ struct PRCommandDependencies: Sendable {
   let originURL: @Sendable () throws -> String
   let defaultBranch: @Sendable (String) async throws -> GitDefaultBranch
   let prepare: @Sendable (String, String?, String) throws -> PreparedPullRequest
+  let prepareStack: @Sendable (String, String?, String) throws -> PreparedPullRequestStack
   let create:
     @Sendable (String, String?, String, String, String, String?, Data) async throws ->
       TangledRecord<PullRequest>
+  let createStack:
+    @Sendable (String, String?, String, String, [PullRequestStackCommit]) async throws ->
+      PullRequestStackCreationResult
   let prepareResubmission: @Sendable (String) async throws -> PreparedPRResubmission
   let createComment: @Sendable (RecordReference, String, Int) async throws -> TangledRecord<Comment>
   let mergeCheck: @Sendable (String) async throws -> PullRequestMergeCheck
@@ -82,6 +86,9 @@ struct PRCommandDependencies: Sendable {
       prepare: {
         try GitPullRequestPreparer().prepare(base: $0, head: $1, baseRemote: $2)
       },
+      prepareStack: {
+        try GitPullRequestPreparer().prepareStack(base: $0, head: $1, baseRemote: $2)
+      },
       create: { repositoryDID, sourceRepositoryDID, base, head, title, body, patch in
         try await PDSClient.restore(from: CLISessionStore.make().store).createPullRequest(
           repositoryDID: repositoryDID,
@@ -91,6 +98,15 @@ struct PRCommandDependencies: Sendable {
           title: title,
           body: body,
           patch: patch
+        )
+      },
+      createStack: { repositoryDID, sourceRepositoryDID, base, head, commits in
+        try await PDSClient.restore(from: CLISessionStore.make().store).createPullRequestStack(
+          repositoryDID: repositoryDID,
+          sourceRepositoryDID: sourceRepositoryDID,
+          baseBranch: base,
+          headBranch: head,
+          commits: commits
         )
       },
       prepareResubmission: {
@@ -321,6 +337,7 @@ struct PRCommandService: Sendable {
     title: String?,
     body: String?,
     bodyFile: String?,
+    stack: Bool = false,
     json: Bool
   ) async throws -> CLICommandOutput {
     let origin = try dependencies.originURL()
@@ -360,6 +377,28 @@ struct PRCommandService: Sendable {
       resolvedBase = base
     } else {
       resolvedBase = try await dependencies.defaultBranch(targetRecord.uri).name
+    }
+    if stack {
+      guard title == nil, body == nil, bodyFile == nil else {
+        throw TangledError.invalidRequest(
+          "--stack cannot be used with --title, --body, or --body-file"
+        )
+      }
+      let prepared = try dependencies.prepareStack(resolvedBase, head, baseRemote)
+      let created = try await dependencies.createStack(
+        targetDID,
+        isFork ? originDID : nil,
+        prepared.base,
+        prepared.head,
+        prepared.commits
+      )
+      let result = PRCreateStackResult(
+        pullRequests: created.pullRequests,
+        repositoryPullsURL: repositoryPullsURL(record: targetRecord)
+      )
+      return CLICommandOutput(
+        stdout: try json ? formatter.json(result) : format(result)
+      )
     }
     let prepared = try dependencies.prepare(resolvedBase, head, baseRemote)
     let resolvedBody: String?
@@ -490,6 +529,18 @@ extension PRCommandService {
       + "Pull requests: \(result.repositoryPullsURL)\n"
   }
 
+  fileprivate func format(_ result: PRCreateStackResult) -> String {
+    var output = "Created \(result.pullRequests.count) pull requests:\n"
+    for (index, pullRequest) in result.pullRequests.enumerated() {
+      output += "\(index): \(pullRequest.uri)"
+      if let dependentOn = pullRequest.value.dependentOn {
+        output += " (depends on \(dependentOn))"
+      }
+      output += "\n"
+    }
+    return output + "Pull requests: \(result.repositoryPullsURL)\n"
+  }
+
   fileprivate func format(_ result: PullRequestResubmissionResult) -> String {
     "Resubmitted pull request: \(result.pullRequest.uri)\n"
       + "Round: \(result.roundNumber)\n"
@@ -615,6 +666,11 @@ extension String {
 
 struct PRCreateResult: Codable, Equatable, Sendable {
   let pullRequest: TangledRecord<PullRequest>
+  let repositoryPullsURL: String
+}
+
+struct PRCreateStackResult: Codable, Equatable, Sendable {
+  let pullRequests: [TangledRecord<PullRequest>]
   let repositoryPullsURL: String
 }
 

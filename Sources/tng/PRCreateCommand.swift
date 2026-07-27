@@ -24,12 +24,18 @@ struct PRCreateCommand: AsyncParsableCommand {
   @Option(help: "Read the pull request body from a file")
   var bodyFile: String?
 
+  @Flag(help: "Create one dependent pull request per commit")
+  var stack = false
+
   @Flag(help: "Output the created pull request as JSON")
   var json = false
 
   mutating func validate() throws {
     guard body == nil || bodyFile == nil else {
       throw ValidationError("--body and --body-file cannot be used together")
+    }
+    guard !stack || (title == nil && body == nil && bodyFile == nil) else {
+      throw ValidationError("--stack cannot be used with --title, --body, or --body-file")
     }
   }
 
@@ -42,6 +48,7 @@ struct PRCreateCommand: AsyncParsableCommand {
         title: title,
         body: body,
         bodyFile: bodyFile,
+        stack: stack,
         json: json
       )
     }

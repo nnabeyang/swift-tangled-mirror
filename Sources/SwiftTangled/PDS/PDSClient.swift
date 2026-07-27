@@ -333,6 +333,156 @@ public struct PDSClient: Sendable {
     )
   }
 
+  public func createPullRequestStack(
+    repositoryDID: String,
+    sourceRepositoryDID: String? = nil,
+    baseBranch: String,
+    headBranch: String,
+    commits: [PullRequestStackCommit]
+  ) async throws -> PullRequestStackCreationResult {
+    let repositoryDID = try validatedDID(repositoryDID)
+    let sourceRepositoryDID = try sourceRepositoryDID.map(validatedDID)
+    let isFork = sourceRepositoryDID != nil && sourceRepositoryDID != repositoryDID
+    let baseBranch = try validatedNonempty(baseBranch, name: "base branch")
+    let headBranch = try validatedNonempty(headBranch, name: "head branch")
+    guard isFork || baseBranch != headBranch else {
+      throw TangledError.invalidRequest("base and head branches must differ")
+    }
+    guard !commits.isEmpty else {
+      throw TangledError.invalidRequest("pull request stack must contain at least one commit")
+    }
+    let changeIDs = try commits.map {
+      try validatedNonempty($0.changeID, name: "change ID")
+    }
+    guard Set(changeIDs).count == changeIDs.count else {
+      throw TangledError.invalidRequest("pull request stack contains duplicate change IDs")
+    }
+    for commit in commits {
+      _ = try validatedNonempty(commit.title, name: "title")
+      guard !commit.patch.isEmpty else {
+        throw TangledError.invalidRequest("pull request patch must not be empty")
+      }
+    }
+    try requirePullScope()
+
+    var blobs: [LexBlob] = []
+    for commit in commits {
+      let compressedPatch = try GzipCompressor.compress(commit.patch)
+      let upload = try await perform {
+        try await client.RepoUploadBlob(
+          input: XRPCBlobUpload(data: compressedPatch, mimeType: "application/gzip")
+        )
+      }
+      blobs.append(upload.blob)
+    }
+
+    let rkeys = commits.map { _ in nextRecordKey() }
+    guard Set(rkeys).count == rkeys.count else {
+      throw TangledError.invalidRequest("pull request stack generated duplicate record keys")
+    }
+    let createdAt = FormatString(now())
+    var records: [Sh.Tangled.RepoPull] = []
+    for index in commits.indices {
+      let commit = commits[index]
+      let dependentOn =
+        index == commits.startIndex
+        ? nil
+        : FormatString<ATURI>(
+          rawValue: "at://\(repoDID)/\(Self.pullCollection)/\(rkeys[index - 1])"
+        )
+      records.append(
+        Sh.Tangled.RepoPull(
+          body: commit.body?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty,
+          createdAt: createdAt,
+          dependentOn: dependentOn,
+          mentions: [],
+          references: [],
+          rounds: [.init(createdAt: createdAt, patchBlob: blobs[index])],
+          source: .init(
+            branch: headBranch,
+            repo: isFork ? FormatString(rawValue: sourceRepositoryDID!) : nil
+          ),
+          target: .init(branch: baseBranch, repo: FormatString(rawValue: repositoryDID)),
+          title: commit.title
+        )
+      )
+    }
+    let writes = zip(rkeys, records).map { rkey, record in
+      Com.Atproto.RepoApplyWrites_Input_Writes_Elem.repoApplyWritesCreate(
+        .init(
+          collection: FormatString(rawValue: Self.pullCollection),
+          rkey: FormatString(rawValue: rkey),
+          value: .record(record)
+        )
+      )
+    }
+    let output: Com.Atproto.RepoApplyWrites_Output
+    do {
+      output = try await perform {
+        try await client.RepoApplyWrites(
+          input: .init(
+            repo: FormatString(rawValue: repoDID),
+            validate: nil,
+            writes: writes
+          )
+        )
+      }
+    } catch {
+      let uploaded = blobs.map { $0.ref.toBaseEncodedString }.joined(separator: ", ")
+      throw TangledError.transport(
+        "\(error.localizedDescription) (uploaded patch blobs: \(uploaded))"
+      )
+    }
+    guard let results = output.results, results.count == records.count else {
+      throw TangledError.decoding(PDSClientError.invalidApplyWritesResult)
+    }
+    var pullRequests: [TangledRecord<PullRequest>] = []
+    for index in commits.indices {
+      let commit = commits[index]
+      let record = records[index]
+      let blob = blobs[index]
+      let result = results[index]
+      guard case .repoApplyWritesCreateResult(let created) = result else {
+        throw TangledError.decoding(PDSClientError.invalidApplyWritesResult)
+      }
+      let expectedURI = "at://\(repoDID)/\(Self.pullCollection)/\(rkeys[index])"
+      guard created.uri.rawValue == expectedURI else {
+        throw TangledError.upstreamFailed(
+          "PDS returned a different pull request record: \(created.uri.rawValue)"
+        )
+      }
+      pullRequests.append(
+        TangledRecord(
+          uri: created.uri.rawValue,
+          cid: created.cid.rawValue,
+          value: PullRequest(
+            title: commit.title,
+            body: record.body,
+            rounds: [
+              .init(
+                createdAt: createdAt,
+                patchBlob: .init(
+                  cid: blob.ref.toBaseEncodedString,
+                  mimeType: blob.mimeType,
+                  size: Int(blob.size)
+                )
+              )
+            ],
+            source: .init(
+              branch: headBranch,
+              repositoryDID: isFork ? sourceRepositoryDID : nil
+            ),
+            target: .init(branch: baseBranch, repositoryDID: repositoryDID),
+            createdAt: createdAt,
+            mentions: [],
+            references: [],
+            dependentOn: record.dependentOn?.rawValue
+          )
+        ))
+    }
+    return PullRequestStackCreationResult(pullRequests: pullRequests)
+  }
+
   func appendPullRequestRound(
     current: PullRequestRecordSnapshot,
     patch: Data

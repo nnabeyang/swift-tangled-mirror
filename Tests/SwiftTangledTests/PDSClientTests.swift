@@ -629,6 +629,93 @@ import Testing
     #expect(source["repo"] as? String == sourceRepositoryDID)
   }
 
+  @Test func createPullRequestStackUsesOneAtomicWriteAndBuildsDependencies() async throws {
+    let mock = try PDSXRPCMock(listPages: [])
+    let keys = TestRecordKeySequence(["3stack0", "3stack1"])
+    let client = PDSClient(
+      client: mock,
+      repoDID: sessionDID,
+      authorizedScopes: ["atproto", "repo:sh.tangled.repo.pull", "blob:*/*"],
+      now: { createdAt.typed! },
+      nextRecordKey: { keys.next() }
+    )
+    let result = try await client.createPullRequestStack(
+      repositoryDID: repositoryDID,
+      sourceRepositoryDID: "did:plc:fork",
+      baseBranch: "main",
+      headBranch: "feature/stack",
+      commits: [
+        PullRequestStackCommit(
+          title: "First",
+          changeID: "change-one",
+          patch: Data("first patch".utf8)
+        ),
+        PullRequestStackCommit(
+          title: "Second",
+          body: "Details",
+          changeID: "change-two",
+          patch: Data("second patch".utf8)
+        ),
+      ]
+    )
+
+    #expect(result.pullRequests.count == 2)
+    #expect(result.pullRequests[0].value.dependentOn == nil)
+    #expect(
+      result.pullRequests[1].value.dependentOn
+        == "at://\(sessionDID)/sh.tangled.repo.pull/3stack0"
+    )
+    #expect(result.pullRequests.allSatisfy { $0.value.source?.repositoryDID == "did:plc:fork" })
+
+    let requests = await mock.recordedRequests()
+    #expect(
+      requests.map(\.nsID) == [
+        "com.atproto.repo.uploadBlob",
+        "com.atproto.repo.uploadBlob",
+        "com.atproto.repo.applyWrites",
+      ])
+    let body = try #require(requests.last?.body)
+    let object = try #require(JSONSerialization.jsonObject(with: body) as? [String: Any])
+    let writes = try #require(object["writes"] as? [[String: Any]])
+    #expect(writes.count == 2)
+    let first = try #require(writes[0]["value"] as? [String: Any])
+    let second = try #require(writes[1]["value"] as? [String: Any])
+    #expect(first["dependentOn"] == nil)
+    #expect(
+      second["dependentOn"] as? String
+        == "at://\(sessionDID)/sh.tangled.repo.pull/3stack0"
+    )
+  }
+
+  @Test func createPullRequestStackRejectsDuplicateChangeIDsBeforeUploading() async throws {
+    let mock = try PDSXRPCMock(listPages: [])
+    let client = PDSClient(
+      client: mock,
+      repoDID: sessionDID,
+      authorizedScopes: ["atproto", "repo:sh.tangled.repo.pull", "blob:*/*"]
+    )
+    await #expect(throws: TangledError.self) {
+      _ = try await client.createPullRequestStack(
+        repositoryDID: repositoryDID,
+        baseBranch: "main",
+        headBranch: "feature",
+        commits: [
+          PullRequestStackCommit(
+            title: "First",
+            changeID: "duplicate",
+            patch: Data("one".utf8)
+          ),
+          PullRequestStackCommit(
+            title: "Second",
+            changeID: "duplicate",
+            patch: Data("two".utf8)
+          ),
+        ]
+      )
+    }
+    #expect(await mock.recordedRequests().isEmpty)
+  }
+
   @Test func appendPullRequestRoundPreservesRawRecordAndUsesCurrentCID() async throws {
     let uri = "at://\(sessionDID)/sh.tangled.repo.pull/\(recordKey)"
     let mock = try PDSXRPCMock(
@@ -1110,6 +1197,21 @@ struct PDSArtifactTests {
 
   private func putRecordJSON(from data: Data) throws -> [String: Any] {
     try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+  }
+}
+
+private final class TestRecordKeySequence: @unchecked Sendable {
+  private let lock = NSLock()
+  private var values: [String]
+
+  init(_ values: [String]) {
+    self.values = values
+  }
+
+  func next() -> String {
+    lock.lock()
+    defer { lock.unlock() }
+    return values.removeFirst()
   }
 }
 
