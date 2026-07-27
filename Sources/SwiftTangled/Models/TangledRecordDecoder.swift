@@ -156,6 +156,9 @@ enum TangledRecordDecoder {
   }
 
   static func recordType(of value: UnknownATPValue) throws -> String {
+    if case .record(let record) = value, let unknown = record as? UnknownRecord {
+      return unknown.type
+    }
     guard let type = value.type else {
       throw TangledError.decoding(UnknownRecordTypeError())
     }

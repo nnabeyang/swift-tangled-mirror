@@ -313,6 +313,56 @@ import Testing
     }
   }
 
+  @Test func reportsDecodingFailureRatherThanUnknownForMalformedKnownType() async {
+    let listTransport = PDSRecordTransport([
+      .init(
+        statusCode: 200,
+        body: Data(
+          """
+          {"records":[{"uri":"\(uri(collection: "sh.tangled.repo"))","cid":"bafkreidie4e7g2mr7u4rbvzuhzrgjxkvcc7qeac7uzidusdy74lvgb2r3a","value":{"$type":"sh.tangled.repo","knot":123,"createdAt":"2026-07-26T00:00:00Z"}}]}
+          """.utf8
+        )
+      )
+    ])
+    let getTransport = PDSRecordTransport([
+      response(
+        collection: "sh.tangled.repo",
+        value:
+          """
+          {"$type":"sh.tangled.repo","knot":123,"createdAt":"2026-07-26T00:00:00Z"}
+          """
+      )
+    ])
+
+    do {
+      _ = try await makeClient(transport: listTransport).repositories(ownerDID: ownerDID)
+      Issue.record("Expected decoding failure from list path")
+    } catch TangledError.upstreamFailed(let message) {
+      Issue.record(
+        "Should not surface as upstreamFailed(record type unknown …): \(message ?? "")"
+      )
+    } catch TangledError.decoding {
+      // Expected.
+    } catch {
+      Issue.record("Unexpected error from list path: \(error)")
+    }
+
+    do {
+      _ = try await makeClient(transport: getTransport).repository(
+        uri: uri(collection: "sh.tangled.repo")
+      )
+      Issue.record("Expected decoding failure from getRecord path")
+    } catch TangledError.upstreamFailed(let message) {
+      Issue.record(
+        "Should not surface as upstreamFailed(record type unknown …): \(message ?? "")"
+      )
+    } catch TangledError.decoding {
+      // Expected.
+    } catch {
+      Issue.record("Unexpected error from getRecord path: \(error)")
+    }
+  }
+
   @Test func rejectsMismatchedReturnedURIAndRecordType() async {
     let wrongURI = PDSRecordTransport([
       response(
