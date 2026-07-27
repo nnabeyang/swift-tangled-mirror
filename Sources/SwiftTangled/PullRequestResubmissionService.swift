@@ -62,12 +62,7 @@ public struct PullRequestResubmissionService: Sendable {
     }
     let authorDID = try ownerDID(record.uri, name: "pull request")
     let pull = record.value
-    guard let source = pull.source else {
-      throw TangledError.invalidRequest(
-        "patch-based pull request resubmission is not supported yet"
-      )
-    }
-    guard source.repositoryDID == nil else {
+    guard pull.source?.repositoryDID == nil else {
       throw TangledError.invalidRequest(
         "fork-based pull request resubmission is not supported yet"
       )
@@ -115,7 +110,7 @@ public struct PullRequestResubmissionService: Sendable {
       pullRequest: record,
       snapshot: snapshot,
       latestPatch: latestPatch,
-      latestSourceRevision: sourceRevision(in: latestPatch)
+      latestSourceRevision: pull.source == nil ? nil : sourceRevision(in: latestPatch)
     )
   }
 
@@ -125,12 +120,12 @@ public struct PullRequestResubmissionService: Sendable {
     sourceRevision: String,
     pdsClient: PDSClient
   ) async throws -> PullRequestResubmissionResult {
-    guard !patch.isEmpty else {
-      throw TangledError.invalidRequest("pull request patch must not be empty")
+    guard context.pullRequest.value.source != nil else {
+      throw TangledError.invalidRequest(
+        "source revision is only valid for branch-based pull requests"
+      )
     }
-    guard patch != context.latestPatch else {
-      throw TangledError.invalidRequest("patch is identical to the latest round")
-    }
+    try validateChangedPatch(patch, context: context)
     if let previous = context.latestSourceRevision,
       revisionsMatch(previous, sourceRevision)
     {
@@ -138,6 +133,29 @@ public struct PullRequestResubmissionService: Sendable {
         "source branch has not changed since the latest round"
       )
     }
+    return try await append(patch, to: context, pdsClient: pdsClient)
+  }
+
+  public func resubmit(
+    _ context: PullRequestResubmissionContext,
+    patch: Data,
+    pdsClient: PDSClient
+  ) async throws -> PullRequestResubmissionResult {
+    guard context.pullRequest.value.source == nil else {
+      throw TangledError.invalidRequest(
+        "patch files are only valid for patch-based pull requests"
+      )
+    }
+    let normalizedPatch = try normalizedPatch(patch)
+    try validateChangedPatch(normalizedPatch, context: context)
+    return try await append(normalizedPatch, to: context, pdsClient: pdsClient)
+  }
+
+  private func append(
+    _ patch: Data,
+    to context: PullRequestResubmissionContext,
+    pdsClient: PDSClient
+  ) async throws -> PullRequestResubmissionResult {
     let roundNumber = context.pullRequest.value.rounds.count
     let record = try await dependencies.appendRound(context.snapshot, patch, pdsClient)
     return PullRequestResubmissionResult(
@@ -158,6 +176,57 @@ struct PullRequestResubmissionDependencies: Sendable {
 }
 
 extension PullRequestResubmissionService {
+  private func validateChangedPatch(
+    _ patch: Data,
+    context: PullRequestResubmissionContext
+  ) throws {
+    guard !patch.isEmpty else {
+      throw TangledError.invalidRequest("pull request patch must not be empty")
+    }
+    guard patch != context.latestPatch else {
+      throw TangledError.invalidRequest("patch is identical to the latest round")
+    }
+  }
+
+  private func normalizedPatch(_ patch: Data) throws -> Data {
+    guard let text = String(data: patch, encoding: .utf8) else {
+      throw TangledError.invalidRequest("pull request patch must be valid UTF-8")
+    }
+    let lines = text.split(separator: "\n", omittingEmptySubsequences: false)
+    guard lines.count >= 2 else {
+      throw TangledError.invalidRequest(
+        "pull request patch must be a git diff or git format-patch"
+      )
+    }
+
+    let firstLine = lines[0].trimmingCharacters(in: .whitespaces)
+    let diffPrefixes = ["diff ", "--- ", "Index: ", "+++ ", "@@ "]
+    if diffPrefixes.contains(where: firstLine.hasPrefix) {
+      return text.hasSuffix("\n") ? patch : Data("\(text)\n".utf8)
+    }
+
+    let envelopeSuffix = " Mon Sep 17 00:00:00 2001"
+    guard firstLine.hasPrefix("From "), firstLine.hasSuffix(envelopeSuffix),
+      lines.contains(where: { $0.hasPrefix("From: ") }),
+      lines.contains(where: { $0.hasPrefix("Subject: ") }),
+      lines.contains(where: {
+        let line = $0.trimmingCharacters(in: .whitespaces)
+        return diffPrefixes.contains(where: line.hasPrefix)
+      })
+    else {
+      throw TangledError.invalidRequest(
+        "pull request patch must be a git diff or git format-patch"
+      )
+    }
+    let revision = firstLine.dropFirst("From ".count).dropLast(envelopeSuffix.count)
+    guard revision.count >= 7, revision.allSatisfy(\.isHexDigit) else {
+      throw TangledError.invalidRequest(
+        "pull request patch must be a git diff or git format-patch"
+      )
+    }
+    return patch
+  }
+
   private func allPullRequests(
     repositoryDID: String,
     repositoryOwnerDID: String,

@@ -55,9 +55,58 @@ import Testing
     #expect(await recorder.appendCount() == 0)
   }
 
-  @Test func rejectsPatchForkAndEitherStackDirection() async throws {
+  @Test func patchPullAcceptsDiffAndFormatPatch() async throws {
+    for candidate in [
+      Data("diff --git a/a b/a\n--- a/a\n+++ b/a\n@@ -1 +1 @@\n-old\n+new\n".utf8),
+      patch(revision: String(repeating: "b", count: 40), file: "new"),
+    ] {
+      let snapshot = try makeSnapshot(source: nil)
+      let recorder = ResubmissionRecorder()
+      let service = makeService(snapshot: snapshot, recorder: recorder)
+      let context = try await service.prepare(pullRequestURI: pullURI)
+
+      let result = try await service.resubmit(
+        context,
+        patch: candidate,
+        pdsClient: unusedPDSClient()
+      )
+
+      #expect(result.roundNumber == 1)
+      #expect(await recorder.appendCount() == 1)
+    }
+  }
+
+  @Test func patchPullRejectsMalformedIdenticalAndBranchMode() async throws {
+    let snapshot = try makeSnapshot(source: nil)
+    let recorder = ResubmissionRecorder()
+    let service = makeService(snapshot: snapshot, recorder: recorder)
+    let context = try await service.prepare(pullRequestURI: pullURI)
+
+    for candidate in [
+      Data("not a patch\nstill not a patch\n".utf8),
+      patch(revision: String(repeating: "a", count: 40), file: "old"),
+    ] {
+      await #expect(throws: TangledError.self) {
+        _ = try await service.resubmit(
+          context,
+          patch: candidate,
+          pdsClient: unusedPDSClient()
+        )
+      }
+    }
+    await #expect(throws: TangledError.self) {
+      _ = try await service.resubmit(
+        context,
+        patch: Data("diff --git a/a b/a\n--- a/a\n".utf8),
+        sourceRevision: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        pdsClient: unusedPDSClient()
+      )
+    }
+    #expect(await recorder.appendCount() == 0)
+  }
+
+  @Test func rejectsForkAndEitherStackDirection() async throws {
     let cases = [
-      try makeSnapshot(source: nil),
       try makeSnapshot(
         source: PullRequestSource(
           branch: "feature",
@@ -219,6 +268,7 @@ extension PullRequestResubmissionServiceTests {
     Data(
       """
       From \(revision) Mon Sep 17 00:00:00 2001
+      From: Author <author@example.com>
       Subject: [PATCH] \(file)
 
       diff --git a/\(file) b/\(file)
