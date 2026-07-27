@@ -61,6 +61,52 @@ public struct KnotClient: Sendable {
     )
     _ = try await client(knot: knot, token: token).RepoMerge(input: input)
   }
+
+  public func updateHiddenRef(
+    knot: String,
+    token: String,
+    repositoryURI: String,
+    sourceBranch: String,
+    targetBranch: String
+  ) async throws -> String {
+    let sourceBranch = try required(sourceBranch, name: "source branch")
+    let targetBranch = try required(targetBranch, name: "target branch")
+    let expectedRef = "hidden/\(sourceBranch)/\(targetBranch)"
+    let input = Sh.Tangled.RepoHiddenRef_Input(
+      forkRef: sourceBranch,
+      remoteRef: targetBranch,
+      repo: FormatString(rawValue: repositoryURI)
+    )
+    let output = try await client(knot: knot, token: token).RepoHiddenRef(input: input)
+    guard output.success else {
+      throw TangledError.upstreamFailed(
+        output.error ?? "Knot failed to update the hidden tracking ref"
+      )
+    }
+    if let returnedRef = output.ref, returnedRef != expectedRef {
+      throw TangledError.upstreamFailed(
+        "Knot returned a different hidden tracking ref: \(returnedRef)"
+      )
+    }
+    return expectedRef
+  }
+
+  public func compare(
+    knot: String,
+    repositoryDID: String,
+    baseRevision: String,
+    headRevision: String
+  ) async throws -> GitComparison {
+    let repositoryDID = try required(repositoryDID, name: "repository DID")
+    let baseRevision = try required(baseRevision, name: "base revision")
+    let headRevision = try required(headRevision, name: "head revision")
+    let data = try await client(knot: knot).RepoCompare(
+      repo: repositoryDID,
+      rev1: baseRevision,
+      rev2: headRevision
+    )
+    return try decodeGitComparison(from: data)
+  }
 }
 
 public struct PullRequestMergeCheckResponse: Equatable, Sendable {
@@ -80,6 +126,24 @@ public struct PullRequestMergeCheckResponse: Equatable, Sendable {
     self.message = message
     self.error = error
   }
+}
+
+func knotServiceAudience(_ knot: String) throws -> String {
+  let rawValue = knot.contains("://") ? knot : "https://\(knot)"
+  guard let url = URL(string: rawValue),
+    url.scheme?.lowercased() == "https",
+    let host = url.host,
+    url.path.isEmpty || url.path == "/"
+  else {
+    throw TangledError.invalidRequest("invalid Knot endpoint: \(knot)")
+  }
+  let authority =
+    if let port = url.port {
+      "\(host):\(port)".replacingOccurrences(of: ":", with: "%3A")
+    } else {
+      host
+    }
+  return "did:web:\(authority)"
 }
 
 extension KnotClient {
@@ -104,5 +168,13 @@ extension KnotClient {
       throw TangledError.invalidRequest("invalid Knot endpoint: \(value)")
     }
     return url
+  }
+
+  private func required(_ value: String, name: String) throws -> String {
+    let value = value.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !value.isEmpty else {
+      throw TangledError.invalidRequest("\(name) must not be empty")
+    }
+    return value
   }
 }

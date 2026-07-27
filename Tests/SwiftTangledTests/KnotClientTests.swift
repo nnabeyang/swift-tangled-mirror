@@ -273,6 +273,92 @@ import Testing
     #expect(request.url?.absoluteString == "https://knot.example/xrpc/sh.tangled.repo.merge")
     #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer service-token")
   }
+
+  @Test func hiddenRefUsesServiceTokenAndReturnsExpectedReference() async throws {
+    let transport = KnotTransport(
+      statusCode: 200,
+      body: Data(#"{"success":true}"#.utf8)
+    )
+    let reference = try await KnotClient(transport: transport).updateHiddenRef(
+      knot: "knot.example",
+      token: "service-token",
+      repositoryURI: "at://did:plc:owner/sh.tangled.repo/example",
+      sourceBranch: "feature",
+      targetBranch: "main"
+    )
+
+    #expect(reference == "hidden/feature/main")
+    let request = try #require(await transport.request())
+    #expect(
+      request.url?.absoluteString
+        == "https://knot.example/xrpc/sh.tangled.repo.hiddenRef"
+    )
+    #expect(request.httpMethod == "POST")
+    #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer service-token")
+    let input = try JSONDecoder().decode(
+      Sh.Tangled.RepoHiddenRef_Input.self,
+      from: try #require(request.httpBody)
+    )
+    #expect(input.repo.rawValue == "at://did:plc:owner/sh.tangled.repo/example")
+    #expect(input.forkRef == "feature")
+    #expect(input.remoteRef == "main")
+  }
+
+  @Test func hiddenRefRejectsUnsuccessfulAndMismatchedResponses() async {
+    for body in [
+      Data(#"{"success":false,"error":"fetch failed"}"#.utf8),
+      Data(#"{"success":true,"ref":"hidden/other/main"}"#.utf8),
+    ] {
+      await #expect(throws: TangledError.self) {
+        _ = try await KnotClient(
+          transport: KnotTransport(statusCode: 200, body: body)
+        ).updateHiddenRef(
+          knot: "knot.example",
+          token: "service-token",
+          repositoryURI: "at://did:plc:owner/sh.tangled.repo/example",
+          sourceBranch: "feature",
+          targetBranch: "main"
+        )
+      }
+    }
+  }
+
+  @Test func compareReadsFormatPatchFromForkKnot() async throws {
+    let transport = KnotTransport(
+      statusCode: 200,
+      body: Data(
+        #"{"rev1":"aaaaaaaa","rev2":"bbbbbbbb","patch":"From bbbbbbbb Mon Sep 17 00:00:00 2001\n"}"#
+          .utf8
+      )
+    )
+    let comparison = try await KnotClient(transport: transport).compare(
+      knot: "knot.example",
+      repositoryDID: "did:plc:repository",
+      baseRevision: "hidden/feature/main",
+      headRevision: "feature"
+    )
+
+    #expect(comparison.baseRevision == "aaaaaaaa")
+    #expect(comparison.headRevision == "bbbbbbbb")
+    #expect(comparison.patch.hasPrefix("From bbbbbbbb"))
+    let request = try #require(await transport.request())
+    let url = try #require(request.url)
+    let components = try #require(
+      URLComponents(url: url, resolvingAgainstBaseURL: false)
+    )
+    #expect(components.path == "/xrpc/sh.tangled.repo.compare")
+    #expect(
+      Dictionary(
+        uniqueKeysWithValues: (components.queryItems ?? []).map {
+          ($0.name, $0.value)
+        })
+        == [
+          "repo": "did:plc:repository",
+          "rev1": "hidden/feature/main",
+          "rev2": "feature",
+        ]
+    )
+  }
 }
 
 private actor KnotTransport: HTTPTransport {

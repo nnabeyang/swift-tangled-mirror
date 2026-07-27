@@ -21,7 +21,15 @@ extension BobbinClient {
     let data = try await generatedQuery {
       try await RepoCompare(repo: repositoryURI, rev1: baseRevision, rev2: headRevision)
     }
-    return try decodeGitResponse(WireGitComparison.self, from: data).model
+    return try decodeGitComparison(from: data)
+  }
+}
+
+func decodeGitComparison(from data: Data) throws -> GitComparison {
+  do {
+    return try JSONDecoder().decode(WireGitComparison.self, from: data).model
+  } catch {
+    throw TangledError.decoding(error)
   }
 }
 

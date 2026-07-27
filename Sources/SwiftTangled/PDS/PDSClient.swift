@@ -18,6 +18,7 @@ public struct PDSClient: Sendable {
   package let client: any XRPCCallable
   package let repoDID: String
   package let grantedScopes: ScopesSet
+  package let rawAuthorizedScopes: Set<String>
   package let now: @Sendable () -> Date
   package let nextRecordKey: @Sendable () -> String
   private let retainedSessionStore: SessionStoreBox?
@@ -70,6 +71,7 @@ public struct PDSClient: Sendable {
     self.client = client
     self.repoDID = repoDID
     self.grantedScopes = ScopesSet(rawScopes: authorizedScopes)
+    self.rawAuthorizedScopes = Set(authorizedScopes)
     self.now = now
     self.nextRecordKey = nextRecordKey
     self.retainedSessionStore = retainedSessionStore
@@ -454,7 +456,11 @@ public struct PDSClient: Sendable {
   public func serviceAuthToken(audience: String, lxm: String) async throws -> String {
     let audience = try validatedNonempty(audience, name: "service audience")
     let lxm = try validatedNonempty(lxm, name: "service method")
-    guard grantedScopes.allowsRpc(lxm: lxm, aud: audience) else {
+    guard
+      grantedScopes.allowsRpc(lxm: lxm, aud: audience)
+        || rawAuthorizedScopes.contains("rpc:\(lxm)?aud=*")
+        || rawAuthorizedScopes.contains("rpc:\(lxm)?aud=\(audience)")
+    else {
       throw TangledError.insufficientScope("rpc:\(lxm)?aud=\(audience)")
     }
     let output = try await perform {

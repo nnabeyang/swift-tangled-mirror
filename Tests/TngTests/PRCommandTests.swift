@@ -405,9 +405,14 @@ import Testing
 
   @Test func resubmitUsesRecordBranchesAndFormatsNewRound() async throws {
     let recorder = PRCommandRecorder()
+    let branchPull = samplePullRequestRecord(
+      source: PullRequestSource(branch: "feature/rounds"),
+      dependentOn: nil
+    )
     let service = PRCommandService(
       dependencies: dependencies(
         recorder: recorder,
+        authoritativePullRequestRecord: branchPull,
         originURL: { "git@tangled.org:alice.example/core.git" }
       )
     )
@@ -431,10 +436,15 @@ import Testing
 
   @Test func resubmitRejectsMismatchedGitOriginBeforePreparingPatch() async {
     let recorder = PRCommandRecorder()
+    let branchPull = samplePullRequestRecord(
+      source: PullRequestSource(branch: "feature/rounds"),
+      dependentOn: nil
+    )
     let service = PRCommandService(
       dependencies: dependencies(
         recorder: recorder,
         repositoryRecord: sampleRepositoryRecord(repositoryDID: "did:plc:other"),
+        authoritativePullRequestRecord: branchPull,
         originURL: { "git@tangled.org:other.example/core.git" }
       )
     )
@@ -446,6 +456,61 @@ import Testing
       )
     }
     #expect(await recorder.resubmitCalls().isEmpty)
+  }
+
+  @Test func resubmitForkUsesSourceOriginWithoutPreparingLocalPatch() async throws {
+    let recorder = PRCommandRecorder()
+    let forkPull = samplePullRequestRecord(
+      source: PullRequestSource(
+        branch: "feature/rounds",
+        repositoryDID: "did:plc:fork"
+      ),
+      dependentOn: nil
+    )
+    let service = PRCommandService(
+      dependencies: dependencies(
+        recorder: recorder,
+        repositoryRecord: sampleRepositoryRecord(repositoryDID: "did:plc:fork"),
+        authoritativePullRequestRecord: forkPull,
+        originURL: { "git@tangled.org:fork.example/core.git" }
+      )
+    )
+
+    let output = try await service.resubmit(
+      pullRequestURI: samplePullRequestURI,
+      json: false
+    )
+
+    #expect(output.stdout.contains("Round: 2"))
+    #expect(await recorder.forkResubmitCount() == 1)
+    #expect(await recorder.resubmitCalls().isEmpty)
+  }
+
+  @Test func resubmitForkRejectsMismatchedSourceOrigin() async {
+    let recorder = PRCommandRecorder()
+    let forkPull = samplePullRequestRecord(
+      source: PullRequestSource(
+        branch: "feature/rounds",
+        repositoryDID: "did:plc:fork"
+      ),
+      dependentOn: nil
+    )
+    let service = PRCommandService(
+      dependencies: dependencies(
+        recorder: recorder,
+        repositoryRecord: sampleRepositoryRecord(repositoryDID: "did:plc:other"),
+        authoritativePullRequestRecord: forkPull,
+        originURL: { "git@tangled.org:other.example/core.git" }
+      )
+    )
+
+    await #expect(throws: TangledError.self) {
+      _ = try await service.resubmit(
+        pullRequestURI: samplePullRequestURI,
+        json: false
+      )
+    }
+    #expect(await recorder.forkResubmitCount() == 0)
   }
 
   @Test func resubmitPatchReadsFileWithoutUsingGit() async throws {
@@ -857,6 +922,17 @@ extension PRCommandTests {
               ),
               roundNumber: authoritativePullRequestRecord.value.rounds.count
             )
+          },
+          submitFork: {
+            await recorder.recordForkResubmit()
+            return PullRequestResubmissionResult(
+              pullRequest: TangledRecord(
+                uri: authoritativePullRequestRecord.uri,
+                cid: "bafyresubmitted",
+                value: authoritativePullRequestRecord.value
+              ),
+              roundNumber: authoritativePullRequestRecord.value.rounds.count
+            )
           }
         )
       },
@@ -1044,6 +1120,7 @@ private actor PRCommandRecorder {
   private var recordedCreateCalls: [CreateCall] = []
   private var recordedStatusCalls: [StatusCall] = []
   private var recordedResubmitCalls: [ResubmitCall] = []
+  private var recordedForkResubmitCount = 0
   private var recordedCommentWriteCount = 0
 
   func record(reference: String) {
@@ -1084,6 +1161,10 @@ private actor PRCommandRecorder {
 
   func record(resubmit: ResubmitCall) {
     recordedResubmitCalls.append(resubmit)
+  }
+
+  func recordForkResubmit() {
+    recordedForkResubmitCount += 1
   }
 
   func recordCommentWrite() {
@@ -1132,6 +1213,10 @@ private actor PRCommandRecorder {
 
   func resubmitCalls() -> [ResubmitCall] {
     recordedResubmitCalls
+  }
+
+  func forkResubmitCount() -> Int {
+    recordedForkResubmitCount
   }
 
   func commentWriteCount() -> Int {

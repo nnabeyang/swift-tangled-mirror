@@ -94,7 +94,7 @@ public struct PullRequestMergeService: Sendable {
     }
     try await validateFreshMergeState(prepared)
 
-    let audience = try knotAudience(prepared.repository.value.knot)
+    let audience = try knotServiceAudience(prepared.repository.value.knot)
     let token = try await pdsClient.serviceAuthToken(
       audience: audience,
       lxm: "sh.tangled.repo.merge"
@@ -301,23 +301,6 @@ extension PullRequestMergeService {
     )
   }
 
-  private func knotAudience(_ knot: String) throws -> String {
-    let rawValue = knot.contains("://") ? knot : "https://\(knot)"
-    guard let url = URL(string: rawValue),
-      url.scheme?.lowercased() == "https",
-      let host = url.host,
-      url.path.isEmpty || url.path == "/"
-    else {
-      throw TangledError.invalidRequest("invalid Knot endpoint: \(knot)")
-    }
-    let authority =
-      if let port = url.port {
-        "\(host):\(port)".replacingOccurrences(of: ":", with: "%3A")
-      } else {
-        host
-      }
-    return "did:web:\(authority)"
-  }
 }
 
 private enum PullRequestMergeServiceError: Error, Sendable {

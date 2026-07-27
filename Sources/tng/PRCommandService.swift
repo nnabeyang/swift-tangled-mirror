@@ -111,6 +111,12 @@ struct PRCommandDependencies: Sendable {
               patch: patch,
               pdsClient: try PDSClient.restore(from: CLISessionStore.make().store)
             )
+          },
+          submitFork: {
+            try await resubmissionService.resubmitFork(
+              context,
+              pdsClient: try PDSClient.restore(from: CLISessionStore.make().store)
+            )
           }
         )
       },
@@ -395,6 +401,20 @@ struct PRCommandService: Sendable {
         )
       }
       result = try await resubmission.submitPatch(PatchFileReader().read(path: patchFile))
+    } else if let source = pull.source, let sourceRepositoryDID = source.repositoryDID {
+      guard patchFile == nil else {
+        throw TangledError.invalidRequest(
+          "--patch-file is not valid for fork-based pull requests"
+        )
+      }
+      let origin = try dependencies.originURL()
+      let originRecord = try await dependencies.resolveRepository(origin)
+      guard originRecord.value.repoDID == sourceRepositoryDID else {
+        throw TangledError.invalidRequest(
+          "Git origin does not match the pull request source repository"
+        )
+      }
+      result = try await resubmission.submitFork()
     } else {
       guard patchFile == nil else {
         throw TangledError.invalidRequest(
@@ -602,6 +622,7 @@ struct PreparedPRResubmission: Sendable {
   let pullRequest: TangledRecord<PullRequest>
   let submitBranch: @Sendable (Data, String) async throws -> PullRequestResubmissionResult
   let submitPatch: @Sendable (Data) async throws -> PullRequestResubmissionResult
+  let submitFork: @Sendable () async throws -> PullRequestResubmissionResult
 }
 
 struct PRViewWithCommentsResult: Codable, Equatable, Sendable {
