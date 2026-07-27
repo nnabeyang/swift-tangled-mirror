@@ -59,10 +59,15 @@ public struct URLSessionATPResolver: ATPResolver {
         baseURL: handleResolver,
         transport: URLSessionTransport(session: session)
       ).IdentityResolveHandle(handle: .init(handle))
+    } catch Com.Atproto.IdentityResolveHandle.Error.handlenotfound {
+      return nil
     } catch TangledError.notFound {
       return nil
     }
-    return response.did.typed
+    guard let did = response.did.typed else {
+      throw TangledError.decoding(InvalidResolvedDIDError(value: response.did.rawValue))
+    }
+    return did
   }
 
   public func resolve(did: DID) async throws -> DIDDocument? {
@@ -103,4 +108,8 @@ public struct URLSessionATPResolver: ATPResolver {
       throw TangledError.handleNotResolved("unsupported DID method: \(did.method)")
     }
   }
+}
+
+private struct InvalidResolvedDIDError: Error {
+  let value: String
 }

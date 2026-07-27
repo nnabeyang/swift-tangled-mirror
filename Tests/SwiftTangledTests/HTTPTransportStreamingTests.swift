@@ -1,4 +1,5 @@
 import Foundation
+import TangledLexicons
 import Testing
 
 @testable import SwiftTangled
@@ -196,7 +197,7 @@ struct URLSessionTransportStreamingTests {
     do {
       _ = try await notFoundClient.archiveStream(repositoryURI: repositoryURI, ref: "main")
       Issue.record("Expected notFound")
-    } catch TangledError.notFound(let message) {
+    } catch Sh.Tangled.RepoArchive.Error.reponotfound(let message) {
       #expect(message == "missing")
     } catch {
       Issue.record("Unexpected error: \(error)")

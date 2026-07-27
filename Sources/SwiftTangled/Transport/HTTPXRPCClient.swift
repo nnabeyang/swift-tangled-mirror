@@ -86,29 +86,35 @@ struct HTTPXRPCClient: XRPCCallable, Sendable {
     return request
   }
 
-  private func mapError(data: Data, response: HTTPURLResponse) -> TangledError {
+  private func mapError(data: Data, response: HTTPURLResponse) -> any Error {
     let failure = try? JSONDecoder().decode(XRPCFailureEnvelope.self, from: data)
     let message = failure?.message ?? failure?.error
+    if response.statusCode == 400 || response.statusCode == 404,
+      let code = failure?.error,
+      !code.isEmpty
+    {
+      return UnExpectedError(error: code, message: failure?.message)
+    }
     switch response.statusCode {
     case 400:
-      return .invalidRequest(message)
+      return TangledError.invalidRequest(message)
     case 401:
-      return .unauthorized
+      return TangledError.unauthorized
     case 403:
-      return .forbidden(message)
+      return TangledError.forbidden(message)
     case 404:
-      return .notFound(message)
+      return TangledError.notFound(message)
     case 409:
-      return .invalidRequest(message ?? conflictMessage)
+      return TangledError.invalidRequest(message ?? conflictMessage)
     case 429:
-      return .rateLimited(
-        retryAfter: response.value(forHTTPHeaderField: "Retry-After").flatMap(TimeInterval.init),
+      return TangledError.rateLimited(
+        retryAfter: RetryAfterHeader.parse(response.value(forHTTPHeaderField: "Retry-After")),
         message: message
       )
     case 502, 503, 504:
-      return .serviceUnavailable(message)
+      return TangledError.serviceUnavailable(message)
     default:
-      return .serverStatus(response.statusCode, message)
+      return TangledError.serverStatus(response.statusCode, message)
     }
   }
 }

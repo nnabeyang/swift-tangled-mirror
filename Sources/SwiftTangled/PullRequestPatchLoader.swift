@@ -124,7 +124,10 @@ extension PullRequestPatchLoader {
         cid: FormatString(rawValue: cid),
         did: .init(did)
       )
-    } catch TangledError.notFound {
+    } catch Com.Atproto.SyncGetBlob.Error.blobnotfound,
+      Com.Atproto.SyncGetBlob.Error.reponotfound,
+      TangledError.notFound
+    {
       throw TangledError.notFound("pull request patch blob not found")
     }
   }

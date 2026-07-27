@@ -74,7 +74,18 @@ public struct BobbinClient: XRPCCallable, Sendable {
   }
 
   public func coverage() async throws -> BobbinCoverage {
-    try await get(nsid: "sh.tangled.bobbin.getCoverage")
+    do {
+      return try await get(nsid: "sh.tangled.bobbin.getCoverage")
+    } catch let error as UnExpectedError {
+      switch error.error {
+      case "InvalidRequest":
+        throw TangledError.invalidRequest(error.message)
+      case "RecordNotFound":
+        throw TangledError.notFound(error.message)
+      default:
+        throw error
+      }
+    }
   }
 
   public func getProxy(nsid: String) -> String? {
@@ -170,7 +181,10 @@ public struct BobbinClient: XRPCCallable, Sendable {
           return (data, response)
         }
 
-        let retryAfter = parseRetryAfter(response.value(forHTTPHeaderField: "Retry-After"))
+        let retryAfter = RetryAfterHeader.parse(
+          response.value(forHTTPHeaderField: "Retry-After"),
+          now: now
+        )
         if shouldRetry(statusCode: response.statusCode), attempt < retryPolicy.maxAttempts {
           try await sleeper.sleep(for: retryDelay(attempt: attempt, retryAfter: retryAfter))
           attempt += 1
@@ -179,6 +193,8 @@ public struct BobbinClient: XRPCCallable, Sendable {
         throw mapHTTPError(data: data, response: response, retryAfter: retryAfter)
       } catch is CancellationError {
         throw CancellationError()
+      } catch let error as UnExpectedError {
+        throw error
       } catch let error as TangledError {
         throw error
       } catch let error as URLError {
@@ -209,7 +225,10 @@ public struct BobbinClient: XRPCCallable, Sendable {
         }
 
         let data = await errorBody(from: body, maximumBytes: 64 * 1024)
-        let retryAfter = parseRetryAfter(response.value(forHTTPHeaderField: "Retry-After"))
+        let retryAfter = RetryAfterHeader.parse(
+          response.value(forHTTPHeaderField: "Retry-After"),
+          now: now
+        )
         if shouldRetry(statusCode: response.statusCode), attempt < retryPolicy.maxAttempts {
           try await sleeper.sleep(for: retryDelay(attempt: attempt, retryAfter: retryAfter))
           attempt += 1
@@ -218,6 +237,8 @@ public struct BobbinClient: XRPCCallable, Sendable {
         throw mapHTTPError(data: data, response: response, retryAfter: retryAfter)
       } catch is CancellationError {
         throw CancellationError()
+      } catch let error as UnExpectedError {
+        throw error
       } catch let error as TangledError {
         throw error
       } catch let error as URLError {
@@ -278,43 +299,34 @@ public struct BobbinClient: XRPCCallable, Sendable {
     return retryPolicy.baseDelay * pow(2, Double(attempt - 1))
   }
 
-  private func parseRetryAfter(_ value: String?) -> TimeInterval? {
-    guard let value else { return nil }
-    let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
-    if let seconds = TimeInterval(trimmed) {
-      return max(0, seconds)
-    }
-
-    let formatter = DateFormatter()
-    formatter.locale = Locale(identifier: "en_US_POSIX")
-    formatter.timeZone = TimeZone(secondsFromGMT: 0)
-    formatter.dateFormat = "EEE',' dd MMM yyyy HH':'mm':'ss z"
-    guard let date = formatter.date(from: trimmed) else { return nil }
-    return max(0, date.timeIntervalSince(now()))
-  }
-
   private func mapHTTPError(
     data: Data,
     response: HTTPURLResponse,
     retryAfter: TimeInterval?
-  ) -> TangledError {
+  ) -> any Error {
     let body = try? JSONDecoder().decode(BobbinErrorEnvelope.self, from: data)
-    let message = body?.message
+    let message = body?.message ?? body?.error
+    if response.statusCode == 400 || response.statusCode == 404,
+      let code = body?.error,
+      !code.isEmpty
+    {
+      return UnExpectedError(error: code, message: body?.message)
+    }
     switch response.statusCode {
     case 400:
-      return .invalidRequest(message)
+      return TangledError.invalidRequest(message)
     case 401:
-      return .unauthorized
+      return TangledError.unauthorized
     case 404:
-      return .notFound(message)
+      return TangledError.notFound(message)
     case 429:
-      return .rateLimited(retryAfter: retryAfter, message: message)
+      return TangledError.rateLimited(retryAfter: retryAfter, message: message)
     case 502:
-      return .upstreamFailed(message)
+      return TangledError.upstreamFailed(message)
     case 503:
-      return .serviceUnavailable(message)
+      return TangledError.serviceUnavailable(message)
     default:
-      return .serverStatus(response.statusCode, message)
+      return TangledError.serverStatus(response.statusCode, message)
     }
   }
 }

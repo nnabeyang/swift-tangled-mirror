@@ -1,6 +1,7 @@
 import Foundation
 import SwiftAtproto
 import Testing
+import TangledLexicons
 
 @testable import SwiftTangled
 
@@ -227,7 +228,7 @@ import Testing
     do {
       _ = try await client.pipeline(id: "3mr7m2f6ger22")
       Issue.record("Expected notFound")
-    } catch TangledError.notFound(let message) {
+    } catch Sh.Tangled.CiGetPipeline.Error.pipelinenotfound(let message) {
       #expect(message == "pipeline not found")
     } catch {
       Issue.record("Unexpected error: \(error)")

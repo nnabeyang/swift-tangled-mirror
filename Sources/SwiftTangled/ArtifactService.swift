@@ -464,14 +464,54 @@ extension ArtifactService {
     case 401, 403:
       body.cancel()
       throw TangledError.unauthorized
-    case 404:
-      body.cancel()
+    case 400, 404:
+      let data = await errorBody(from: body, maximumBytes: 64 * 1024)
+      if let failure = try? JSONDecoder().decode(ArtifactBlobFailure.self, from: data),
+        let code = failure.error,
+        !code.isEmpty
+      {
+        let error = Com.Atproto.SyncGetBlob.Error(
+          error: UnExpectedError(error: code, message: failure.message)
+        )
+        switch error {
+        case .blobnotfound, .reponotfound:
+          throw TangledError.notFound("artifact blob not found")
+        default:
+          throw error
+        }
+      }
       throw TangledError.notFound("artifact blob not found")
     default:
       body.cancel()
       throw TangledError.serverStatus(response.statusCode, "PDS blob request failed")
     }
   }
+
+  private func errorBody(from body: HTTPBodyStream, maximumBytes: Int) async -> Data {
+    var result = Data()
+    do {
+      for try await chunk in body {
+        let remaining = maximumBytes - result.count
+        guard remaining > 0 else {
+          body.cancel()
+          break
+        }
+        result.append(chunk.prefix(remaining))
+        if chunk.count >= remaining {
+          body.cancel()
+          break
+        }
+      }
+    } catch {
+      body.cancel()
+    }
+    return result
+  }
+}
+
+private struct ArtifactBlobFailure: Decodable {
+  let error: String?
+  let message: String?
 }
 
 enum ArtifactFileReader {

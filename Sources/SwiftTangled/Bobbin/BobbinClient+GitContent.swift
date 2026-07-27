@@ -3,6 +3,10 @@ import HTTPTypes
 import SwiftAtproto
 import TangledLexicons
 
+#if canImport(FoundationNetworking)
+  import FoundationNetworking
+#endif
+
 extension BobbinClient {
   /// Downloads an archive into memory. Use a byte range to bound the response when the server
   /// supports partial content. Streaming downloads are intentionally provided separately.
@@ -13,15 +17,21 @@ extension BobbinClient {
     prefix: String? = nil,
     byteRange: GitArchiveByteRange? = nil
   ) async throws -> GitArchive {
-    let (content, response) = try await responseWithMetadata(
-      archiveRequest(
-        repositoryURI: repositoryURI,
-        ref: ref,
-        format: format,
-        prefix: prefix,
-        byteRange: byteRange
+    let content: Data
+    let response: HTTPURLResponse
+    do {
+      (content, response) = try await responseWithMetadata(
+        archiveRequest(
+          repositoryURI: repositoryURI,
+          ref: ref,
+          format: format,
+          prefix: prefix,
+          byteRange: byteRange
+        )
       )
-    )
+    } catch let error as UnExpectedError {
+      throw Sh.Tangled.RepoArchive.Error(error: error)
+    }
     return GitArchive(
       content: content,
       statusCode: response.statusCode,
@@ -41,15 +51,21 @@ extension BobbinClient {
     prefix: String? = nil,
     byteRange: GitArchiveByteRange? = nil
   ) async throws -> GitArchiveStream {
-    let (body, response) = try await streamingResponseWithMetadata(
-      archiveRequest(
-        repositoryURI: repositoryURI,
-        ref: ref,
-        format: format,
-        prefix: prefix,
-        byteRange: byteRange
+    let body: HTTPBodyStream
+    let response: HTTPURLResponse
+    do {
+      (body, response) = try await streamingResponseWithMetadata(
+        archiveRequest(
+          repositoryURI: repositoryURI,
+          ref: ref,
+          format: format,
+          prefix: prefix,
+          byteRange: byteRange
+        )
       )
-    )
+    } catch let error as UnExpectedError {
+      throw Sh.Tangled.RepoArchive.Error(error: error)
+    }
     return GitArchiveStream(
       body: body,
       statusCode: response.statusCode,
@@ -134,13 +150,18 @@ extension BobbinClient {
     try validateDID(repositoryDID, name: "repository DID")
     // Bobbin uses the repository AT URI to select the knot, while the knot's generated
     // describeRepo query accepts only repoDid. Send both routing and upstream parameters.
-    let response: Sh.Tangled.RepoDescribeRepo_Output = try await get(
-      nsid: Sh.Tangled.RepoDescribeRepo.id,
-      queryItems: [
-        URLQueryItem(name: "repo", value: repositoryURI),
-        URLQueryItem(name: "repoDid", value: repositoryDID),
-      ]
-    )
+    let response: Sh.Tangled.RepoDescribeRepo_Output
+    do {
+      response = try await get(
+        nsid: Sh.Tangled.RepoDescribeRepo.id,
+        queryItems: [
+          URLQueryItem(name: "repo", value: repositoryURI),
+          URLQueryItem(name: "repoDid", value: repositoryDID),
+        ]
+      )
+    } catch let error as UnExpectedError {
+      throw Sh.Tangled.RepoDescribeRepo.Error(error: error)
+    }
     return GitRepositoryDescription(
       ownerDID: response.ownerDid.rawValue,
       repositoryDID: response.repoDid.rawValue,

@@ -114,6 +114,8 @@ extension RepositoryLocator {
         baseURL: knotURL,
         transport: knotTransport
       ).RepoDescribeRepo(repoDid: .init(repoDID))
+    } catch Sh.Tangled.RepoDescribeRepo.Error.reponotfound {
+      throw TangledError.notFound("repository not found on its Knot: \(rawRepoDID)")
     } catch TangledError.notFound {
       throw TangledError.notFound("repository not found on its Knot: \(rawRepoDID)")
     }

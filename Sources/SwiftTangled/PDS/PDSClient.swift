@@ -644,11 +644,14 @@ extension PDSClient {
       where response.error == "InvalidSwap"
     {
       throw TangledError.conflict(nil)
+    } catch Com.Atproto.RepoPutRecord.Error.invalidswap(let message) {
+      throw TangledError.conflict(message)
+    } catch Com.Atproto.RepoApplyWrites.Error.invalidswap(let message) {
+      throw TangledError.conflict(message)
+    } catch Com.Atproto.RepoDeleteRecord.Error.invalidswap(let message) {
+      throw TangledError.conflict(message)
     } catch let error as any XRPCError {
-      if error.error == "InvalidSwap" {
-        throw TangledError.conflict(error.message)
-      }
-      throw TangledError.transport(error.message ?? error.error ?? String(describing: error))
+      throw error
     } catch {
       throw TangledError.transport(String(describing: error))
     }

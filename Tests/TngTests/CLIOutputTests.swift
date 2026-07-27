@@ -1,6 +1,7 @@
 import ArgumentParser
 import Foundation
 import SwiftTangled
+import TangledLexicons
 import Testing
 
 @testable import tng
@@ -87,6 +88,21 @@ import Testing
     #expect(report.diagnostic == "API error: forbidden: insufficient permissions\n")
     #expect(json.category == "api")
     #expect(json.code == "forbidden")
+  }
+
+  @Test func reportsGeneratedXRPCErrorsAsAPIErrors() {
+    let error = Com.Atproto.IdentityResolveHandle.Error.unexpected(
+      error: "FutureError",
+      message: "future failure"
+    )
+    let report = errorReport(for: error)
+    let json = jsonErrorReport(for: error)
+
+    #expect(report.exitCode == .api)
+    #expect(report.diagnostic == "API error: FutureError: future failure\n")
+    #expect(json.category == "api")
+    #expect(json.code == "FutureError")
+    #expect(json.exitCode == CLIExitCode.api.rawValue)
   }
 
   @Test func reportsUsageAndUnexpectedErrors() {

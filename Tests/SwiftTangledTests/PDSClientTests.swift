@@ -365,7 +365,7 @@ import Testing
     }
   }
 
-  @Test func updateIssueKeepsOtherXRPCErrorsAsTransportFailures() async throws {
+  @Test func updateIssuePreservesOtherGeneratedXRPCErrors() async throws {
     let issueURI = "at://\(sessionDID)/sh.tangled.repo.issue/\(recordKey)"
     let mock = try PDSXRPCMock(listPages: [], failure: .xrpcOther)
     let client = PDSClient(
@@ -389,8 +389,9 @@ import Testing
         title: "Updated title",
         body: nil
       )
-      Issue.record("Expected transport failure")
-    } catch TangledError.transport(let message) {
+      Issue.record("Expected generated XRPC failure")
+    } catch Com.Atproto.RepoPutRecord.Error.unexpected(let code, let message) {
+      #expect(code == "UpstreamFailure")
       #expect(message == "upstream failed")
     } catch {
       Issue.record("Unexpected error: \(error)")

@@ -238,15 +238,20 @@ extension PDSRecordClient {
   ) async throws -> Com.Atproto.RepoGetRecord_Output {
     let target = try RecordTarget(uri: uri, expectedCollection: collection)
     let pdsURL = try await pdsURL(for: target.ownerDID)
-    let output = try await decode {
-      try await PDSRecordXRPCClient(
-        baseURL: pdsURL,
-        transport: transport
-      ).RepoGetRecord(
-        collection: FormatString(target.collection),
-        repo: FormatString(rawValue: target.ownerDID.rawValue),
-        rkey: FormatString(target.rkey)
-      )
+    let output: Com.Atproto.RepoGetRecord_Output
+    do {
+      output = try await decode {
+        try await PDSRecordXRPCClient(
+          baseURL: pdsURL,
+          transport: transport
+        ).RepoGetRecord(
+          collection: FormatString(target.collection),
+          repo: FormatString(rawValue: target.ownerDID.rawValue),
+          rkey: FormatString(target.rkey)
+        )
+      }
+    } catch Com.Atproto.RepoGetRecord.Error.recordnotfound(let message) {
+      throw TangledError.notFound(message)
     }
     try validate(
       uri: output.uri.rawValue,
@@ -291,6 +296,8 @@ extension PDSRecordClient {
     } catch is CancellationError {
       throw CancellationError()
     } catch let error as TangledError {
+      throw error
+    } catch let error as any XRPCError {
       throw error
     } catch {
       throw TangledError.decoding(error)
@@ -370,30 +377,33 @@ private struct PDSRecordXRPCClient: XRPCCallable {
     return data
   }
 
-  private func mapError(data: Data, response: HTTPURLResponse) -> TangledError {
+  private func mapError(data: Data, response: HTTPURLResponse) -> any Error {
     let failure = try? JSONDecoder().decode(PDSRecordFailure.self, from: data)
     let message = failure?.message ?? failure?.error
-    if failure?.error == "RecordNotFound" {
-      return .notFound(message)
+    if response.statusCode == 400 || response.statusCode == 404,
+      let code = failure?.error,
+      !code.isEmpty
+    {
+      return UnExpectedError(error: code, message: failure?.message)
     }
     switch response.statusCode {
     case 400:
-      return .invalidRequest(message)
+      return TangledError.invalidRequest(message)
     case 401, 403:
-      return .unauthorized
+      return TangledError.unauthorized
     case 404:
-      return .notFound(message)
+      return TangledError.notFound(message)
     case 429:
-      return .rateLimited(
-        retryAfter: response.value(forHTTPHeaderField: "Retry-After").flatMap(TimeInterval.init),
+      return TangledError.rateLimited(
+        retryAfter: RetryAfterHeader.parse(response.value(forHTTPHeaderField: "Retry-After")),
         message: message
       )
     case 502:
-      return .serviceUnavailable(message)
+      return TangledError.serviceUnavailable(message)
     case 503:
-      return .serviceUnavailable(message)
+      return TangledError.serviceUnavailable(message)
     default:
-      return .serverStatus(response.statusCode, message)
+      return TangledError.serverStatus(response.statusCode, message)
     }
   }
 }

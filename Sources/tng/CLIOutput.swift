@@ -204,6 +204,14 @@ func errorReport(for error: any Error) -> CLIErrorReport {
       diagnostic: "Artifact error: \(describeArtifactError(error))\n"
     )
   }
+  if let error = error as? any TangledXRPCError {
+    let code = error.error ?? "xrpc_error"
+    let detail = error.message.map { "\(code): \($0)" } ?? code
+    return CLIErrorReport(
+      exitCode: .api,
+      diagnostic: "API error: \(detail)\n"
+    )
+  }
   if error is ValidationError {
     return CLIErrorReport(
       exitCode: .usage,
@@ -274,6 +282,9 @@ private func jsonErrorCode(for error: any Error) -> String {
     case .checksumMismatch: return "artifact_checksum_mismatch"
     case .unsafeDestination: return "unsafe_artifact_destination"
     }
+  }
+  if let error = error as? any TangledXRPCError {
+    return error.error ?? "xrpc_error"
   }
   if error is ValidationError {
     return "invalid_usage"
