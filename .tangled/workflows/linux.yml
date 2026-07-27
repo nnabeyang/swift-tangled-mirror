@@ -39,6 +39,15 @@ steps:
         swift-tangled-ci:6.3.2 \
         swift test
 
+  - name: "Manual documentation"
+    command: |
+      docker run --rm \
+        --env CI=true \
+        --volume "$PWD:/workspace" \
+        --workdir /workspace \
+        swift-tangled-ci:6.3.2 \
+        ./generate-manual-site.sh --check
+
   - name: "CLI smoke tests"
     command: |
       docker run --rm \
