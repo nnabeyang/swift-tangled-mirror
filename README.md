@@ -3,6 +3,9 @@
 `swift-tangled` provides the reusable `SwiftTangled` SDK and the `tng`
 command-line tool for Tangled.
 
+Read the [tng CLI manual](https://nnabeyang.tngl.sh/swift-tangled/) for the
+complete command reference, installation guide, and quick start.
+
 ## Requirements
 
 - macOS 15 or later, or Linux
@@ -63,9 +66,6 @@ tng --help
 tng pr --help
 tng capabilities --json
 ```
-
-The complete command reference, installation guide, and quick start are
-available in the [tng CLI manual](https://nnabeyang.tngl.sh/swift-tangled/).
 
 `capabilities` returns a versioned description of every executable command,
 including its arguments, options, read/write classification, authentication
