@@ -59,6 +59,9 @@ import Testing
     #expect(create.title == "Create PR")
     #expect(create.body == "Details")
     #expect(create.json)
+    let resubmit = try PRResubmitCommand.parse([samplePullRequestURI, "--json"])
+    #expect(resubmit.pullRequestURI == samplePullRequestURI)
+    #expect(resubmit.json)
     #expect(throws: (any Error).self) {
       _ = try PRCreateCommand.parse(["--body", "text", "--body-file", "body.md"])
     }
@@ -394,6 +397,51 @@ import Testing
     #expect(await recorder.references() == ["git@tangled.org:alice.example/core.git"])
   }
 
+  @Test func resubmitUsesRecordBranchesAndFormatsNewRound() async throws {
+    let recorder = PRCommandRecorder()
+    let service = PRCommandService(
+      dependencies: dependencies(
+        recorder: recorder,
+        originURL: { "git@tangled.org:alice.example/core.git" }
+      )
+    )
+
+    let output = try await service.resubmit(
+      pullRequestURI: samplePullRequestURI,
+      json: false
+    )
+
+    #expect(output.stdout == "Resubmitted pull request: \(samplePullRequestURI)\nRound: 2\n")
+    #expect(
+      await recorder.resubmitCalls()
+        == [
+          .init(
+            patch: Data("patch".utf8),
+            sourceRevision: "1111111111111111111111111111111111111111"
+          )
+        ]
+    )
+  }
+
+  @Test func resubmitRejectsMismatchedGitOriginBeforePreparingPatch() async {
+    let recorder = PRCommandRecorder()
+    let service = PRCommandService(
+      dependencies: dependencies(
+        recorder: recorder,
+        repositoryRecord: sampleRepositoryRecord(repositoryDID: "did:plc:other"),
+        originURL: { "git@tangled.org:other.example/core.git" }
+      )
+    )
+
+    await #expect(throws: TangledError.self) {
+      _ = try await service.resubmit(
+        pullRequestURI: samplePullRequestURI,
+        json: false
+      )
+    }
+    #expect(await recorder.resubmitCalls().isEmpty)
+  }
+
   @Test func createURLFallsBackToRepositoryRkeyWhenNameIsMissing() async throws {
     let recorder = PRCommandRecorder()
     let service = PRCommandService(
@@ -705,6 +753,7 @@ extension PRCommandTests {
         PreparedPullRequest(
           base: base,
           head: head ?? "feature",
+          sourceRevision: "1111111111111111111111111111111111111111",
           title: "Commit title",
           body: "Commit body",
           patch: Data("patch".utf8)
@@ -723,6 +772,27 @@ extension PRCommandTests {
           )
         )
         return pullRequestRecord
+      },
+      prepareResubmission: { _ in
+        PreparedPRResubmission(
+          pullRequest: authoritativePullRequestRecord,
+          submit: { patch, sourceRevision in
+            await recorder.record(
+              resubmit: .init(
+                patch: patch,
+                sourceRevision: sourceRevision
+              )
+            )
+            return PullRequestResubmissionResult(
+              pullRequest: TangledRecord(
+                uri: authoritativePullRequestRecord.uri,
+                cid: "bafyresubmitted",
+                value: authoritativePullRequestRecord.value
+              ),
+              roundNumber: authoritativePullRequestRecord.value.rounds.count
+            )
+          }
+        )
       },
       createComment: { subject, body, roundIndex in
         await recorder.recordCommentWrite()
@@ -891,6 +961,11 @@ private actor PRCommandRecorder {
     let status: PullRequestStatus
   }
 
+  struct ResubmitCall: Equatable, Sendable {
+    let patch: Data
+    let sourceRevision: String
+  }
+
   private var recordedReferences: [String] = []
   private var recordedOwners: [String] = []
   private var recordedListCalls: [ListCall] = []
@@ -900,6 +975,7 @@ private actor PRCommandRecorder {
   private var recordedPatchCalls: [PatchCall] = []
   private var recordedCreateCalls: [CreateCall] = []
   private var recordedStatusCalls: [StatusCall] = []
+  private var recordedResubmitCalls: [ResubmitCall] = []
   private var recordedCommentWriteCount = 0
 
   func record(reference: String) {
@@ -936,6 +1012,10 @@ private actor PRCommandRecorder {
 
   func record(statusURI: String, status: PullRequestStatus) {
     recordedStatusCalls.append(.init(uri: statusURI, status: status))
+  }
+
+  func record(resubmit: ResubmitCall) {
+    recordedResubmitCalls.append(resubmit)
   }
 
   func recordCommentWrite() {
@@ -980,6 +1060,10 @@ private actor PRCommandRecorder {
 
   func statusCalls() -> [StatusCall] {
     recordedStatusCalls
+  }
+
+  func resubmitCalls() -> [ResubmitCall] {
+    recordedResubmitCalls
   }
 
   func commentWriteCount() -> Int {

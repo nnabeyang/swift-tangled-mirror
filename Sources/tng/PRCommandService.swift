@@ -21,6 +21,7 @@ struct PRCommandDependencies: Sendable {
   let create:
     @Sendable (String, String?, String, String, String, String?, Data) async throws ->
       TangledRecord<PullRequest>
+  let prepareResubmission: @Sendable (String) async throws -> PreparedPRResubmission
   let createComment: @Sendable (RecordReference, String, Int) async throws -> TangledRecord<Comment>
   let mergeCheck: @Sendable (String) async throws -> PullRequestMergeCheck
   let merge: @Sendable (String, Bool) async throws -> PullRequestMergeResult
@@ -34,6 +35,10 @@ struct PRCommandDependencies: Sendable {
     let recordReader = TangledRecordReader(
       pdsClient: pdsRecordClient,
       bobbinClient: client
+    )
+    let resubmissionService = PullRequestResubmissionService(
+      pdsRecordClient: pdsRecordClient,
+      repositoryLocator: locator
     )
     return PRCommandDependencies(
       resolveRepository: { try await locator.resolve($0) },
@@ -86,6 +91,20 @@ struct PRCommandDependencies: Sendable {
           title: title,
           body: body,
           patch: patch
+        )
+      },
+      prepareResubmission: {
+        let context = try await resubmissionService.prepare(pullRequestURI: $0)
+        return PreparedPRResubmission(
+          pullRequest: context.pullRequest,
+          submit: { patch, sourceRevision in
+            try await resubmissionService.resubmit(
+              context,
+              patch: patch,
+              sourceRevision: sourceRevision,
+              pdsClient: try PDSClient.restore(from: CLISessionStore.make().store)
+            )
+          }
         )
       },
       createComment: { subject, body, roundIndex in
@@ -353,6 +372,38 @@ struct PRCommandService: Sendable {
       stdout: try json ? formatter.json(result) : format(result)
     )
   }
+
+  func resubmit(
+    pullRequestURI: String,
+    json: Bool
+  ) async throws -> CLICommandOutput {
+    let resubmission = try await dependencies.prepareResubmission(pullRequestURI)
+    let pull = resubmission.pullRequest.value
+    guard let source = pull.source else {
+      throw TangledError.invalidRequest(
+        "patch-based pull request resubmission is not supported yet"
+      )
+    }
+    let origin = try dependencies.originURL()
+    let originRecord = try await dependencies.resolveRepository(origin)
+    guard originRecord.value.repoDID == pull.target.repositoryDID else {
+      throw TangledError.invalidRequest(
+        "Git origin does not match the pull request target repository"
+      )
+    }
+    let prepared = try dependencies.prepare(
+      pull.target.branch,
+      source.branch,
+      "origin"
+    )
+    let result = try await resubmission.submit(
+      prepared.patch,
+      prepared.sourceRevision
+    )
+    return CLICommandOutput(
+      stdout: try json ? formatter.json(result) : format(result)
+    )
+  }
 }
 
 extension PRCommandService {
@@ -396,6 +447,11 @@ extension PRCommandService {
   fileprivate func format(_ result: PRCreateResult) -> String {
     "Created pull request: \(result.pullRequest.uri)\n"
       + "Pull requests: \(result.repositoryPullsURL)\n"
+  }
+
+  fileprivate func format(_ result: PullRequestResubmissionResult) -> String {
+    "Resubmitted pull request: \(result.pullRequest.uri)\n"
+      + "Round: \(result.roundNumber)\n"
   }
 
   fileprivate func repositoryPullsURL(record: TangledRecord<Repository>) -> String {
@@ -519,6 +575,11 @@ extension String {
 struct PRCreateResult: Codable, Equatable, Sendable {
   let pullRequest: TangledRecord<PullRequest>
   let repositoryPullsURL: String
+}
+
+struct PreparedPRResubmission: Sendable {
+  let pullRequest: TangledRecord<PullRequest>
+  let submit: @Sendable (Data, String) async throws -> PullRequestResubmissionResult
 }
 
 struct PRViewWithCommentsResult: Codable, Equatable, Sendable {

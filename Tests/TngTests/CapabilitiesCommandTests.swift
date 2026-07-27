@@ -20,9 +20,10 @@ import Testing
 
     #expect(document.schemaVersion == 1)
     #expect(document.cliVersion == SwiftTangled.version)
-    #expect(paths.count == 43)
+    #expect(paths.count == 44)
     #expect(paths.contains("capabilities"))
     #expect(paths.contains("pr create"))
+    #expect(paths.contains("pr resubmit"))
     #expect(paths.contains("pr close"))
     #expect(paths.contains("pr reopen"))
     #expect(paths.contains("issue create"))
@@ -47,6 +48,9 @@ import Testing
     )
     let pullClose = try #require(
       document.commands.first { $0.path == ["pr", "close"] }
+    )
+    let pullResubmit = try #require(
+      document.commands.first { $0.path == ["pr", "resubmit"] }
     )
     let repoArchive = try #require(
       document.commands.first { $0.path == ["repo", "archive"] }
@@ -84,6 +88,12 @@ import Testing
     #expect(pullClose.authenticationRequired)
     #expect(
       pullClose.arguments == [
+        CapabilityArgument(name: "pull-request-uri", required: true, repeating: false)
+      ])
+    #expect(pullResubmit.access == .write)
+    #expect(pullResubmit.authenticationRequired)
+    #expect(
+      pullResubmit.arguments == [
         CapabilityArgument(name: "pull-request-uri", required: true, repeating: false)
       ])
     #expect(repoArchive.access == .write)

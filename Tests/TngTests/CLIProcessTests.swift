@@ -30,6 +30,7 @@ import Testing
     #expect(human.status == 0)
     #expect(human.stdout.contains("COMMAND"))
     #expect(human.stdout.contains("pr create"))
+    #expect(human.stdout.contains("pr resubmit"))
     #expect(human.stderr.isEmpty)
 
     #expect(json.status == 0)

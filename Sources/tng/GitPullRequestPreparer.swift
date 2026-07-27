@@ -3,6 +3,7 @@ import Foundation
 struct PreparedPullRequest: Sendable {
   let base: String
   let head: String
+  let sourceRevision: String
   let title: String
   let body: String?
   let patch: Data
@@ -59,6 +60,7 @@ struct GitPullRequestPreparer: Sendable {
     return PreparedPullRequest(
       base: base,
       head: head,
+      sourceRevision: localHead,
       title: title,
       body: fields.dropFirst().first.flatMap { $0.isEmpty ? nil : $0 },
       patch: patch
