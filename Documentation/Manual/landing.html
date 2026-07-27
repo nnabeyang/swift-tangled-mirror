@@ -1,0 +1,56 @@
+<div class="hero">
+  <p class="eyebrow">Tangled from your terminal</p>
+  <h1>tng CLI manual</h1>
+  <p class="lead">
+    Use <code>tng</code> to work with Tangled repositories, issues, pull
+    requests, artifacts, and Spindle pipelines.
+  </p>
+  <p><a class="primary-link" href="manual/tng/">Browse all commands</a></p>
+</div>
+
+<section>
+  <h2>Installation</h2>
+  <p>On an Apple Silicon Mac running macOS 15 or later:</p>
+  <pre><code>brew tap nnabeyang/tap \
+  https://tangled.org/nnabeyang.tngl.sh/homebrew-tap
+brew install nnabeyang/tap/tng</code></pre>
+  <p>
+    To build from source on macOS or Linux, clone the repository and run
+    <code>./install.sh</code>.
+  </p>
+</section>
+
+<section>
+  <h2>Quick start</h2>
+  <pre><code>tng --version
+tng auth login YOUR_ATPROTO_HANDLE
+tng auth status
+tng repo view OWNER/REPOSITORY</code></pre>
+  <p>
+    Public read commands do not require authentication. Commands that create
+    or change Tangled records use your AT Protocol OAuth session.
+  </p>
+</section>
+
+<section>
+  <h2>Finding help</h2>
+  <pre><code>tng --help
+tng repo --help
+tng pr create --help
+tng capabilities --json</code></pre>
+  <p>
+    Most repository-aware commands can infer the repository from the current
+    Git <code>origin</code>. Use an explicit repository argument or
+    <code>--repo</code> when you need to target another repository.
+  </p>
+</section>
+
+<section>
+  <h2>Support</h2>
+  <p>
+    Report bugs and request features in
+    <a href="https://tangled.org/nnabeyang.tngl.sh/swift-tangled/issues">Tangled Issues</a>.
+    Development and contribution instructions are available in the
+    <a href="https://tangled.org/nnabeyang.tngl.sh/swift-tangled">repository</a>.
+  </p>
+</section>

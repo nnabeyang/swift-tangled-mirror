@@ -70,6 +70,10 @@ let package = Package(
         .enableUpcomingFeature("ApproachableConcurrency")
       ]
     ),
+    .executableTarget(
+      name: "ManualSiteGenerator",
+      path: "Tools/ManualSiteGenerator"
+    ),
     .testTarget(
       name: "TangledLexiconsTests",
       dependencies: ["TangledLexicons"],
@@ -100,6 +104,10 @@ let package = Package(
       swiftSettings: [
         .enableUpcomingFeature("ApproachableConcurrency")
       ]
+    ),
+    .testTarget(
+      name: "ManualSiteGeneratorTests",
+      dependencies: ["ManualSiteGenerator"]
     ),
   ]
 )
