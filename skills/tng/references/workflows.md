@@ -230,10 +230,19 @@ git ls-remote --heads origin refs/heads/FEATURE_BRANCH
 tng pr resubmit PULL_AT_URI --json
 ```
 
-The command currently supports open, non-stacked pull requests whose source
-branch is in the target repository. It reports patch-based, fork-based, and
-stacked pull requests as unsupported instead of applying different Tangled
-semantics implicitly.
+For a patch-based Pull Request, prepare a cumulative patch containing the
+complete change from the target branch. Both `git diff` and
+`git format-patch` are accepted:
+
+```sh
+tng pr resubmit PULL_AT_URI --patch-file changes.patch --json
+```
+
+`--patch-file` is required for patch-based Pull Requests and rejected for
+branch-based Pull Requests. The command currently supports open, non-stacked
+Pull Requests that are branch-based in the target repository or patch-based.
+It reports fork-based and stacked Pull Requests as unsupported instead of
+applying different Tangled semantics implicitly.
 
 Report the returned Pull Request URI, CID, and zero-based round number. Verify
 the exact record and new round directly rather than assuming Bobbin or the Web
