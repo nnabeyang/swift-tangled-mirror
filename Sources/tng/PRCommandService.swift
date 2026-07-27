@@ -97,11 +97,18 @@ struct PRCommandDependencies: Sendable {
         let context = try await resubmissionService.prepare(pullRequestURI: $0)
         return PreparedPRResubmission(
           pullRequest: context.pullRequest,
-          submit: { patch, sourceRevision in
+          submitBranch: { patch, sourceRevision in
             try await resubmissionService.resubmit(
               context,
               patch: patch,
               sourceRevision: sourceRevision,
+              pdsClient: try PDSClient.restore(from: CLISessionStore.make().store)
+            )
+          },
+          submitPatch: { patch in
+            try await resubmissionService.resubmit(
+              context,
+              patch: patch,
               pdsClient: try PDSClient.restore(from: CLISessionStore.make().store)
             )
           }
@@ -375,31 +382,45 @@ struct PRCommandService: Sendable {
 
   func resubmit(
     pullRequestURI: String,
+    patchFile: String? = nil,
     json: Bool
   ) async throws -> CLICommandOutput {
     let resubmission = try await dependencies.prepareResubmission(pullRequestURI)
     let pull = resubmission.pullRequest.value
-    guard let source = pull.source else {
-      throw TangledError.invalidRequest(
-        "patch-based pull request resubmission is not supported yet"
+    let result: PullRequestResubmissionResult
+    if pull.source == nil {
+      guard let patchFile else {
+        throw TangledError.invalidRequest(
+          "patch-based pull request resubmission requires --patch-file"
+        )
+      }
+      result = try await resubmission.submitPatch(PatchFileReader().read(path: patchFile))
+    } else {
+      guard patchFile == nil else {
+        throw TangledError.invalidRequest(
+          "--patch-file is only valid for patch-based pull requests"
+        )
+      }
+      guard let source = pull.source else {
+        throw TangledError.invalidRequest("pull request source is missing")
+      }
+      let origin = try dependencies.originURL()
+      let originRecord = try await dependencies.resolveRepository(origin)
+      guard originRecord.value.repoDID == pull.target.repositoryDID else {
+        throw TangledError.invalidRequest(
+          "Git origin does not match the pull request target repository"
+        )
+      }
+      let prepared = try dependencies.prepare(
+        pull.target.branch,
+        source.branch,
+        "origin"
+      )
+      result = try await resubmission.submitBranch(
+        prepared.patch,
+        prepared.sourceRevision
       )
     }
-    let origin = try dependencies.originURL()
-    let originRecord = try await dependencies.resolveRepository(origin)
-    guard originRecord.value.repoDID == pull.target.repositoryDID else {
-      throw TangledError.invalidRequest(
-        "Git origin does not match the pull request target repository"
-      )
-    }
-    let prepared = try dependencies.prepare(
-      pull.target.branch,
-      source.branch,
-      "origin"
-    )
-    let result = try await resubmission.submit(
-      prepared.patch,
-      prepared.sourceRevision
-    )
     return CLICommandOutput(
       stdout: try json ? formatter.json(result) : format(result)
     )
@@ -579,7 +600,8 @@ struct PRCreateResult: Codable, Equatable, Sendable {
 
 struct PreparedPRResubmission: Sendable {
   let pullRequest: TangledRecord<PullRequest>
-  let submit: @Sendable (Data, String) async throws -> PullRequestResubmissionResult
+  let submitBranch: @Sendable (Data, String) async throws -> PullRequestResubmissionResult
+  let submitPatch: @Sendable (Data) async throws -> PullRequestResubmissionResult
 }
 
 struct PRViewWithCommentsResult: Codable, Equatable, Sendable {

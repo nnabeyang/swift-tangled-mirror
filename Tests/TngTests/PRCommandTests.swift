@@ -61,7 +61,13 @@ import Testing
     #expect(create.json)
     let resubmit = try PRResubmitCommand.parse([samplePullRequestURI, "--json"])
     #expect(resubmit.pullRequestURI == samplePullRequestURI)
+    #expect(resubmit.patchFile == nil)
     #expect(resubmit.json)
+
+    let patchResubmit = try PRResubmitCommand.parse([
+      samplePullRequestURI, "--patch-file", "changes.patch",
+    ])
+    #expect(patchResubmit.patchFile == "changes.patch")
     #expect(throws: (any Error).self) {
       _ = try PRCreateCommand.parse(["--body", "text", "--body-file", "body.md"])
     }
@@ -442,6 +448,50 @@ import Testing
     #expect(await recorder.resubmitCalls().isEmpty)
   }
 
+  @Test func resubmitPatchReadsFileWithoutUsingGit() async throws {
+    let recorder = PRCommandRecorder()
+    let patchRecord = samplePullRequestRecord(source: nil, dependentOn: nil)
+    let service = PRCommandService(
+      dependencies: dependencies(
+        recorder: recorder,
+        authoritativePullRequestRecord: patchRecord,
+        originURL: { throw TangledError.invalidRequest("Git must not be used") }
+      )
+    )
+    let fileURL = FileManager.default.temporaryDirectory
+      .appendingPathComponent(UUID().uuidString)
+    let patch = Data("diff --git a/a b/a\n--- a/a\n+++ b/a\n".utf8)
+    try patch.write(to: fileURL)
+    defer { try? FileManager.default.removeItem(at: fileURL) }
+
+    let output = try await service.resubmit(
+      pullRequestURI: samplePullRequestURI,
+      patchFile: fileURL.path,
+      json: false
+    )
+
+    #expect(output.stdout.contains("Round: 2"))
+    #expect(await recorder.resubmitCalls() == [.init(patch: patch, sourceRevision: nil)])
+  }
+
+  @Test func patchFileReaderRejectsDirectoryAndSymbolicLink() throws {
+    let directory = FileManager.default.temporaryDirectory
+      .appendingPathComponent(UUID().uuidString, isDirectory: true)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let target = directory.appendingPathComponent("patch")
+    let link = directory.appendingPathComponent("patch-link")
+    try Data("diff --git a/a b/a\n--- a/a\n".utf8).write(to: target)
+    try FileManager.default.createSymbolicLink(at: link, withDestinationURL: target)
+
+    #expect(throws: TangledError.self) {
+      _ = try PatchFileReader().read(path: directory.path)
+    }
+    #expect(throws: TangledError.self) {
+      _ = try PatchFileReader().read(path: link.path)
+    }
+  }
+
   @Test func createURLFallsBackToRepositoryRkeyWhenNameIsMissing() async throws {
     let recorder = PRCommandRecorder()
     let service = PRCommandService(
@@ -776,11 +826,27 @@ extension PRCommandTests {
       prepareResubmission: { _ in
         PreparedPRResubmission(
           pullRequest: authoritativePullRequestRecord,
-          submit: { patch, sourceRevision in
+          submitBranch: { patch, sourceRevision in
             await recorder.record(
               resubmit: .init(
                 patch: patch,
                 sourceRevision: sourceRevision
+              )
+            )
+            return PullRequestResubmissionResult(
+              pullRequest: TangledRecord(
+                uri: authoritativePullRequestRecord.uri,
+                cid: "bafyresubmitted",
+                value: authoritativePullRequestRecord.value
+              ),
+              roundNumber: authoritativePullRequestRecord.value.rounds.count
+            )
+          },
+          submitPatch: { patch in
+            await recorder.record(
+              resubmit: .init(
+                patch: patch,
+                sourceRevision: nil
               )
             )
             return PullRequestResubmissionResult(
@@ -859,7 +925,12 @@ extension PRCommandTests {
   }
 
   fileprivate func samplePullRequestRecord(
-    title: String = "Preserve rounds"
+    title: String = "Preserve rounds",
+    source: PullRequestSource? = PullRequestSource(
+      branch: "feature/rounds",
+      repositoryDID: "did:plc:source"
+    ),
+    dependentOn: String? = "at://did:plc:author/sh.tangled.repo.pull/dependency"
   ) -> TangledRecord<PullRequest> {
     TangledRecord(
       uri: samplePullRequestURI,
@@ -885,10 +956,7 @@ extension PRCommandTests {
             )
           ),
         ],
-        source: PullRequestSource(
-          branch: "feature/rounds",
-          repositoryDID: "did:plc:source"
-        ),
+        source: source,
         target: PullRequestTarget(
           branch: "main",
           repositoryDID: "did:plc:repository"
@@ -896,7 +964,7 @@ extension PRCommandTests {
         createdAt: FormatString<Date>(rawValue: "2026-07-20T17:27:07Z"),
         mentions: ["did:plc:mentioned"],
         references: ["at://did:plc:author/sh.tangled.repo.issue/related"],
-        dependentOn: "at://did:plc:author/sh.tangled.repo.pull/dependency"
+        dependentOn: dependentOn
       )
     )
   }
@@ -963,7 +1031,7 @@ private actor PRCommandRecorder {
 
   struct ResubmitCall: Equatable, Sendable {
     let patch: Data
-    let sourceRevision: String
+    let sourceRevision: String?
   }
 
   private var recordedReferences: [String] = []
