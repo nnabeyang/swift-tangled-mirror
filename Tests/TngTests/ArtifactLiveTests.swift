@@ -31,13 +31,13 @@ import Testing
     var recordCreated = false
     defer {
       if recordCreated {
-        _ = try? ArtifactLiveProcess.run([
+        _ = try? TngProcess.run([
           "artifact", "delete", tag, name, "--repo", repository, "--yes", "--json",
         ])
       }
     }
 
-    let upload = try ArtifactLiveProcess.run([
+    let upload = try TngProcess.run([
       "artifact", "upload", tag, source.path, "--repo", repository, "--name", name,
       "--content-type", "text/plain", "--json",
     ])
@@ -46,13 +46,13 @@ import Testing
     #expect(upload.stdout.contains("\"schemaVersion\" : 1"))
 
     try await waitUntil {
-      let view = try ArtifactLiveProcess.run([
+      let view = try TngProcess.run([
         "artifact", "view", tag, "--repo", repository, "--json",
       ])
       return view.status == 0 && view.stdout.contains(name)
     }
 
-    let download = try ArtifactLiveProcess.run([
+    let download = try TngProcess.run([
       "artifact", "download", tag, name, "--repo", repository,
       "--output", destination.path, "--json",
     ])
@@ -60,14 +60,14 @@ import Testing
     #expect(try Data(contentsOf: destination) == Data("artifact-live-one\n".utf8))
 
     try Data("artifact-live-two\n".utf8).write(to: source)
-    let overwrite = try ArtifactLiveProcess.run([
+    let overwrite = try TngProcess.run([
       "artifact", "upload", tag, source.path, "--repo", repository, "--name", name,
       "--content-type", "text/plain", "--force", "--json",
     ])
     try requireSuccess(overwrite, operation: "force upload")
 
     try await waitUntil {
-      let refreshed = try ArtifactLiveProcess.run([
+      let refreshed = try TngProcess.run([
         "artifact", "download", tag, name, "--repo", repository,
         "--output", destination.path, "--force", "--json",
       ])
@@ -75,14 +75,14 @@ import Testing
         && (try? Data(contentsOf: destination)) == Data("artifact-live-two\n".utf8)
     }
 
-    let deletion = try ArtifactLiveProcess.run([
+    let deletion = try TngProcess.run([
       "artifact", "delete", tag, name, "--repo", repository, "--yes", "--json",
     ])
     try requireSuccess(deletion, operation: "delete")
     recordCreated = false
 
     try await waitUntil {
-      let view = try ArtifactLiveProcess.run([
+      let view = try TngProcess.run([
         "artifact", "view", tag, "--repo", repository, "--json",
       ])
       return view.status == 0 && !view.stdout.contains(name)
@@ -105,7 +105,7 @@ import Testing
   }
 
   private func requireSuccess(
-    _ result: ArtifactLiveProcessResult,
+    _ result: TngProcessResult,
     operation: String
   ) throws {
     guard result.status == 0 else {
@@ -116,65 +116,8 @@ import Testing
   }
 }
 
-private struct ArtifactLiveProcessResult {
-  let status: Int32
-  let stdout: String
-  let stderr: String
-}
-
-private enum ArtifactLiveProcess {
-  static func run(_ arguments: [String]) throws -> ArtifactLiveProcessResult {
-    let process = Process()
-    let standardOutput = Pipe()
-    let standardError = Pipe()
-    process.executableURL = try executableURL()
-    process.arguments = arguments
-    process.standardOutput = standardOutput
-    process.standardError = standardError
-    var environment = ProcessInfo.processInfo.environment
-    environment["NO_COLOR"] = "1"
-    process.environment = environment
-
-    try process.run()
-    process.waitUntilExit()
-    return ArtifactLiveProcessResult(
-      status: process.terminationStatus,
-      stdout: String(
-        decoding: standardOutput.fileHandleForReading.readDataToEndOfFile(),
-        as: UTF8.self
-      ),
-      stderr: String(
-        decoding: standardError.fileHandleForReading.readDataToEndOfFile(),
-        as: UTF8.self
-      )
-    )
-  }
-
-  private static func executableURL() throws -> URL {
-    let packageRoot = URL(fileURLWithPath: #filePath)
-      .deletingLastPathComponent()
-      .deletingLastPathComponent()
-      .deletingLastPathComponent()
-    let candidates = [
-      packageRoot.appendingPathComponent(".build/debug/tng"),
-      URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
-        .appendingPathComponent(".build/debug/tng"),
-      Bundle.main.bundleURL.deletingLastPathComponent().appendingPathComponent("tng"),
-    ]
-    guard
-      let executable = candidates.first(where: {
-        FileManager.default.isExecutableFile(atPath: $0.path)
-      })
-    else {
-      throw ArtifactLiveTestError.executableNotFound
-    }
-    return executable
-  }
-}
-
 private enum ArtifactLiveTestError: Error {
   case missingConfiguration
-  case executableNotFound
   case commandFailed(String)
   case timedOut
 }

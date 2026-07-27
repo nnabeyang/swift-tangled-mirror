@@ -202,72 +202,6 @@ import Testing
   }
 }
 
-private struct TngProcessResult {
-  let status: Int32
-  let stdout: String
-  let stderr: String
-}
-
-private enum TngProcess {
-  static func run(
-    _ arguments: [String],
-    currentDirectory: URL? = nil,
-    environment overrides: [String: String] = [:]
-  ) throws -> TngProcessResult {
-    let process = Process()
-    let standardOutput = Pipe()
-    let standardError = Pipe()
-    process.executableURL = try executableURL()
-    process.arguments = arguments
-    process.currentDirectoryURL = currentDirectory
-    process.standardOutput = standardOutput
-    process.standardError = standardError
-    var environment = ProcessInfo.processInfo.environment
-    environment["NO_COLOR"] = "1"
-    for (key, value) in overrides {
-      environment[key] = value
-    }
-    process.environment = environment
-
-    try process.run()
-    process.waitUntilExit()
-
-    return TngProcessResult(
-      status: process.terminationStatus,
-      stdout: String(
-        decoding: standardOutput.fileHandleForReading.readDataToEndOfFile(),
-        as: UTF8.self
-      ),
-      stderr: String(
-        decoding: standardError.fileHandleForReading.readDataToEndOfFile(),
-        as: UTF8.self
-      )
-    )
-  }
-
-  private static func executableURL() throws -> URL {
-    let packageRoot = URL(fileURLWithPath: #filePath)
-      .deletingLastPathComponent()
-      .deletingLastPathComponent()
-      .deletingLastPathComponent()
-    let candidates = [
-      packageRoot.appendingPathComponent(".build/debug/tng"),
-      URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
-        .appendingPathComponent(".build/debug/tng"),
-      Bundle.main.bundleURL.deletingLastPathComponent().appendingPathComponent("tng"),
-      URL(fileURLWithPath: CommandLine.arguments[0])
-        .deletingLastPathComponent()
-        .appendingPathComponent("tng"),
-    ]
-    if let executable = candidates.first(where: {
-      FileManager.default.isExecutableFile(atPath: $0.path)
-    }) {
-      return executable
-    }
-    throw ProcessTestError.executableNotFound(candidates.map(\.path))
-  }
-}
-
 private final class TemporaryDirectory {
   let url: URL
 
@@ -281,8 +215,4 @@ private final class TemporaryDirectory {
   deinit {
     try? FileManager.default.removeItem(at: url)
   }
-}
-
-private enum ProcessTestError: Error {
-  case executableNotFound([String])
 }
