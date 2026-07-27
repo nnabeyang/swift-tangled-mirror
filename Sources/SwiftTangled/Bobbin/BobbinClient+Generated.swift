@@ -29,8 +29,7 @@ extension BobbinClient {
     )
   }
 
-  /// Decode-and-transform used by list endpoints where one malformed record must not
-  /// abort the whole page. Failures are logged and dropped.
+  /// Decodes list records independently so one malformed item does not abort the page.
   func tolerantGeneratedRecord<Value: Decodable & Sendable, Result>(
     uri: FormatString<ATURI>,
     cid: FormatString<LexLink>?,
@@ -51,6 +50,25 @@ extension BobbinClient {
         "skipping malformed record",
         metadata: [
           "type": .string(String(describing: type)),
+          "uri": .string(uri.rawValue),
+          "error": .string(String(describing: error)),
+        ]
+      )
+      return nil
+    }
+  }
+
+  /// Runs an arbitrary list-record decode without aborting the page.
+  func tolerantDecode<Result>(
+    uri: FormatString<ATURI>,
+    _ operation: () throws -> Result
+  ) -> Result? {
+    do {
+      return try operation()
+    } catch {
+      Self.recordDecodeLogger.warning(
+        "skipping malformed record",
+        metadata: [
           "uri": .string(uri.rawValue),
           "error": .string(String(describing: error)),
         ]

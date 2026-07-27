@@ -21,12 +21,14 @@ extension BobbinClient {
     let response = try await generatedQuery {
       try await RepoGetIssues(issues: uris.map { FormatString<ATURI>(rawValue: $0) })
     }
-    return try response.items.map {
-      try TangledRecordDecoder.issue(
-        uri: $0.uri.rawValue,
-        cid: $0.cid?.rawValue,
-        value: $0.value
-      )
+    return response.items.compactMap { item in
+      tolerantDecode(uri: item.uri) {
+        try TangledRecordDecoder.issue(
+          uri: item.uri.rawValue,
+          cid: item.cid?.rawValue,
+          value: item.value
+        )
+      }
     }
   }
 
@@ -56,15 +58,17 @@ extension BobbinClient {
       )
     }
     return Page(
-      items: try response.items.map {
-        try issueListItem(
-          uri: $0.uri,
-          cid: $0.cid,
-          value: $0.value,
-          state: $0.state.rawValue,
-          stateUpdatedAt: $0.stateUpdatedAt,
-          commentCount: $0.commentCount
-        )
+      items: response.items.compactMap { item in
+        tolerantDecode(uri: item.uri) {
+          try issueListItem(
+            uri: item.uri,
+            cid: item.cid,
+            value: item.value,
+            state: item.state.rawValue,
+            stateUpdatedAt: item.stateUpdatedAt,
+            commentCount: item.commentCount
+          )
+        }
       },
       cursor: response.cursor
     )
@@ -91,15 +95,17 @@ extension BobbinClient {
       )
     }
     return Page(
-      items: try response.items.map {
-        try issueListItem(
-          uri: $0.uri,
-          cid: $0.cid,
-          value: $0.value,
-          state: $0.state.rawValue,
-          stateUpdatedAt: $0.stateUpdatedAt,
-          commentCount: $0.commentCount
-        )
+      items: response.items.compactMap { item in
+        tolerantDecode(uri: item.uri) {
+          try issueListItem(
+            uri: item.uri,
+            cid: item.cid,
+            value: item.value,
+            state: item.state.rawValue,
+            stateUpdatedAt: item.stateUpdatedAt,
+            commentCount: item.commentCount
+          )
+        }
       },
       cursor: response.cursor
     )
@@ -137,13 +143,14 @@ extension BobbinClient {
         subject: FormatString<ATURI>(rawValue: issueURI)
       )
     }
-    let items = try response.items.map {
-      let record: BobbinRecord<Sh.Tangled.Repo.IssueState> = try generatedRecord(
+    let items = response.items.compactMap {
+      tolerantGeneratedRecord(
         uri: $0.uri,
         cid: $0.cid,
-        value: $0.value
+        value: $0.value,
+        as: Sh.Tangled.Repo.IssueState.self,
+        transform: \.issueStateRecord
       )
-      return record.issueStateRecord
     }
     return Page(items: items, cursor: response.cursor)
   }
@@ -164,13 +171,14 @@ extension BobbinClient {
         subject: FormatString<DID>(rawValue: authorDID)
       )
     }
-    let items = try response.items.map {
-      let record: BobbinRecord<Sh.Tangled.Repo.IssueState> = try generatedRecord(
+    let items = response.items.compactMap {
+      tolerantGeneratedRecord(
         uri: $0.uri,
         cid: $0.cid,
-        value: $0.value
+        value: $0.value,
+        as: Sh.Tangled.Repo.IssueState.self,
+        transform: \.issueStateRecord
       )
-      return record.issueStateRecord
     }
     return Page(items: items, cursor: response.cursor)
   }

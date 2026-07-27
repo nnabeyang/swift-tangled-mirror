@@ -55,13 +55,14 @@ extension BobbinClient {
         subject: subjectURI
       )
     }
-    let items = try response.items.map {
-      let record: BobbinRecord<Sh.Tangled.LabelOp> = try generatedRecord(
+    let items = response.items.compactMap {
+      tolerantGeneratedRecord(
         uri: $0.uri,
         cid: $0.cid,
-        value: $0.value
+        value: $0.value,
+        as: Sh.Tangled.LabelOp.self,
+        transform: \.labelOperationRecord
       )
-      return record.labelOperationRecord
     }
     return Page(items: items, cursor: response.cursor)
   }
@@ -82,13 +83,14 @@ extension BobbinClient {
         subject: FormatString<DID>(rawValue: authorDID)
       )
     }
-    let items = try response.items.map {
-      let record: BobbinRecord<Sh.Tangled.LabelOp> = try generatedRecord(
+    let items = response.items.compactMap {
+      tolerantGeneratedRecord(
         uri: $0.uri,
         cid: $0.cid,
-        value: $0.value
+        value: $0.value,
+        as: Sh.Tangled.LabelOp.self,
+        transform: \.labelOperationRecord
       )
-      return record.labelOperationRecord
     }
     return Page(items: items, cursor: response.cursor)
   }
