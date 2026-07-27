@@ -8779,6 +8779,131 @@ extension Sh.Tangled {
       try _unknownValues.encode(to: encoder)
     }
   }
+  /// Create a hidden ref in a repository
+  public enum RepoHiddenRef: XRPCProcedure {
+    public static let id = "sh.tangled.repo.hiddenRef"
+    public static let contentType = "application/json"
+    public typealias RequestBody = RepoHiddenRef_Input
+    public typealias ResponseBody = RepoHiddenRef_Output
+    public indirect enum Error: XRPCError {
+      case unexpected(error: Swift.String?, message: Swift.String?)
+
+      public init(error: UnExpectedError) {
+        switch error.error {
+        default:
+          self = .unexpected(error: error.error, message: error.message)
+        }
+      }
+
+      public var error: Swift.String? {
+        switch self {
+        case .unexpected(let error, _):
+          return error
+        }
+      }
+
+      public var message: Swift.String? {
+        switch self {
+        case .unexpected(_, let message):
+          return message
+        }
+      }
+    }
+  }
+
+  public struct RepoHiddenRef_Input: Codable, Hashable, Sendable {
+    /// Fork reference name
+    public var forkRef: Swift.String
+    /// Remote reference name
+    public var remoteRef: Swift.String
+    /// AT-URI of the repository
+    public var repo: FormatString<ATURI>
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(forkRef: Swift.String, remoteRef: Swift.String, repo: FormatString<ATURI>) {
+      self.forkRef = forkRef
+      self.remoteRef = remoteRef
+      self.repo = repo
+      self._unknownValues = [:]
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case forkRef
+      case remoteRef
+      case repo
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      self.forkRef = try keyedContainer.decode(Swift.String.self, forKey: .forkRef)
+      self.remoteRef = try keyedContainer.decode(Swift.String.self, forKey: .remoteRef)
+      self.repo = try keyedContainer.decode(FormatString<ATURI>.self, forKey: .repo)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      self._unknownValues = _unknownValues
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encode(self.forkRef, forKey: .forkRef)
+      try container.encode(self.remoteRef, forKey: .remoteRef)
+      try container.encode(self.repo, forKey: .repo)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
+
+  public struct RepoHiddenRef_Output: Codable, Hashable, Sendable {
+    /// Error message if creation failed
+    public var error: Swift.String?
+    /// The created hidden ref name
+    public var ref: Swift.String?
+    /// Whether the hidden ref was created successfully
+    public var success: Swift.Bool
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(error: Swift.String? = nil, ref: Swift.String? = nil, success: Swift.Bool) {
+      self.error = error
+      self.ref = ref
+      self.success = success
+      self._unknownValues = [:]
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case error
+      case ref
+      case success
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      self.error = try keyedContainer.decodeIfPresent(Swift.String.self, forKey: .error)
+      self.ref = try keyedContainer.decodeIfPresent(Swift.String.self, forKey: .ref)
+      self.success = try keyedContainer.decode(Swift.Bool.self, forKey: .success)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      self._unknownValues = _unknownValues
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encodeIfPresent(self.error, forKey: .error)
+      try container.encodeIfPresent(self.ref, forKey: .ref)
+      try container.encode(self.success, forKey: .success)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
   public struct RepoIssue: ATProtoRecord {
     public static let nsId = "sh.tangled.repo.issue"
     public var type: Swift.String {
@@ -13048,6 +13173,8 @@ public protocol XRPCCallable: _XRPCCallable {
   func RepoGetRepo(repo: FormatString<ATURI>) async throws -> Sh.Tangled.RepoGetRepo.ResponseBody
   func RepoGetRepoByRepoDid(repoDid: FormatString<DID>) async throws -> Sh.Tangled.RepoGetRepoByRepoDid.ResponseBody
   func RepoGetRepos(repos: [FormatString<ATURI>]) async throws -> Sh.Tangled.RepoGetRepos.ResponseBody
+  /// Create a hidden ref in a repository
+  func RepoHiddenRef(input: Sh.Tangled.RepoHiddenRef_Input) async throws -> Sh.Tangled.RepoHiddenRef.ResponseBody
   func RepoLanguages(ref: Swift.String?, repo: Swift.String) async throws -> Sh.Tangled.RepoLanguages.ResponseBody
   func RepoListArtifacts(cursor: Swift.String?, limit: Swift.Int?, order: Sh.Tangled.RepoListArtifacts_Order?, subject: Swift.String) async throws -> Sh.Tangled.RepoListArtifacts.ResponseBody
   func RepoListIssues(author: FormatString<DID>?, cursor: Swift.String?, limit: Swift.Int?, order: Sh.Tangled.RepoListIssues_Order?, state: Sh.Tangled.RepoListIssues_State?, subject: FormatString<DID>) async throws -> Sh.Tangled.RepoListIssues.ResponseBody
@@ -13253,6 +13380,10 @@ extension XRPCCallable {
   }
   public func RepoGetRepos(repos: [FormatString<ATURI>]) async throws -> Sh.Tangled.RepoGetRepos.ResponseBody {
     try await call(Sh.Tangled.RepoGetRepos.self, input: .init(repos: repos))
+  }
+  /// Create a hidden ref in a repository
+  public func RepoHiddenRef(input: Sh.Tangled.RepoHiddenRef_Input) async throws -> Sh.Tangled.RepoHiddenRef.ResponseBody {
+    try await call(Sh.Tangled.RepoHiddenRef.self, input: input)
   }
   public func RepoLanguages(ref: Swift.String? = nil, repo: Swift.String) async throws -> Sh.Tangled.RepoLanguages.ResponseBody {
     try await call(Sh.Tangled.RepoLanguages.self, input: .init(ref: ref, repo: repo))

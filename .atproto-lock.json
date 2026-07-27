@@ -87,6 +87,7 @@
             "sh.tangled.repo.getRepo",
             "sh.tangled.repo.getRepoByRepoDid",
             "sh.tangled.repo.getRepos",
+            "sh.tangled.repo.hiddenRef",
             "sh.tangled.repo.issue",
             "sh.tangled.repo.issue.countStates",
             "sh.tangled.repo.issue.countStatesBy",
@@ -126,5 +127,5 @@
   ],
   "generator" : "0.42.2",
   "module" : "Sources/TangledLexicons",
-  "originHash" : "4bd25427f06a0dbb4694c4ffc9f160eb0a17f3c3fb19699e1d0e01d8a63b3682"
+  "originHash" : "f1d180d62193fdda618643f3325c890667bb451e6b1dbf9133ea1e46d7f60af9"
 }

@@ -89,6 +89,7 @@
             "sh.tangled.repo.getRepo",
             "sh.tangled.repo.getRepoByRepoDid",
             "sh.tangled.repo.getRepos",
+            "sh.tangled.repo.hiddenRef",
             "sh.tangled.repo.issue",
             "sh.tangled.repo.issue.countStates",
             "sh.tangled.repo.issue.countStatesBy",
