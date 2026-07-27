@@ -119,6 +119,18 @@ tng pr create --base main --head feature/my-change \
   --body "Why this change is useful"
 ```
 
+Create one dependent pull request per commit with `--stack`:
+
+```sh
+tng pr create --base main --head feature/my-stack --stack
+```
+
+Every commit in a stack must contain a unique `Change-Id` commit header.
+Jujutsu users can enable `git.write-change-id-header = true`. Stack titles and
+bodies come from the individual commits, so `--stack` cannot be combined with
+`--title`, `--body`, or `--body-file`. Fork stacks use the same `--repo`
+workflow as other fork pull requests.
+
 After pushing more commits to the source branch, add a new review round:
 
 ```sh

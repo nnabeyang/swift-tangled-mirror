@@ -217,6 +217,23 @@ unfiltered result does not prove absence. If creation was interrupted before a
 URI was returned, do not retry until PDS state has been checked and the user
 explicitly authorizes another write.
 
+To create one Pull Request per commit, ensure that every commit has a unique
+`Change-Id` commit header and use `--stack`:
+
+```sh
+git ls-remote --heads origin refs/heads/FEATURE_BRANCH
+tng pr create --repo OWNER/UPSTREAM --base main --head FEATURE_BRANCH \
+  --stack --json
+```
+
+The JSON result contains `pullRequests` in base-to-tip order. The first record
+has no dependency, and every subsequent record depends on the previous record.
+Use each commit's subject and body as its Pull Request metadata; `--stack`
+cannot be combined with `--title`, `--body`, or `--body-file`. The command
+uploads every patch before creating all Pull Request records in one atomic PDS
+write. If the write fails, do not retry until the author PDS has been checked
+for the returned records.
+
 ## Resubmit a pull request
 
 Inspect the Pull Request and verify its exact AT URI, current status, source
