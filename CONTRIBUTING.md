@@ -1,7 +1,7 @@
 # Contributing
 
 Contributions to swift-tangled are welcome. This project currently prioritizes
-the reusable `SwiftTangled` SDK and practical `tng` command-line workflows.
+practical `tng` command-line workflows.
 
 ## Report Bugs and Request Features
 
@@ -109,6 +109,10 @@ pipeline log, or artifact.
 - Keep `tng` focused on argument parsing, output, and orchestration.
 - Preserve the dependency direction from clients to `SwiftTangled`, then to
   `swift-atproto` and AT Protocol services.
+- `tng` is the package's only supported public product. `SwiftTangled` and
+  `TangledLexicons` are internal targets, so their `public` declarations are
+  not an external API. Do not add `.library` products for them without an
+  explicit decision to support their external API stability.
 - Discuss new third-party dependencies in an issue before adding them.
 - Prefer authoritative PDS records for current repository, issue, pull request,
   and artifact state. Use Bobbin for indexed aggregate reads, Spindle for
@@ -119,6 +123,13 @@ The generated files `Sources/TangledLexicons/XRPCAPIClient.swift` and
 `Sources/TangledLexicons/UnknownATPValue.swift` must not be edited directly.
 Update `.atproto.json` when changing Lexicon inputs, then run `./generate.sh`
 and commit the generated files together with `.atproto-lock.json`.
+
+`.atproto.json` lists only the NSIDs that `tng` actually uses. Covering every
+Tangled NSID is not a goal, because `TangledLexicons` is not a published
+library. Add an NSID when you write code that references it, and remove one
+that nothing references any more. When a listed Lexicon `ref`s another
+Lexicon, list that dependency too, as `com.atproto.repo.applyWrites` requires
+`com.atproto.repo.defs`.
 
 ## Pull Requests
 

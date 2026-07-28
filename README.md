@@ -1,7 +1,9 @@
 # swift-tangled
 
-`swift-tangled` provides the reusable `SwiftTangled` SDK and the `tng`
-command-line tool for Tangled.
+`swift-tangled` provides the `tng` command-line tool for Tangled. `tng` is the
+package's only supported public product; the `SwiftTangled` and
+`TangledLexicons` targets are internal implementation layers and are not
+exposed for use as libraries.
 
 Read the [tng CLI manual](https://nnabeyang.tngl.sh/swift-tangled/) for the
 complete command reference, installation guide, and quick start.
@@ -267,27 +269,9 @@ tng events watch \
   --json
 ```
 
-## Swift SDK
-
-`SwiftTangled` exposes reusable APIs used by the CLI. For example,
-`JetstreamClient` provides a reconnecting stream of live AT Protocol events:
-
-```swift
-import SwiftTangled
-
-let client = JetstreamClient()
-for try await event in client.events(
-  options: JetstreamOptions(
-    wantedCollections: ["sh.tangled.repo.pull"],
-    wantedDIDs: ["did:plc:example"]
-  )
-) {
-  print(event.timeUS, event.kind.rawValue)
-}
-```
-
-Use authoritative PDS records for current record state, Bobbin for indexed
-aggregate reads, Spindle for pipelines, and Jetstream for live events.
+`tng` reads current record state from authoritative PDS records, uses Bobbin
+for indexed aggregate reads, Spindle for pipelines, and Jetstream for live
+events.
 
 ## Agent Skill
 
