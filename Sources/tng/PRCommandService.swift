@@ -294,7 +294,10 @@ struct PRCommandService: Sendable {
   ) async throws -> CLICommandOutput {
     let record = try await dependencies.viewPullRequest(pullRequestURI)
     guard comments else {
-      return CLICommandOutput(stdout: try json ? formatter.json(record) : format(record))
+      return CLICommandOutput(
+        stdout: try json ? formatter.json(record) : format(record),
+        isPageable: !json
+      )
     }
     async let coverage = readBobbinCoverage(using: dependencies.coverage)
     let page = try await dependencies.comments(pullRequestURI, commentCursor, commentLimit)
@@ -306,7 +309,8 @@ struct PRCommandService: Sendable {
         + BobbinReadDiagnostics(
           coverage: try await coverage,
           initialPageIsEmpty: commentCursor == nil && page.items.isEmpty
-        ).stderr
+        ).stderr,
+      isPageable: !json
     )
   }
 
@@ -349,7 +353,7 @@ struct PRCommandService: Sendable {
 
   func diff(pullRequestURI: String, roundNumber: Int?) async throws -> CLICommandOutput {
     let patch = try await dependencies.pullRequestPatch(pullRequestURI, roundNumber)
-    return CLICommandOutput(stdoutData: patch.unifiedDiff)
+    return CLICommandOutput(stdoutData: patch.unifiedDiff, isPageable: true)
   }
 
   func edit(

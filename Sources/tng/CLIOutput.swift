@@ -11,6 +11,7 @@ import SwiftTangled
 struct CLICommandOutput: Equatable, Sendable {
   private let standardOutput: Data
   let stderr: String
+  let isPageable: Bool
 
   var stdout: String {
     String(decoding: standardOutput, as: UTF8.self)
@@ -20,14 +21,16 @@ struct CLICommandOutput: Equatable, Sendable {
     standardOutput
   }
 
-  init(stdout: String, stderr: String = "") {
+  init(stdout: String, stderr: String = "", isPageable: Bool = false) {
     self.standardOutput = Data(stdout.utf8)
     self.stderr = stderr
+    self.isPageable = isPageable
   }
 
-  init(stdoutData: Data, stderr: String = "") {
+  init(stdoutData: Data, stderr: String = "", isPageable: Bool = false) {
     self.standardOutput = stdoutData
     self.stderr = stderr
+    self.isPageable = isPageable
   }
 }
 
@@ -60,8 +63,7 @@ func runCLICommand(
 ) async throws {
   do {
     let output = try await operation()
-    write(output.stdoutData, to: .standardOutput)
-    write(output.stderr, to: .standardError)
+    try CLIOutputWriter.live.write(output)
   } catch {
     let report = errorReport(for: error)
     if jsonErrors {
@@ -166,6 +168,12 @@ func exitCode(for error: any Error) -> Int32 {
 }
 
 func errorReport(for error: any Error) -> CLIErrorReport {
+  if let error = error as? CLIPagerError {
+    return CLIErrorReport(
+      exitCode: .unexpected,
+      diagnostic: "Pager error: \(error.description)\n"
+    )
+  }
   if let error = error as? PipelineWatchFailure {
     return CLIErrorReport(
       exitCode: .unexpected,
@@ -235,6 +243,9 @@ private func jsonErrorCategory(for exitCode: CLIExitCode) -> String {
 }
 
 private func jsonErrorCode(for error: any Error) -> String {
+  if error is CLIPagerError {
+    return "pager_error"
+  }
   if error is PipelineWatchFailure {
     return "pipeline_failed"
   }

@@ -141,6 +141,8 @@ import Testing
 
     #expect(human.stdout.contains("Name\tcore"))
     #expect(human.stdout.contains("Repository DID\tdid:plc:repository"))
+    #expect(human.isPageable)
+    #expect(!json.isPageable)
     let decoded = try JSONDecoder().decode(
       TangledRecord<Repository>.self,
       from: Data(json.stdout.utf8)

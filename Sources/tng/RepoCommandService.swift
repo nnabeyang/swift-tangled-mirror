@@ -141,7 +141,8 @@ struct RepoCommandService: Sendable {
     let reference = try repository ?? dependencies.originURL()
     let record = try await dependencies.resolveRepository(reference)
     return CLICommandOutput(
-      stdout: try json ? formatter.json(record) : format(record)
+      stdout: try json ? formatter.json(record) : format(record),
+      isPageable: !json
     )
   }
 

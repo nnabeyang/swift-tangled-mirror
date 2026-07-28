@@ -171,6 +171,8 @@ import struct SwiftTangled.Issue
     #expect(human.stdout.contains("Title\tLogin fails"))
     #expect(human.stdout.contains("Body\tSteps to reproduce"))
     #expect(human.stdout.contains("Repository DID\tdid:plc:repository"))
+    #expect(human.isPageable)
+    #expect(!json.isPageable)
     let record = try JSONDecoder().decode(
       TangledRecord<Issue>.self,
       from: Data(json.stdout.utf8)
@@ -195,6 +197,7 @@ import struct SwiftTangled.Issue
     #expect(human.stdout.contains("\nComments\nURI\tBODY\tCREATED\n"))
     #expect(human.stdout.contains("Please add a test."))
     #expect(human.stderr == "Next cursor: comments-next\n")
+    #expect(human.isPageable)
 
     let json = try await service.view(
       issueURI: sampleIssueURI,
@@ -211,6 +214,7 @@ import struct SwiftTangled.Issue
     #expect(result.comments.items.first?.value.body.markdown?.text == "Please add a test.")
     #expect(result.comments.cursor == "comments-next")
     #expect(json.stderr.isEmpty)
+    #expect(!json.isPageable)
     #expect(
       await recorder.commentListCalls()
         == [

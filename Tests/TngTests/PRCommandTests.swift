@@ -341,6 +341,8 @@ import Testing
     #expect(human.stdout.contains("Round 0 patch CID\tbafkroundone"))
     #expect(human.stdout.contains("Round 1 patch MIME type\tapplication/gzip"))
     #expect(human.stdout.contains("Round 1 patch size\t2012"))
+    #expect(human.isPageable)
+    #expect(!json.isPageable)
     let record = try JSONDecoder().decode(
       TangledRecord<PullRequest>.self,
       from: Data(json.stdout.utf8)
@@ -369,6 +371,7 @@ import Testing
     #expect(result.pullRequest.uri == samplePullRequestURI)
     #expect(result.comments.items.first?.value.body.markdown?.text == "Review comment")
     #expect(result.comments.cursor == "comment-next")
+    #expect(!output.isPageable)
   }
 
   @Test func commentDefaultsToLatestRound() async throws {
@@ -475,6 +478,7 @@ import Testing
 
     #expect(output.stdoutData == samplePullRequestPatch().unifiedDiff)
     #expect(output.stderr.isEmpty)
+    #expect(output.isPageable)
     #expect(
       await recorder.patchCalls() == [
         .init(uri: samplePullRequestURI, roundNumber: 0)

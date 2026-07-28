@@ -1,0 +1,212 @@
+import Foundation
+import Testing
+
+@testable import tng
+
+@Suite struct CLIPagerTests {
+  @Test func commandUsesTNGPagerThenPagerAndIgnoresEmptyValues() {
+    #expect(
+      CLIPager.command(
+        environment: [
+          "TNG_PAGER": "less -R",
+          "PAGER": "more",
+        ]
+      ) == "less -R"
+    )
+    #expect(
+      CLIPager.command(
+        environment: [
+          "TNG_PAGER": "",
+          "PAGER": "more",
+        ]
+      ) == "more"
+    )
+    #expect(CLIPager.command(environment: ["TNG_PAGER": "", "PAGER": ""]) == nil)
+    #expect(CLIPager.command(environment: [:]) == nil)
+  }
+
+  @Test func pagerEnvironmentAddsOnlyMissingDefaults() {
+    let defaults = CLIPager.pagerEnvironment(["PATH": "/bin"])
+    #expect(defaults["LESS"] == "FRX")
+    #expect(defaults["LV"] == "-c")
+    #expect(defaults["PATH"] == "/bin")
+
+    let configured = CLIPager.pagerEnvironment([
+      "LESS": "",
+      "LV": "-Ou8",
+    ])
+    #expect(configured["LESS"] == "")
+    #expect(configured["LV"] == "-Ou8")
+  }
+
+  @Test func writerPagesOnlyEligibleTerminalOutput() throws {
+    let recorder = PagerRecorder()
+    let writer = outputWriter(recorder: recorder, terminal: true, pager: "pager --flag")
+
+    try writer.write(CLICommandOutput(stdout: "paged\n", stderr: "warning\n", isPageable: true))
+    try writer.write(CLICommandOutput(stdout: "direct\n"))
+
+    #expect(recorder.pagerCommands == ["pager --flag"])
+    #expect(recorder.pagerInputs == [Data("paged\n".utf8)])
+    #expect(recorder.pagerEnvironments[0]["LESS"] == "FRX")
+    #expect(recorder.pagerEnvironments[0]["LV"] == "-c")
+    #expect(recorder.stdout == Data("direct\n".utf8))
+    #expect(recorder.stderr == Data("warning\n".utf8))
+  }
+
+  @Test func writerBypassesPagerForNonTerminalMissingAndCatConfigurations() throws {
+    let nonTerminal = PagerRecorder()
+    try outputWriter(recorder: nonTerminal, terminal: false, pager: "less")
+      .write(CLICommandOutput(stdout: "plain\n", isPageable: true))
+    #expect(nonTerminal.pagerCommands.isEmpty)
+    #expect(nonTerminal.stdout == Data("plain\n".utf8))
+
+    let missing = PagerRecorder()
+    try outputWriter(recorder: missing, terminal: true, pager: nil)
+      .write(CLICommandOutput(stdout: "missing\n", isPageable: true))
+    #expect(missing.pagerCommands.isEmpty)
+    #expect(missing.stdout == Data("missing\n".utf8))
+
+    let cat = PagerRecorder()
+    try outputWriter(recorder: cat, terminal: true, pager: "cat")
+      .write(CLICommandOutput(stdout: "cat\n", isPageable: true))
+    #expect(cat.pagerCommands.isEmpty)
+    #expect(cat.stdout == Data("cat\n".utf8))
+  }
+
+  @Test func writerPagesWhenTerminalOutputIsForced() throws {
+    let recorder = PagerRecorder()
+    let terminal = CLITerminalContext.resolve(
+      environment: ["TNG_FORCE_TTY": "80"],
+      outputIsTerminal: false,
+      detectedWidth: nil
+    )
+    let writer = CLIOutputWriter(
+      terminal: terminal,
+      environment: ["TNG_PAGER": "less"],
+      pager: CLIPager { command, data, environment in
+        recorder.pagerCommands.append(command)
+        recorder.pagerInputs.append(data)
+        recorder.pagerEnvironments.append(environment)
+      },
+      stdout: { recorder.stdout.append($0) },
+      stderr: { recorder.stderr.append($0) }
+    )
+
+    try writer.write(CLICommandOutput(stdout: "forced\n", isPageable: true))
+
+    #expect(recorder.pagerCommands == ["less"])
+    #expect(recorder.pagerInputs == [Data("forced\n".utf8)])
+    #expect(recorder.stdout.isEmpty)
+  }
+
+  @Test func liveProcessWritesDataAndConfiguredEnvironment() throws {
+    let directory = try PagerTemporaryDirectory()
+    let output = directory.url.appendingPathComponent("output")
+    let environment = directory.url.appendingPathComponent("environment")
+    let command =
+      "printf '%s|%s' \"$LESS\" \"$LV\" > \(shellQuote(environment.path)); "
+      + "cat > \(shellQuote(output.path))"
+
+    try CLIPager.runProcess(
+      command: command,
+      data: Data("pager input\n".utf8),
+      environment: CLIPager.pagerEnvironment([:])
+    )
+
+    #expect(try Data(contentsOf: output) == Data("pager input\n".utf8))
+    #expect(try String(contentsOf: environment, encoding: .utf8) == "FRX|-c")
+  }
+
+  @Test(
+    arguments: [
+      "exit 0",
+      "head -c 1 >/dev/null",
+    ]
+  )
+  func liveProcessAcceptsEarlyExitAndBrokenPipe(command: String) throws {
+    try CLIPager.runProcess(
+      command: command,
+      data: Data(repeating: 0x61, count: 2 * 1024 * 1024),
+      environment: [:]
+    )
+  }
+
+  @Test(
+    arguments: [
+      ("exit 7", Int32(7)),
+      ("command-that-does-not-exist", Int32(127)),
+    ]
+  )
+  func liveProcessRejectsUnsuccessfulCommands(command: String, status: Int32) {
+    #expect(
+      throws: CLIPagerError.exit(command: command, status: status)
+    ) {
+      try CLIPager.runProcess(
+        command: command,
+        data: Data(),
+        environment: [:]
+      )
+    }
+  }
+
+  @Test func pagerErrorsUseUnexpectedExitAndStableJSONCode() {
+    let error = CLIPagerError.exit(command: "pager", status: 2)
+    let report = errorReport(for: error)
+    let json = jsonErrorReport(for: error)
+
+    #expect(report.exitCode == .unexpected)
+    #expect(report.diagnostic == "Pager error: 'pager' exited with status 2\n")
+    #expect(json.category == "unexpected")
+    #expect(json.code == "pager_error")
+  }
+
+  private func outputWriter(
+    recorder: PagerRecorder,
+    terminal: Bool,
+    pager: String?
+  ) -> CLIOutputWriter {
+    CLIOutputWriter(
+      terminal: CLITerminalContext(
+        isTerminal: terminal,
+        viewportWidth: 80,
+        markdownWidth: 80,
+        colorEnabled: terminal
+      ),
+      environment: pager.map { ["TNG_PAGER": $0] } ?? [:],
+      pager: CLIPager { command, data, environment in
+        recorder.pagerCommands.append(command)
+        recorder.pagerInputs.append(data)
+        recorder.pagerEnvironments.append(environment)
+      },
+      stdout: { recorder.stdout.append($0) },
+      stderr: { recorder.stderr.append($0) }
+    )
+  }
+}
+
+private final class PagerRecorder: @unchecked Sendable {
+  var pagerCommands: [String] = []
+  var pagerInputs: [Data] = []
+  var pagerEnvironments: [[String: String]] = []
+  var stdout = Data()
+  var stderr = Data()
+}
+
+private final class PagerTemporaryDirectory {
+  let url: URL
+
+  init() throws {
+    url = FileManager.default.temporaryDirectory
+      .appendingPathComponent("swift-tangled-pager-\(UUID().uuidString)")
+    try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+  }
+
+  deinit {
+    try? FileManager.default.removeItem(at: url)
+  }
+}
+
+private func shellQuote(_ value: String) -> String {
+  "'\(value.replacingOccurrences(of: "'", with: "'\"'\"'"))'"
+}

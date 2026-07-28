@@ -139,7 +139,10 @@ struct IssueCommandService: Sendable {
   ) async throws -> CLICommandOutput {
     let record = try await dependencies.viewIssue(issueURI)
     guard comments else {
-      return CLICommandOutput(stdout: try json ? formatter.json(record) : format(record))
+      return CLICommandOutput(
+        stdout: try json ? formatter.json(record) : format(record),
+        isPageable: !json
+      )
     }
     async let coverage = readBobbinCoverage(using: dependencies.coverage)
     let page = try await dependencies.comments(issueURI, commentCursor, commentLimit)
@@ -151,7 +154,8 @@ struct IssueCommandService: Sendable {
         + BobbinReadDiagnostics(
           coverage: try await coverage,
           initialPageIsEmpty: commentCursor == nil && page.items.isEmpty
-        ).stderr
+        ).stderr,
+      isPageable: !json
     )
   }
 
