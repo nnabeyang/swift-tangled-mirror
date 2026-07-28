@@ -95,13 +95,12 @@ automation support `--json` where documented by their help.
 
 ### Terminal output
 
-On macOS, when standard output is a terminal, `tng` experimentally renders
-human-readable Markdown, tables, and details with ANSI styling and
-terminal-width-aware wrapping. OSC-8 hyperlinks are disabled. Linux keeps the
-existing tab-separated human-readable output. When output is piped or
-redirected on either platform, `tng` keeps the existing plain output and avoids
-terminal-width-dependent formatting. Use `--json` when scripts or agents need
-a stable, structured contract.
+When standard output is a terminal, `tng` experimentally renders human-readable
+Markdown, tables, and details with ANSI styling and terminal-width-aware
+wrapping on macOS and Linux. OSC-8 hyperlinks are disabled. When output is piped
+or redirected, `tng` keeps the existing plain output and avoids
+terminal-width-dependent formatting. Use `--json` when scripts or agents need a
+stable, structured contract.
 
 The following environment variables control terminal detection, width, and
 ANSI styling:
@@ -109,7 +108,7 @@ ANSI styling:
 | Variable | Behavior |
 | --- | --- |
 | `TNG_FORCE_TTY` | Force terminal-style output. A positive integer sets the viewport width; a positive percentage uses that share of the detected terminal width. |
-| `TNG_MDWIDTH` | Set the maximum width available to width-aware Markdown, table, and details rendering on macOS. |
+| `TNG_MDWIDTH` | Set the maximum width available to width-aware Markdown, table, and details rendering. |
 | `NO_COLOR` | Disable ANSI styling when set to a nonempty value. |
 | `CLICOLOR` | Disable ANSI styling when set to `0`. |
 | `CLICOLOR_FORCE` | Force ANSI styling, including for piped output, when set to a nonempty value other than `0`. |
