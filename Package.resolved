@@ -1,5 +1,5 @@
 {
-  "originHash" : "adb822652cbde15948bcd4e9a4c2b90014c3948cc97e1c2b57b73d1018c79925",
+  "originHash" : "35dcae9bf7dd3cc8dd53f50c33121a2103718cde46f25c8085d18c1e1282365a",
   "pins" : [
     {
       "identity" : "compress-nio",
@@ -328,10 +328,10 @@
     {
       "identity" : "swiftdansi",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/steipete/Swiftdansi.git",
+      "location" : "https://github.com/nnabeyang/Swiftdansi.git",
       "state" : {
-        "revision" : "66b33f2bb01d0484ede2504f3d89b1941941bf72",
-        "version" : "0.2.2"
+        "revision" : "774854f685a6dc99011bcf14f353ccb7e1622c62",
+        "version" : "0.2.3-linux.1"
       }
     }
   ],

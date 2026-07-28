@@ -87,15 +87,10 @@ import Testing
     )
 
     #expect(plain.stdout.contains("\u{001B}") == false)
-    #if os(macOS)
-      #expect(forcedTTY.stdout.contains("\u{001B}"))
-      #expect(forcedTTY.stdout.contains("COMMAND"))
-      #expect(forcedColor.stdout.contains("\u{001B}"))
-      #expect(forcedColor.stdout.contains("COMMAND"))
-    #else
-      #expect(forcedTTY.stdout.contains("\u{001B}[1mCOMMAND\u{001B}[0m"))
-      #expect(forcedColor.stdout.contains("\u{001B}[1mCOMMAND\u{001B}[0m"))
-    #endif
+    #expect(forcedTTY.stdout.contains("\u{001B}"))
+    #expect(forcedTTY.stdout.contains("COMMAND"))
+    #expect(forcedColor.stdout.contains("\u{001B}"))
+    #expect(forcedColor.stdout.contains("COMMAND"))
     #expect(disabled.stdout.contains("\u{001B}") == false)
     #expect(json.stdout.contains("\u{001B}") == false)
     #expect(

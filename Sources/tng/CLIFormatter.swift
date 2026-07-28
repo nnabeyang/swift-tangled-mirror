@@ -1,8 +1,5 @@
 import Foundation
-
-#if os(macOS)
-  import Swiftdansi
-#endif
+import Swiftdansi
 
 struct CLIFormatter: Sendable {
   let terminal: CLITerminalContext
@@ -22,22 +19,20 @@ struct CLIFormatter: Sendable {
     rows: [[String?]],
     markdownColumns: Set<Int> = []
   ) -> String {
-    #if os(macOS)
-      if terminal.isTerminal {
-        let header = "| " + headers.map { markdownCell($0) }.joined(separator: " | ") + " |"
-        let separator = "| " + headers.map { _ in "---" }.joined(separator: " | ") + " |"
-        let body = rows.map { row in
-          let cells = headers.indices.map { index in
-            let value = index < row.count ? row[index] : nil
-            return markdownColumns.contains(index)
-              ? markdownTableContent(value)
-              : markdownCell(cell(value))
-          }
-          return "| " + cells.joined(separator: " | ") + " |"
+    if terminal.isTerminal {
+      let header = "| " + headers.map { markdownCell($0) }.joined(separator: " | ") + " |"
+      let separator = "| " + headers.map { _ in "---" }.joined(separator: " | ") + " |"
+      let body = rows.map { row in
+        let cells = headers.indices.map { index in
+          let value = index < row.count ? row[index] : nil
+          return markdownColumns.contains(index)
+            ? markdownTableContent(value)
+            : markdownCell(cell(value))
         }
-        return renderMarkdown(([header, separator] + body).joined(separator: "\n"))
+        return "| " + cells.joined(separator: " | ") + " |"
       }
-    #endif
+      return renderMarkdown(([header, separator] + body).joined(separator: "\n"))
+    }
 
     let header = headers.map { decorateLabel(cell($0)) }.joined(separator: "\t")
     let body = rows.map { row in
@@ -50,18 +45,16 @@ struct CLIFormatter: Sendable {
     _ fields: [(label: String, value: String?)],
     markdownLabels: Set<String> = []
   ) -> String {
-    #if os(macOS)
-      if terminal.isTerminal {
-        let markdown = fields.map { field in
-          if markdownLabels.contains(field.label) {
-            return
-              "**\(markdownCell(field.label)):**\n\n\(markdownContent(field.value))"
-          }
-          return "**\(markdownCell(field.label)):** \(markdownCell(cell(field.value)))"
-        }.joined(separator: "\n\n")
-        return renderMarkdown(markdown)
-      }
-    #endif
+    if terminal.isTerminal {
+      let markdown = fields.map { field in
+        if markdownLabels.contains(field.label) {
+          return
+            "**\(markdownCell(field.label)):**\n\n\(markdownContent(field.value))"
+        }
+        return "**\(markdownCell(field.label)):** \(markdownCell(cell(field.value)))"
+      }.joined(separator: "\n\n")
+      return renderMarkdown(markdown)
+    }
 
     return fields.map { field in
       "\(decorateLabel(cell(field.label)))\t\(cell(field.value))"
@@ -116,45 +109,43 @@ struct CLIFormatter: Sendable {
     return sanitized.isEmpty ? "-" : sanitized
   }
 
-  #if os(macOS)
-    private func renderMarkdown(_ markdown: String) -> String {
-      let output = Swiftdansi.render(
-        markdown,
-        options: RenderOptions(
-          wrap: true,
-          width: terminal.markdownWidth,
-          hyperlinks: false,
-          color: terminal.colorEnabled,
-          theme: .default,
-          tableBorder: .unicode,
-          tablePadding: 0,
-          tableDense: false,
-          tableTruncate: true
-        )
+  private func renderMarkdown(_ markdown: String) -> String {
+    let output = Swiftdansi.render(
+      markdown,
+      options: RenderOptions(
+        wrap: true,
+        width: terminal.markdownWidth,
+        hyperlinks: false,
+        color: terminal.colorEnabled,
+        theme: .default,
+        tableBorder: .unicode,
+        tablePadding: 0,
+        tableDense: false,
+        tableTruncate: true
       )
-      return output.hasSuffix("\n") ? output : output + "\n"
-    }
+    )
+    return output.hasSuffix("\n") ? output : output + "\n"
+  }
 
-    private func markdownContent(_ value: String?) -> String {
-      guard let value, !value.isEmpty else { return "-" }
-      let sanitized = sanitize(value, preserveNewlines: true)
-      return sanitized.isEmpty ? "-" : sanitized
-    }
+  private func markdownContent(_ value: String?) -> String {
+    guard let value, !value.isEmpty else { return "-" }
+    let sanitized = sanitize(value, preserveNewlines: true)
+    return sanitized.isEmpty ? "-" : sanitized
+  }
 
-    private func markdownTableContent(_ value: String?) -> String {
-      markdownContent(value)
-        .replacingOccurrences(of: "\n", with: "<br>")
-        .replacingOccurrences(of: "|", with: "\\|")
-    }
+  private func markdownTableContent(_ value: String?) -> String {
+    markdownContent(value)
+      .replacingOccurrences(of: "\n", with: "<br>")
+      .replacingOccurrences(of: "|", with: "\\|")
+  }
 
-    private func markdownCell(_ value: String) -> String {
-      var result = value.replacingOccurrences(of: "\\", with: "\\\\")
-      for character in ["`", "*", "_", "{", "}", "[", "]", "<", ">", "(", ")", "#", "+", "-", ".", "!", "|"] {
-        result = result.replacingOccurrences(of: character, with: "\\\(character)")
-      }
-      return result
+  private func markdownCell(_ value: String) -> String {
+    var result = value.replacingOccurrences(of: "\\", with: "\\\\")
+    for character in ["`", "*", "_", "{", "}", "[", "]", "<", ">", "(", ")", "#", "+", "-", ".", "!", "|"] {
+      result = result.replacingOccurrences(of: character, with: "\\\(character)")
     }
-  #endif
+    return result
+  }
 
   private func sanitize(_ value: String, preserveNewlines: Bool) -> String {
     var result = String.UnicodeScalarView()
