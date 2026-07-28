@@ -109,28 +109,30 @@ struct GitPullRequestPreparer: Sendable {
     guard !metadata.isEmpty else {
       throw CLICommandError.git("base and head do not contain any commits to submit")
     }
-    let patches = try splitFormatPatch(
-      try data(["format-patch", "--stdout", "--binary", "--no-cover-letter", range])
-    )
-    guard patches.count == metadata.count else {
-      throw CLICommandError.git(
-        "git format-patch count does not match the commits in the selected range"
-      )
-    }
-
     var seenChangeIDs = Set<String>()
-    let commits = try zip(metadata, patches).map { metadata, patch in
-      guard metadata.revision == patch.revision else {
-        throw CLICommandError.git(
-          "git format-patch order does not match the commits in the selected range"
-        )
-      }
+    let commits = try metadata.map { metadata in
       let changeID = try commitChangeID(
         try data(["cat-file", "commit", metadata.revision])
       )
       guard seenChangeIDs.insert(changeID).inserted else {
         throw CLICommandError.git(
           "stacked pull requests require a unique Change-Id header in every commit"
+        )
+      }
+      let patches = try splitFormatPatch(
+        try data([
+          "format-patch", "--stdout", "--binary", "--no-cover-letter", "-1",
+          metadata.revision, "--add-header", "Change-Id: \(changeID)",
+        ])
+      )
+      guard patches.count == 1, let patch = patches.first else {
+        throw CLICommandError.git(
+          "git format-patch did not produce exactly one patch for \(metadata.revision)"
+        )
+      }
+      guard metadata.revision == patch.revision else {
+        throw CLICommandError.git(
+          "git format-patch order does not match the commits in the selected range"
         )
       }
       return PullRequestStackCommit(

@@ -764,19 +764,23 @@ import Testing
     let first = "1111111111111111111111111111111111111111"
     let second = "2222222222222222222222222222222222222222"
     let base = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-    let series = """
+    let firstPatch = """
       From \(first) Mon Sep 17 00:00:00 2001
       From: Test <test@example.com>
-      Subject: [PATCH 1/2] First
+      Subject: [PATCH] First
+      Change-Id: change-one
 
       diff --git a/one b/one
       --- a/one
       +++ b/one
       @@ -0,0 +1 @@
       +one
+      """
+    let secondPatch = """
       From \(second) Mon Sep 17 00:00:00 2001
       From: Test <test@example.com>
-      Subject: [PATCH 2/2] Second
+      Subject: [PATCH] Second
+      Change-Id: change-two
 
       diff --git a/two b/two
       --- a/two
@@ -796,12 +800,20 @@ import Testing
         return Data()
       case ["log", "-z", "--reverse", "--format=%H%x00%s%x00%b", "\(base)..\(second)"]:
         return Data("\(first)\0First title\0First body\0\(second)\0Second title\0\0".utf8)
-      case ["format-patch", "--stdout", "--binary", "--no-cover-letter", "\(base)..\(second)"]:
-        return Data("\(series)\n".utf8)
       case ["cat-file", "commit", first]:
         return Data("tree a\nchange-id change-one\n\nFirst title\n".utf8)
       case ["cat-file", "commit", second]:
         return Data("tree b\nchange-id change-two\n\nSecond title\n".utf8)
+      case [
+        "format-patch", "--stdout", "--binary", "--no-cover-letter", "-1", first,
+        "--add-header", "Change-Id: change-one",
+      ]:
+        return Data("\(firstPatch)\n".utf8)
+      case [
+        "format-patch", "--stdout", "--binary", "--no-cover-letter", "-1", second,
+        "--add-header", "Change-Id: change-two",
+      ]:
+        return Data("\(secondPatch)\n".utf8)
       default:
         throw CLICommandError.git("unexpected command: \(arguments)")
       }
@@ -813,6 +825,7 @@ import Testing
     #expect(result.commits.map(\.changeID) == ["change-one", "change-two"])
     #expect(result.commits[0].body == "First body")
     #expect(result.commits[1].body == nil)
+    #expect(String(decoding: result.commits[0].patch, as: UTF8.self).contains("Change-Id: change-one"))
     #expect(String(decoding: result.commits[1].patch, as: UTF8.self).hasPrefix("From \(second)"))
   }
 
