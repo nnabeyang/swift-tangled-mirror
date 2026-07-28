@@ -6,9 +6,7 @@ let package = Package(
   name: "swift-tangled",
   platforms: [.macOS(.v15)],
   products: [
-    .library(name: "SwiftTangled", targets: ["SwiftTangled"]),
-    .library(name: "TangledLexicons", targets: ["TangledLexicons"]),
-    .executable(name: "tng", targets: ["tng"]),
+    .executable(name: "tng", targets: ["tng"])
   ],
   dependencies: [
     .package(
