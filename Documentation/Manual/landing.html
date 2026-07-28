@@ -48,21 +48,31 @@ tng capabilities --json</code></pre>
 <section>
   <h2>Terminal output</h2>
   <p>
-    On macOS, terminal output experimentally renders human-readable Markdown,
-    tables, and details with width-aware wrapping and optional ANSI styling.
-    OSC-8 hyperlinks are disabled. Linux keeps the existing tab-separated
-    human-readable output. Piped and redirected output stays unchanged on both
-    platforms. Use <code>--json</code> when scripts or agents need a stable,
+    On macOS and Linux, terminal output experimentally renders human-readable
+    Markdown, tables, and details with width-aware wrapping and optional ANSI
+    styling. OSC-8 hyperlinks are disabled. Piped and redirected output stays
+    unchanged. Use <code>--json</code> when scripts or agents need a stable,
     structured result.
   </p>
+  <p>
+    For terminal-style output, <code>tng repo view</code>,
+    <code>tng issue view</code>, <code>tng pr view</code>, and
+    <code>tng pr diff</code> use the pager configured by
+    <code>TNG_PAGER</code> or <code>PAGER</code>. <code>TNG_PAGER</code>
+    takes precedence. If neither variable is set, or the selected command is
+    <code>cat</code>, output is written directly to the terminal.
+  </p>
   <ul>
+    <li><code>TNG_PAGER</code> sets the pager command and takes precedence over <code>PAGER</code>.</li>
+    <li><code>PAGER</code> sets the pager command when <code>TNG_PAGER</code> is not set.</li>
     <li><code>TNG_FORCE_TTY</code> forces terminal-style output and can specify a column count or percentage.</li>
     <li><code>TNG_MDWIDTH</code> limits the width available to width-aware Markdown rendering.</li>
     <li><code>NO_COLOR</code> or <code>CLICOLOR=0</code> disables ANSI styling.</li>
     <li><code>CLICOLOR_FORCE</code> forces ANSI styling when no color-disable setting is active.</li>
   </ul>
   <p>
-    JSON, raw, binary, and streaming output is not decorated by these settings.
+    JSON, list, raw, binary, and streaming output is not sent to a pager. JSON,
+    raw, binary, and streaming output is not decorated by these settings.
   </p>
 </section>
 

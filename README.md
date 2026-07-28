@@ -102,11 +102,19 @@ or redirected, `tng` keeps the existing plain output and avoids
 terminal-width-dependent formatting. Use `--json` when scripts or agents need a
 stable, structured contract.
 
-The following environment variables control terminal detection, width, and
-ANSI styling:
+For terminal-style output, `tng repo view`, `tng issue view`, `tng pr view`,
+and `tng pr diff` use the pager configured by `TNG_PAGER` or `PAGER`.
+`TNG_PAGER` takes precedence. If neither variable is set, or the selected
+command is `cat`, output is written directly to the terminal. JSON, list, raw,
+binary, and streaming output is never sent to a pager.
+
+The following environment variables control paging, terminal detection, width,
+and ANSI styling:
 
 | Variable | Behavior |
 | --- | --- |
+| `TNG_PAGER` | Set the pager command for supported human-readable output. Takes precedence over `PAGER`. |
+| `PAGER` | Set the pager command when `TNG_PAGER` is not set. |
 | `TNG_FORCE_TTY` | Force terminal-style output. A positive integer sets the viewport width; a positive percentage uses that share of the detected terminal width. |
 | `TNG_MDWIDTH` | Set the maximum width available to width-aware Markdown, table, and details rendering. |
 | `NO_COLOR` | Disable ANSI styling when set to a nonempty value. |
