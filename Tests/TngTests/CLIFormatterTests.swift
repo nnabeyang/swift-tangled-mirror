@@ -6,7 +6,12 @@ import Testing
 @Suite struct CLIFormatterTests {
   @Test func terminalOutputBoldsOnlyHeadersAndDetailLabels() {
     let formatter = CLIFormatter(
-      style: CLIOutputStyle(isTerminal: true, noColor: false)
+      terminal: CLITerminalContext(
+        isTerminal: true,
+        viewportWidth: 80,
+        markdownWidth: 80,
+        colorEnabled: true
+      )
     )
 
     let table = formatter.table(
@@ -30,10 +35,20 @@ import Testing
 
   @Test func nonTerminalAndNoColorOutputStayPlain() {
     let nonTerminal = CLIFormatter(
-      style: CLIOutputStyle(isTerminal: false, noColor: false)
+      terminal: CLITerminalContext(
+        isTerminal: false,
+        viewportWidth: 80,
+        markdownWidth: 80,
+        colorEnabled: false
+      )
     )
     let noColor = CLIFormatter(
-      style: CLIOutputStyle(isTerminal: true, noColor: true)
+      terminal: CLITerminalContext(
+        isTerminal: true,
+        viewportWidth: 80,
+        markdownWidth: 80,
+        colorEnabled: false
+      )
     )
 
     #expect(nonTerminal.table(headers: ["NAME"], rows: []).contains("\u{001B}") == false)
@@ -52,7 +67,12 @@ import Testing
 
   @Test func JSONNeverContainsFormatterDecoration() throws {
     let formatter = CLIFormatter(
-      style: CLIOutputStyle(isTerminal: true, noColor: false)
+      terminal: CLITerminalContext(
+        isTerminal: true,
+        viewportWidth: 80,
+        markdownWidth: 80,
+        colorEnabled: true
+      )
     )
     let output = try formatter.json(FormatterFixture(name: "core"))
 

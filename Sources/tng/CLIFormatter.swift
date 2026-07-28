@@ -1,46 +1,17 @@
 import Foundation
 
-#if canImport(Darwin)
-  import Darwin
-#elseif canImport(Glibc)
-  import Glibc
-#endif
-
-struct CLIOutputStyle: Equatable, Sendable {
-  let isTerminal: Bool
-  let noColor: Bool
-
-  init(isTerminal: Bool, noColor: Bool) {
-    self.isTerminal = isTerminal
-    self.noColor = noColor
-  }
-
-  var usesANSI: Bool {
-    isTerminal && !noColor
-  }
-
-  static var live: CLIOutputStyle {
-    CLIOutputStyle(
-      isTerminal: standardOutputIsTerminal(),
-      noColor: ProcessInfo.processInfo.environment.keys.contains("NO_COLOR")
-    )
-  }
-}
-
 struct CLIFormatter: Sendable {
-  let style: CLIOutputStyle
+  let terminal: CLITerminalContext
 
-  init(style: CLIOutputStyle) {
-    self.style = style
+  init(terminal: CLITerminalContext) {
+    self.terminal = terminal
   }
 
   static var live: CLIFormatter {
-    CLIFormatter(style: .live)
+    CLIFormatter(terminal: .live)
   }
 
-  static let plain = CLIFormatter(
-    style: CLIOutputStyle(isTerminal: false, noColor: false)
-  )
+  static let plain = CLIFormatter(terminal: .plain)
 
   func table(headers: [String], rows: [[String?]]) -> String {
     let header = headers.map { decorateLabel(cell($0)) }.joined(separator: "\t")
@@ -105,16 +76,6 @@ struct CLIFormatter: Sendable {
   }
 
   private func decorateLabel(_ value: String) -> String {
-    style.usesANSI ? "\u{001B}[1m\(value)\u{001B}[0m" : value
+    terminal.colorEnabled ? "\u{001B}[1m\(value)\u{001B}[0m" : value
   }
-}
-
-private func standardOutputIsTerminal() -> Bool {
-  #if canImport(Darwin)
-    Darwin.isatty(FileHandle.standardOutput.fileDescriptor) == 1
-  #elseif canImport(Glibc)
-    Glibc.isatty(FileHandle.standardOutput.fileDescriptor) == 1
-  #else
-    false
-  #endif
 }

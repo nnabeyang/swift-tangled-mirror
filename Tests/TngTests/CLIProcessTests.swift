@@ -43,6 +43,60 @@ import Testing
     #expect(json.stderr.isEmpty)
   }
 
+  @Test func terminalEnvironmentControlsOnlyHumanDecoration() throws {
+    let plain = try TngProcess.run(
+      ["capabilities"],
+      environment: [
+        "NO_COLOR": "",
+        "CLICOLOR": "1",
+        "CLICOLOR_FORCE": "0",
+      ]
+    )
+    let forcedTTY = try TngProcess.run(
+      ["capabilities"],
+      environment: [
+        "NO_COLOR": "",
+        "CLICOLOR": "1",
+        "CLICOLOR_FORCE": "0",
+        "TNG_FORCE_TTY": "40",
+      ]
+    )
+    let forcedColor = try TngProcess.run(
+      ["capabilities"],
+      environment: [
+        "NO_COLOR": "",
+        "CLICOLOR": "1",
+        "CLICOLOR_FORCE": "1",
+      ]
+    )
+    let disabled = try TngProcess.run(
+      ["capabilities"],
+      environment: [
+        "NO_COLOR": "1",
+        "CLICOLOR_FORCE": "1",
+        "TNG_FORCE_TTY": "40",
+      ]
+    )
+    let json = try TngProcess.run(
+      ["capabilities", "--json"],
+      environment: [
+        "NO_COLOR": "",
+        "CLICOLOR_FORCE": "1",
+        "TNG_FORCE_TTY": "40",
+      ]
+    )
+
+    #expect(plain.stdout.contains("\u{001B}") == false)
+    #expect(forcedTTY.stdout.contains("\u{001B}[1mCOMMAND\u{001B}[0m"))
+    #expect(forcedColor.stdout.contains("\u{001B}[1mCOMMAND\u{001B}[0m"))
+    #expect(disabled.stdout.contains("\u{001B}") == false)
+    #expect(json.stdout.contains("\u{001B}") == false)
+    #expect(
+      try JSONDecoder().decode(CapabilityDocument.self, from: Data(json.stdout.utf8))
+        .schemaVersion == 1
+    )
+  }
+
   @Test func jsonModeReturnsStructuredOperationalAndUsageErrors() throws {
     let api = try TngProcess.run(["repo", "view", "not-valid", "--json"])
     let usage = try TngProcess.run(["repo", "list", "--limit", "0", "--json"])
