@@ -71,6 +71,17 @@ import Testing
     #expect(resubmit.pullRequestURI == samplePullRequestURI)
     #expect(resubmit.patchFile == nil)
     #expect(resubmit.json)
+    let stackResubmit = try PRResubmitCommand.parse([
+      samplePullRequestURI, "--stack", "--dry-run", "--json",
+    ])
+    #expect(stackResubmit.stack)
+    #expect(stackResubmit.dryRun)
+    #expect(stackResubmit.json)
+    #expect(throws: (any Error).self) {
+      _ = try PRResubmitCommand.parse([
+        samplePullRequestURI, "--stack", "--dry-run", "--yes",
+      ])
+    }
 
     let patchResubmit = try PRResubmitCommand.parse([
       samplePullRequestURI, "--patch-file", "changes.patch",
@@ -1102,6 +1113,28 @@ extension PRCommandTests {
                 value: authoritativePullRequestRecord.value
               ),
               roundNumber: authoritativePullRequestRecord.value.rounds.count
+            )
+          }
+        )
+      },
+      prepareStackResubmission: { _ in
+        PreparedPRStackResubmission(
+          pullRequest: authoritativePullRequestRecord,
+          forkCommits: { [] },
+          makePlan: { _ in
+            let plan = PullRequestStackResubmissionPlan(
+              selectedPullRequestURI: authoritativePullRequestRecord.uri,
+              operations: []
+            )
+            return PreparedPRStackPlan(
+              plan: plan,
+              apply: {
+                PullRequestStackResubmissionResult(
+                  plan: plan,
+                  pullRequests: [],
+                  deletedPullRequestURIs: []
+                )
+              }
             )
           }
         )

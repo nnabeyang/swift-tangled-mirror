@@ -26,6 +26,7 @@ struct PRCommandDependencies: Sendable {
     @Sendable (String, String?, String, String, [PullRequestStackCommit]) async throws ->
       PullRequestStackCreationResult
   let prepareResubmission: @Sendable (String) async throws -> PreparedPRResubmission
+  let prepareStackResubmission: @Sendable (String) async throws -> PreparedPRStackResubmission
   let createComment: @Sendable (RecordReference, String, Int) async throws -> TangledRecord<Comment>
   let mergeCheck: @Sendable (String) async throws -> PullRequestMergeCheck
   let merge: @Sendable (String, Bool) async throws -> PullRequestMergeResult
@@ -41,6 +42,10 @@ struct PRCommandDependencies: Sendable {
       bobbinClient: client
     )
     let resubmissionService = PullRequestResubmissionService(
+      pdsRecordClient: pdsRecordClient,
+      repositoryLocator: locator
+    )
+    let stackResubmissionService = PullRequestStackResubmissionService(
       pdsRecordClient: pdsRecordClient,
       repositoryLocator: locator
     )
@@ -132,6 +137,28 @@ struct PRCommandDependencies: Sendable {
             try await resubmissionService.resubmitFork(
               context,
               pdsClient: try PDSClient.restore(from: CLISessionStore.make().store)
+            )
+          }
+        )
+      },
+      prepareStackResubmission: { uri in
+        let context = try await stackResubmissionService.prepare(pullRequestURI: uri)
+        return PreparedPRStackResubmission(
+          pullRequest: context.pullRequest,
+          forkCommits: {
+            try await stackResubmissionService.forkCommits(
+              context,
+              pdsClient: try PDSClient.restore(from: CLISessionStore.make().store)
+            )
+          },
+          makePlan: { commits in
+            let prepared = try await stackResubmissionService.plan(context, commits: commits)
+            return PreparedPRStackPlan(
+              plan: prepared.plan,
+              apply: {
+                try await PDSClient.restore(from: CLISessionStore.make().store)
+                  .applyPullRequestStackResubmission(prepared)
+              }
             )
           }
         )
@@ -428,8 +455,23 @@ struct PRCommandService: Sendable {
   func resubmit(
     pullRequestURI: String,
     patchFile: String? = nil,
+    stack: Bool = false,
+    dryRun: Bool = false,
+    confirmed: Bool = false,
     json: Bool
   ) async throws -> CLICommandOutput {
+    if stack {
+      return try await resubmitStack(
+        pullRequestURI: pullRequestURI,
+        patchFile: patchFile,
+        dryRun: dryRun,
+        confirmed: confirmed,
+        json: json
+      )
+    }
+    guard !dryRun, !confirmed else {
+      throw TangledError.invalidRequest("--dry-run and --yes require --stack")
+    }
     let resubmission = try await dependencies.prepareResubmission(pullRequestURI)
     let pull = resubmission.pullRequest.value
     let result: PullRequestResubmissionResult
@@ -480,6 +522,76 @@ struct PRCommandService: Sendable {
         prepared.sourceRevision
       )
     }
+    return CLICommandOutput(
+      stdout: try json ? formatter.json(result) : format(result)
+    )
+  }
+
+  private func resubmitStack(
+    pullRequestURI: String,
+    patchFile: String?,
+    dryRun: Bool,
+    confirmed: Bool,
+    json: Bool
+  ) async throws -> CLICommandOutput {
+    guard !(dryRun && confirmed) else {
+      throw TangledError.invalidRequest("--dry-run cannot be combined with --yes")
+    }
+    let prepared = try await dependencies.prepareStackResubmission(pullRequestURI)
+    let pull = prepared.pullRequest.value
+    let commits: [PullRequestStackCommit]
+    if pull.source == nil {
+      guard let patchFile else {
+        throw TangledError.invalidRequest(
+          "patch-based stack resubmission requires --patch-file"
+        )
+      }
+      commits = try FormatPatchSeries.parse(PatchFileReader().read(path: patchFile))
+    } else if let source = pull.source, let sourceRepositoryDID = source.repositoryDID {
+      guard patchFile == nil else {
+        throw TangledError.invalidRequest(
+          "--patch-file is not valid for fork-based stack resubmission"
+        )
+      }
+      let origin = try dependencies.originURL()
+      let originRecord = try await dependencies.resolveRepository(origin)
+      guard originRecord.value.repoDID == sourceRepositoryDID else {
+        throw TangledError.invalidRequest(
+          "Git origin does not match the pull request source repository"
+        )
+      }
+      commits = try await prepared.forkCommits()
+    } else {
+      guard patchFile == nil, let source = pull.source else {
+        throw TangledError.invalidRequest(
+          "--patch-file is only valid for patch-based stack resubmission"
+        )
+      }
+      let origin = try dependencies.originURL()
+      let originRecord = try await dependencies.resolveRepository(origin)
+      guard originRecord.value.repoDID == pull.target.repositoryDID else {
+        throw TangledError.invalidRequest(
+          "Git origin does not match the pull request target repository"
+        )
+      }
+      commits = try dependencies.prepareStack(
+        pull.target.branch,
+        source.branch,
+        "origin"
+      ).commits
+    }
+    let plan = try await prepared.makePlan(commits)
+    if dryRun {
+      return CLICommandOutput(
+        stdout: try json ? formatter.json(plan.plan) : format(plan.plan)
+      )
+    }
+    guard !plan.plan.requiresConfirmation || confirmed else {
+      throw TangledError.invalidRequest(
+        "stack resubmission deletes pull request records; inspect with --dry-run and rerun with --yes"
+      )
+    }
+    let result = try await plan.apply()
     return CLICommandOutput(
       stdout: try json ? formatter.json(result) : format(result)
     )
@@ -544,6 +656,27 @@ extension PRCommandService {
   fileprivate func format(_ result: PullRequestResubmissionResult) -> String {
     "Resubmitted pull request: \(result.pullRequest.uri)\n"
       + "Round: \(result.roundNumber)\n"
+  }
+
+  fileprivate func format(_ plan: PullRequestStackResubmissionPlan) -> String {
+    formatter.table(
+      headers: ["OPERATION", "CHANGE ID", "URI", "ROUND", "DEPENDENT ON"],
+      rows: plan.operations.map {
+        [
+          $0.kind.rawValue,
+          $0.changeID,
+          $0.pullRequestURI,
+          $0.roundNumber.map(String.init) ?? "",
+          $0.dependentOn ?? "",
+        ]
+      }
+    )
+  }
+
+  fileprivate func format(_ result: PullRequestStackResubmissionResult) -> String {
+    format(result.plan)
+      + "Resubmitted pull requests: \(result.pullRequests.count)\n"
+      + "Deleted pull requests: \(result.deletedPullRequestURIs.count)\n"
   }
 
   fileprivate func repositoryPullsURL(record: TangledRecord<Repository>) -> String {
@@ -679,6 +812,17 @@ struct PreparedPRResubmission: Sendable {
   let submitBranch: @Sendable (Data, String) async throws -> PullRequestResubmissionResult
   let submitPatch: @Sendable (Data) async throws -> PullRequestResubmissionResult
   let submitFork: @Sendable () async throws -> PullRequestResubmissionResult
+}
+
+struct PreparedPRStackResubmission: Sendable {
+  let pullRequest: TangledRecord<PullRequest>
+  let forkCommits: @Sendable () async throws -> [PullRequestStackCommit]
+  let makePlan: @Sendable ([PullRequestStackCommit]) async throws -> PreparedPRStackPlan
+}
+
+struct PreparedPRStackPlan: Sendable {
+  let plan: PullRequestStackResubmissionPlan
+  let apply: @Sendable () async throws -> PullRequestStackResubmissionResult
 }
 
 struct PRViewWithCommentsResult: Codable, Equatable, Sendable {
