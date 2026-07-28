@@ -14,7 +14,8 @@
             "com.atproto.repo.deleteRecord",
             "com.atproto.server.getServiceAuth",
             "com.atproto.repo.uploadBlob",
-            "com.atproto.sync.getBlob"
+            "com.atproto.sync.getBlob",
+            "com.atproto.sync.getLatestCommit"
           ],
           "path" : "lexicons/com/atproto"
         }
@@ -127,5 +128,5 @@
   ],
   "generator" : "0.42.2",
   "module" : "Sources/TangledLexicons",
-  "originHash" : "f1d180d62193fdda618643f3325c890667bb451e6b1dbf9133ea1e46d7f60af9"
+  "originHash" : "d08d712d2439a103ee4ce6c3848331448b38213006da055978c43be72dfeff91"
 }

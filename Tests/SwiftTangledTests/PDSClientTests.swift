@@ -958,9 +958,105 @@ import Testing
     }
     #expect(await mock.recordedRequests().count == 1)
   }
+
+  @Test func stackResubmissionUsesOneAtomicApplyWritesRequest() async throws {
+    let firstURI = "at://\(sessionDID)/sh.tangled.repo.pull/first"
+    let secondURI = "at://\(sessionDID)/sh.tangled.repo.pull/second"
+    let snapshot = try stackSnapshot(uri: firstURI, title: "First")
+    let deleted = try stackSnapshot(uri: secondURI, title: "Second", dependentOn: firstURI)
+    let operation = PullRequestStackResubmissionOperation(
+      kind: .update,
+      changeID: "I-first",
+      pullRequestURI: firstURI,
+      title: "First updated",
+      dependentOn: nil,
+      roundNumber: 1
+    )
+    let deletion = PullRequestStackResubmissionOperation(
+      kind: .delete,
+      changeID: "I-second",
+      pullRequestURI: secondURI,
+      title: "Second",
+      previousDependentOn: firstURI
+    )
+    let context = PullRequestStackResubmissionContext(
+      selectedURI: firstURI,
+      expectedRepoCommit: "bafyreposwap",
+      snapshots: [firstURI: snapshot, secondURI: deleted],
+      items: [:],
+      orderedURIs: [firstURI, secondURI]
+    )
+    let plan = PullRequestStackResubmissionPlan(
+      selectedPullRequestURI: firstURI,
+      operations: [operation, deletion]
+    )
+    let prepared = PreparedPullRequestStackResubmission(
+      context: context,
+      plan: plan,
+      commitsByURI: [
+        firstURI: .init(
+          title: "First updated",
+          body: "Updated body",
+          changeID: "I-first",
+          patch: Data("diff --git a/a b/a\n".utf8)
+        )
+      ]
+    )
+    let mock = try PDSXRPCMock(listPages: [])
+    let client = PDSClient(
+      client: mock,
+      repoDID: sessionDID,
+      authorizedScopes: ["atproto", "repo:sh.tangled.repo.pull", "blob:*/*"],
+      now: { self.createdAt.typed! }
+    )
+
+    let result = try await client.applyPullRequestStackResubmission(prepared)
+
+    #expect(result.pullRequests.first?.value.title == "First updated")
+    #expect(result.pullRequests.first?.value.rounds.count == 2)
+    #expect(result.deletedPullRequestURIs == [secondURI])
+    let requests = await mock.recordedRequests()
+    #expect(
+      requests.map(\.nsID)
+        == ["com.atproto.repo.uploadBlob", "com.atproto.repo.applyWrites"]
+    )
+    let input = try JSONDecoder().decode(
+      Com.Atproto.RepoApplyWrites_Input.self,
+      from: #require(requests.last?.body)
+    )
+    #expect(input.swapCommit?.rawValue == "bafyreposwap")
+    #expect(input.writes.count == 2)
+  }
 }
 
 extension PDSClientTests {
+  private func stackSnapshot(
+    uri: String,
+    title: String,
+    dependentOn: String? = nil
+  ) throws -> PullRequestRecordSnapshot {
+    let data = Data(
+      """
+      {
+        "$type":"sh.tangled.repo.pull",
+        "title":"\(title)",
+        "rounds":[{"createdAt":"2026-07-22T12:34:56.000Z","patchBlob":{"$type":"blob","ref":{"$link":"bafkreigh2akiscaildcw453ukxq2grj32w3w6v3ip5ir6v3g7h4xj5d4te"},"mimeType":"application/gzip","size":42}}],
+        "target":{"branch":"main","repo":"\(repositoryDID)"},
+        "createdAt":"2026-07-22T12:34:56.000Z",
+        "mentions":[],
+        "references":[]\(dependentOn.map { ",\"dependentOn\":\"\($0)\"" } ?? "")
+      }
+      """.utf8
+    )
+    let decoder = JSONDecoder()
+    decoder.userInfo[.atprotoLexiconDecodingMode] = LexiconDecodingMode.permissive
+    let raw = try decoder.decode(UnknownATPValue.self, from: data)
+    return PullRequestRecordSnapshot(
+      record: try TangledRecordDecoder.pullRequest(uri: uri, cid: "bafyrecord", value: raw),
+      rawValue: raw
+    )
+  }
+
   private func makeClient(mock: PDSXRPCMock) -> PDSClient {
     PDSClient(
       client: mock,
@@ -1316,14 +1412,27 @@ private actor PDSXRPCMock: XRPCCallable {
         Com.Atproto.RepoApplyWrites_Input.self,
         from: components.body ?? Data()
       )
-      let results = input.writes.compactMap { write -> [String: String]? in
-        guard case .repoApplyWritesCreate(let create) = write else { return nil }
-        return [
-          "$type": "com.atproto.repo.applyWrites#createResult",
-          "uri":
-            "at://did:plc:session/\(create.collection.rawValue)/\(create.rkey?.rawValue ?? "missing")",
-          "cid": "bafystatus",
-        ]
+      let results = input.writes.map { write -> [String: String] in
+        switch write {
+        case .repoApplyWritesCreate(let create):
+          return [
+            "$type": "com.atproto.repo.applyWrites#createResult",
+            "uri":
+              "at://did:plc:session/\(create.collection.rawValue)/\(create.rkey?.rawValue ?? "missing")",
+            "cid": "bafystatus",
+          ]
+        case .repoApplyWritesUpdate(let update):
+          return [
+            "$type": "com.atproto.repo.applyWrites#updateResult",
+            "uri":
+              "at://did:plc:session/\(update.collection.rawValue)/\(update.rkey.rawValue)",
+            "cid": "bafyupdated",
+          ]
+        case .repoApplyWritesDelete:
+          return ["$type": "com.atproto.repo.applyWrites#deleteResult"]
+        case ._other:
+          return ["$type": "com.atproto.repo.applyWrites#deleteResult"]
+        }
       }
       return try JSONSerialization.data(withJSONObject: ["results": results])
     default:

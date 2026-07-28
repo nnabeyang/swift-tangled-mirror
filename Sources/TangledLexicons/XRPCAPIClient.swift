@@ -1557,6 +1557,115 @@ extension Com.Atproto {
       }
     }
   }
+  /// Get the current commit CID & revision of the specified repo. Does not require auth.
+  public enum SyncGetLatestCommit: XRPCQuery {
+    public static let id = "com.atproto.sync.getLatestCommit"
+    public typealias ResponseBody = Com.Atproto.SyncGetLatestCommit_Output
+    public struct Input: XRPCQueryInput {
+      public struct Query: XRPCInputQuery {
+        public var did: FormatString<DID>
+
+        public init(did: FormatString<DID>) {
+          self.did = did
+        }
+        public var asParameters: Parameters? {
+          ["did": .string(did.rawValue)]
+        }
+      }
+      public var query: Input.Query
+    }
+    public indirect enum Error: XRPCError {
+      case repodeactivated(Swift.String?)
+      case reponotfound(Swift.String?)
+      case reposuspended(Swift.String?)
+      case repotakendown(Swift.String?)
+      case unexpected(error: Swift.String?, message: Swift.String?)
+
+      public init(error: UnExpectedError) {
+        switch error.error {
+        case "RepoNotFound":
+          self = .reponotfound(error.message)
+        case "RepoTakendown":
+          self = .repotakendown(error.message)
+        case "RepoSuspended":
+          self = .reposuspended(error.message)
+        case "RepoDeactivated":
+          self = .repodeactivated(error.message)
+        default:
+          self = .unexpected(error: error.error, message: error.message)
+        }
+      }
+
+      public var error: Swift.String? {
+        switch self {
+        case .reponotfound:
+          return "RepoNotFound"
+        case .repotakendown:
+          return "RepoTakendown"
+        case .reposuspended:
+          return "RepoSuspended"
+        case .repodeactivated:
+          return "RepoDeactivated"
+        case .unexpected(let error, _):
+          return error
+        }
+      }
+
+      public var message: Swift.String? {
+        switch self {
+        case .reponotfound(let message):
+          return message
+        case .repotakendown(let message):
+          return message
+        case .reposuspended(let message):
+          return message
+        case .repodeactivated(let message):
+          return message
+        case .unexpected(_, let message):
+          return message
+        }
+      }
+    }
+  }
+
+  public struct SyncGetLatestCommit_Output: Codable, Hashable, Sendable {
+    public var cid: FormatString<LexLink>
+    public var rev: FormatString<TID>
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(cid: FormatString<LexLink>, rev: FormatString<TID>) {
+      self.cid = cid
+      self.rev = rev
+      self._unknownValues = [:]
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case cid
+      case rev
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      self.cid = try keyedContainer.decode(FormatString<LexLink>.self, forKey: .cid)
+      self.rev = try keyedContainer.decode(FormatString<TID>.self, forKey: .rev)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      self._unknownValues = _unknownValues
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encode(self.cid, forKey: .cid)
+      try container.encode(self.rev, forKey: .rev)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
 }
 
 extension Sh.Tangled {
@@ -13124,6 +13233,8 @@ public protocol XRPCCallable: _XRPCCallable {
   func ServerGetServiceAuth(aud: Swift.String, exp: Swift.Int?, lxm: FormatString<NSID>?) async throws -> Com.Atproto.ServerGetServiceAuth.ResponseBody
   /// Get a blob associated with a given account. Returns the full blob as originally uploaded. Does not require auth; implemented by PDS.
   func SyncGetBlob(cid: FormatString<LexLink>, did: FormatString<DID>) async throws -> Com.Atproto.SyncGetBlob.ResponseBody
+  /// Get the current commit CID & revision of the specified repo. Does not require auth.
+  func SyncGetLatestCommit(did: FormatString<DID>) async throws -> Com.Atproto.SyncGetLatestCommit.ResponseBody
   func ActorGetProfile(actor: FormatString<ATURI>) async throws -> Sh.Tangled.ActorGetProfile.ResponseBody
   func ActorGetProfiles(actors: [FormatString<ATURI>]) async throws -> Sh.Tangled.ActorGetProfiles.ResponseBody
   func CiGetPipeline(pipeline: FormatString<TID>) async throws -> Sh.Tangled.CiGetPipeline.ResponseBody
@@ -13237,6 +13348,10 @@ extension XRPCCallable {
   /// Get a blob associated with a given account. Returns the full blob as originally uploaded. Does not require auth; implemented by PDS.
   public func SyncGetBlob(cid: FormatString<LexLink>, did: FormatString<DID>) async throws -> Com.Atproto.SyncGetBlob.ResponseBody {
     try await call(Com.Atproto.SyncGetBlob.self, input: .init(cid: cid, did: did))
+  }
+  /// Get the current commit CID & revision of the specified repo. Does not require auth.
+  public func SyncGetLatestCommit(did: FormatString<DID>) async throws -> Com.Atproto.SyncGetLatestCommit.ResponseBody {
+    try await call(Com.Atproto.SyncGetLatestCommit.self, input: .init(did: did))
   }
   public func ActorGetProfile(actor: FormatString<ATURI>) async throws -> Sh.Tangled.ActorGetProfile.ResponseBody {
     try await call(Sh.Tangled.ActorGetProfile.self, input: .init(actor: actor))

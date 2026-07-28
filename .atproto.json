@@ -17,7 +17,8 @@
             "com.atproto.repo.deleteRecord",
             "com.atproto.server.getServiceAuth",
             "com.atproto.repo.uploadBlob",
-            "com.atproto.sync.getBlob"
+            "com.atproto.sync.getBlob",
+            "com.atproto.sync.getLatestCommit"
           ]
         }
       ],

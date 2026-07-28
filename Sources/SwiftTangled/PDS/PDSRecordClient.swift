@@ -27,6 +27,23 @@ public struct PDSRecordClient: Sendable {
     )
   }
 
+  public func latestCommit(ownerDID rawOwnerDID: String) async throws -> String {
+    let ownerDID: DID
+    do {
+      ownerDID = try DID(string: rawOwnerDID)
+    } catch {
+      throw TangledError.invalidRequest("invalid record owner DID: \(rawOwnerDID)")
+    }
+    let pdsURL = try await pdsURL(for: ownerDID)
+    let output = try await decode {
+      try await PDSRecordXRPCClient(
+        baseURL: pdsURL,
+        transport: transport
+      ).SyncGetLatestCommit(did: FormatString(ownerDID))
+    }
+    return output.cid.rawValue
+  }
+
   public func repositories(
     ownerDID rawOwnerDID: String,
     cursor: String? = nil,
@@ -160,13 +177,13 @@ public struct PDSRecordClient: Sendable {
   }
 }
 
-struct PullRequestRecordSnapshot: Sendable {
-  let record: TangledRecord<PullRequest>
-  let rawValue: UnknownATPValue
+package struct PullRequestRecordSnapshot: Sendable {
+  package let record: TangledRecord<PullRequest>
+  package let rawValue: UnknownATPValue
 }
 
 extension PDSRecordClient {
-  func pullRequestSnapshot(uri: String) async throws -> PullRequestRecordSnapshot {
+  package func pullRequestSnapshot(uri: String) async throws -> PullRequestRecordSnapshot {
     let output = try await record(uri: uri, collection: Sh.Tangled.RepoPull.nsId)
     return PullRequestRecordSnapshot(
       record: try TangledRecordDecoder.pullRequest(

@@ -11,7 +11,7 @@ public struct PDSClient: Sendable {
   private static let starCollection = "sh.tangled.feed.star"
   private static let issueCollection = "sh.tangled.repo.issue"
   private static let issueStateCollection = "sh.tangled.repo.issue.state"
-  private static let pullCollection = "sh.tangled.repo.pull"
+  package static let pullCollection = "sh.tangled.repo.pull"
   private static let commentCollection = "sh.tangled.feed.comment"
   private static let pullStatusCollection = "sh.tangled.repo.pull.status"
 
@@ -780,7 +780,7 @@ extension PDSClient {
     }
   }
 
-  private func requirePullScope() throws {
+  package func requirePullScope() throws {
     guard grantedScopes.allowsRepo(collection: Self.pullCollection, action: .update) else {
       throw TangledError.insufficientScope("repo:\(Self.pullCollection)")
     }
@@ -913,7 +913,7 @@ private final class SessionStoreBox: @unchecked Sendable {
   }
 }
 
-private enum PDSClientError: Error, Sendable {
+package enum PDSClientError: Error, Sendable {
   case invalidRecordURI(String)
   case invalidApplyWritesResult
   case invalidPullRequestRecord
