@@ -149,9 +149,19 @@ For a fork-based pull request, run the command from a checkout whose `origin`
 is the source fork. `tng` refreshes the fork's hidden tracking ref from the
 target branch and prepares the new round on the fork's Knot.
 
-Resubmission supports open, non-stacked pull requests that are branch-based,
-fork-based, or patch-based. Stacked pull requests require a separate
-resubmission workflow and are reported as unsupported for now.
+To resubmit a dependent stack, inspect its operation plan before writing:
+
+```sh
+tng pr resubmit PULL_REQUEST_AT_URI --stack --dry-run
+tng pr resubmit PULL_REQUEST_AT_URI --stack
+```
+
+The stack is matched to its existing pull requests by the unique `Change-Id`
+header in each commit. The command can reorder, update, and add stack entries
+in one PDS transaction. If the plan deletes pull request records, rerun it with
+`--yes` after reviewing `--dry-run`. Merged entries are preserved. For a
+patch-based stack, pass a multi-message `git format-patch` file with
+`--patch-file`.
 
 To list one author's pull requests without waiting for Bobbin indexing, read
 that author's PDS directly:

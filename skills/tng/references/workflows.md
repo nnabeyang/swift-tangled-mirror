@@ -270,10 +270,33 @@ tng pr resubmit PULL_AT_URI --patch-file changes.patch --json
 ```
 
 `--patch-file` is required for patch-based Pull Requests and rejected for
-branch-based and fork-based Pull Requests. The command supports open,
-non-stacked Pull Requests that are branch-based, fork-based, or patch-based.
-It reports stacked Pull Requests as unsupported instead of applying their
-multi-record semantics implicitly.
+branch-based and fork-based Pull Requests.
+
+For a dependent stack, first review the complete operation plan:
+
+```sh
+tng pr resubmit PULL_AT_URI --stack --dry-run --json
+```
+
+Each old and new stack entry must contain one unique `Change-Id` header. The
+plan shows records that will be created, updated, deleted, or preserved because
+they are merged. Resubmit without `--dry-run` when the plan is correct:
+
+```sh
+tng pr resubmit PULL_AT_URI --stack --json
+```
+
+If the plan contains deletion operations, the write requires `--yes`. Do not
+use `--yes` until the exact deletion URIs have been reviewed. Patch-based
+stacks require a multi-message `git format-patch` file:
+
+```sh
+tng pr resubmit PULL_AT_URI --stack --patch-file stack.patch --dry-run --json
+tng pr resubmit PULL_AT_URI --stack --patch-file stack.patch --yes --json
+```
+
+Stack resubmission applies its create, update, and delete operations in one PDS
+transaction. Merged Pull Request records are never updated or deleted.
 
 Report the returned Pull Request URI, CID, and zero-based round number. Verify
 the exact record and new round directly rather than assuming Bobbin or the Web
