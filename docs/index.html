@@ -225,10 +225,12 @@ tng capabilities --json</code></pre>
 <section>
   <h2>Terminal output</h2>
   <p>
-    Human-readable output may use ANSI styling when standard output is a
-    terminal. Piped and redirected output stays plain, and list commands keep
-    one record per line. Use <code>--json</code> when scripts or agents need a
-    stable, structured result.
+    On macOS, terminal output experimentally renders human-readable Markdown,
+    tables, and details with width-aware wrapping and optional ANSI styling.
+    OSC-8 hyperlinks are disabled. Linux keeps the existing tab-separated
+    human-readable output. Piped and redirected output stays unchanged on both
+    platforms. Use <code>--json</code> when scripts or agents need a stable,
+    structured result.
   </p>
   <ul>
     <li><code>TNG_FORCE_TTY</code> forces terminal-style output and can specify a column count or percentage.</li>
@@ -238,7 +240,6 @@ tng capabilities --json</code></pre>
   </ul>
   <p>
     JSON, raw, binary, and streaming output is not decorated by these settings.
-    The current tabular formatter does not wrap Markdown.
   </p>
 </section>
 
