@@ -35,11 +35,30 @@ import Testing
     #expect(comment.body == "Looks good")
     #expect(comment.round == 1)
     #expect(comment.json)
+    let edit = try PREditCommand.parse([
+      samplePullRequestURI, "-t", "New title", "-b", "", "--json",
+    ])
+    #expect(edit.pullRequestURI == samplePullRequestURI)
+    #expect(edit.title == "New title")
+    #expect(edit.body == "")
+    #expect(edit.json)
+    let editFromStdin = try PREditCommand.parse([
+      samplePullRequestURI, "-F", "-",
+    ])
+    #expect(editFromStdin.bodyFile == "-")
     #expect(throws: (any Error).self) {
       _ = try PRCommentCommand.parse([samplePullRequestURI])
     }
     #expect(throws: (any Error).self) {
       _ = try PRCommentCommand.parse([
+        samplePullRequestURI, "--body", "text", "--body-file", "body.md",
+      ])
+    }
+    #expect(throws: (any Error).self) {
+      _ = try PREditCommand.parse([samplePullRequestURI])
+    }
+    #expect(throws: (any Error).self) {
+      _ = try PREditCommand.parse([
         samplePullRequestURI, "--body", "text", "--body-file", "body.md",
       ])
     }
@@ -141,6 +160,70 @@ import Testing
     )
     #expect(merged.stdout.contains("\"pullRequestURIs\""))
     #expect(merged.stdout.contains(samplePullRequestURI))
+  }
+
+  @Test func editUsesAuthoritativePreparedRecordAndReadsBodyFiles() async throws {
+    let recorder = PRCommandRecorder()
+    let service = PRCommandService(dependencies: dependencies(recorder: recorder))
+
+    let human = try await service.edit(
+      pullRequestURI: samplePullRequestURI,
+      title: "Updated title",
+      body: nil,
+      bodyFile: "-",
+      json: false
+    )
+    let json = try await service.edit(
+      pullRequestURI: samplePullRequestURI,
+      title: nil,
+      body: "",
+      bodyFile: nil,
+      json: true
+    )
+
+    #expect(human.stdout.contains("Title\tUpdated title"))
+    #expect(human.stdout.contains("Body\tFrom stdin"))
+    let decoded = try JSONDecoder().decode(
+      TangledRecord<PullRequest>.self,
+      from: Data(json.stdout.utf8)
+    )
+    #expect(decoded.value.title == "Preserve rounds")
+    #expect(decoded.value.body == "")
+    #expect(
+      await recorder.editCalls()
+        == [
+          .init(title: "Updated title", body: "From stdin\n"),
+          .init(title: "Preserve rounds", body: ""),
+        ]
+    )
+    #expect(await recorder.viewPullRequestURIs().isEmpty)
+    #expect(
+      await recorder.authoritativePullRequestURIs()
+        == [samplePullRequestURI, samplePullRequestURI]
+    )
+  }
+
+  @Test func editPropagatesConflictWithoutRetrying() async {
+    let recorder = PRCommandRecorder()
+    let service = PRCommandService(
+      dependencies: dependencies(
+        recorder: recorder,
+        editError: .conflict(nil)
+      )
+    )
+
+    await #expect(throws: TangledError.self) {
+      _ = try await service.edit(
+        pullRequestURI: samplePullRequestURI,
+        title: "Updated title",
+        body: nil,
+        bodyFile: nil,
+        json: false
+      )
+    }
+
+    #expect(await recorder.editCalls().count == 1)
+    #expect(await recorder.authoritativePullRequestURIs() == [samplePullRequestURI])
   }
 
   @Test func closeAndReopenFormatStatusRecords() async throws {
@@ -887,6 +970,7 @@ extension PRCommandTests {
     viewPullRequestRecord: TangledRecord<PullRequest>? = nil,
     authoritativePullRequestRecord: TangledRecord<PullRequest>? = nil,
     authoritativePullRequestError: TangledError? = nil,
+    editError: TangledError? = nil,
     resolvedRepositories: [String: TangledRecord<Repository>] = [:],
     originURL: @escaping @Sendable () throws -> String = { "unused" }
   ) -> PRCommandDependencies {
@@ -1068,6 +1152,36 @@ extension PRCommandTests {
             )
           }
         )
+      },
+      prepareEdit: { uri in
+        await recorder.record(authoritativePullRequestURI: uri)
+        return PreparedPREdit(
+          pullRequest: authoritativePullRequestRecord,
+          apply: { title, body in
+            await recorder.record(edit: .init(title: title, body: body))
+            if let editError {
+              throw editError
+            }
+            return TangledRecord(
+              uri: authoritativePullRequestRecord.uri,
+              cid: "bafyedited",
+              value: PullRequest(
+                title: title,
+                body: body,
+                rounds: authoritativePullRequestRecord.value.rounds,
+                source: authoritativePullRequestRecord.value.source,
+                target: authoritativePullRequestRecord.value.target,
+                createdAt: authoritativePullRequestRecord.value.createdAt,
+                mentions: authoritativePullRequestRecord.value.mentions,
+                references: authoritativePullRequestRecord.value.references,
+                dependentOn: authoritativePullRequestRecord.value.dependentOn
+              )
+            )
+          }
+        )
+      },
+      readEditBodyFile: { path in
+        path == "-" ? "From stdin\n" : "From file\n"
       },
       prepareResubmission: { _ in
         PreparedPRResubmission(
@@ -1316,6 +1430,11 @@ private actor PRCommandRecorder {
     let status: PullRequestStatus
   }
 
+  struct EditCall: Equatable, Sendable {
+    let title: String
+    let body: String?
+  }
+
   struct ResubmitCall: Equatable, Sendable {
     let patch: Data
     let sourceRevision: String?
@@ -1331,6 +1450,7 @@ private actor PRCommandRecorder {
   private var recordedCreateCalls: [CreateCall] = []
   private var recordedCreateStackCalls: [CreateStackCall] = []
   private var recordedStatusCalls: [StatusCall] = []
+  private var recordedEditCalls: [EditCall] = []
   private var recordedResubmitCalls: [ResubmitCall] = []
   private var recordedForkResubmitCount = 0
   private var recordedCommentWriteCount = 0
@@ -1373,6 +1493,10 @@ private actor PRCommandRecorder {
 
   func record(statusURI: String, status: PullRequestStatus) {
     recordedStatusCalls.append(.init(uri: statusURI, status: status))
+  }
+
+  func record(edit: EditCall) {
+    recordedEditCalls.append(edit)
   }
 
   func record(resubmit: ResubmitCall) {
@@ -1429,6 +1553,10 @@ private actor PRCommandRecorder {
 
   func statusCalls() -> [StatusCall] {
     recordedStatusCalls
+  }
+
+  func editCalls() -> [EditCall] {
+    recordedEditCalls
   }
 
   func resubmitCalls() -> [ResubmitCall] {

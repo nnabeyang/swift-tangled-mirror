@@ -103,6 +103,7 @@ enum CapabilityCatalog {
     "pr view": Metadata(access: .read, authenticationRequired: false),
     "pr diff": Metadata(access: .read, authenticationRequired: false),
     "pr create": Metadata(access: .write, authenticationRequired: true),
+    "pr edit": Metadata(access: .write, authenticationRequired: true),
     "pr resubmit": Metadata(access: .write, authenticationRequired: true),
     "pr comment": Metadata(access: .write, authenticationRequired: true),
     "pr close": Metadata(access: .write, authenticationRequired: true),

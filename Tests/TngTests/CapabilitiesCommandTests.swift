@@ -20,9 +20,10 @@ import Testing
 
     #expect(document.schemaVersion == 1)
     #expect(document.cliVersion == SwiftTangled.version)
-    #expect(paths.count == 44)
+    #expect(paths.count == 45)
     #expect(paths.contains("capabilities"))
     #expect(paths.contains("pr create"))
+    #expect(paths.contains("pr edit"))
     #expect(paths.contains("pr resubmit"))
     #expect(paths.contains("pr close"))
     #expect(paths.contains("pr reopen"))
@@ -48,6 +49,9 @@ import Testing
     )
     let pullClose = try #require(
       document.commands.first { $0.path == ["pr", "close"] }
+    )
+    let pullEdit = try #require(
+      document.commands.first { $0.path == ["pr", "edit"] }
     )
     let pullResubmit = try #require(
       document.commands.first { $0.path == ["pr", "resubmit"] }
@@ -84,6 +88,11 @@ import Testing
     #expect(pullCreate.access == .write)
     #expect(pullCreate.authenticationRequired)
     #expect(pullCreate.options.contains { $0.names.contains("--body-file") })
+    #expect(pullEdit.access == .write)
+    #expect(pullEdit.authenticationRequired)
+    #expect(pullEdit.options.contains { $0.names == ["-t", "--title"] })
+    #expect(pullEdit.options.contains { $0.names == ["-b", "--body"] })
+    #expect(pullEdit.options.contains { $0.names == ["-F", "--body-file"] })
     #expect(pullClose.access == .write)
     #expect(pullClose.authenticationRequired)
     #expect(

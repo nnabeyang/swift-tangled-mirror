@@ -25,6 +25,8 @@ struct PRCommandDependencies: Sendable {
   let createStack:
     @Sendable (String, String?, String, String, [PullRequestStackCommit]) async throws ->
       PullRequestStackCreationResult
+  let prepareEdit: @Sendable (String) async throws -> PreparedPREdit
+  let readEditBodyFile: @Sendable (String) throws -> String
   let prepareResubmission: @Sendable (String) async throws -> PreparedPRResubmission
   let prepareStackResubmission: @Sendable (String) async throws -> PreparedPRStackResubmission
   let createComment: @Sendable (RecordReference, String, Int) async throws -> TangledRecord<Comment>
@@ -49,6 +51,7 @@ struct PRCommandDependencies: Sendable {
       pdsRecordClient: pdsRecordClient,
       repositoryLocator: locator
     )
+    let editService = PullRequestEditService(pdsRecordClient: pdsRecordClient)
     return PRCommandDependencies(
       resolveRepository: { try await locator.resolve($0) },
       resolveOwnerDID: { try await locator.resolveOwnerDID($0) },
@@ -114,6 +117,21 @@ struct PRCommandDependencies: Sendable {
           commits: commits
         )
       },
+      prepareEdit: { uri in
+        let context = try await editService.prepare(pullRequestURI: uri)
+        return PreparedPREdit(
+          pullRequest: context.pullRequest,
+          apply: { title, body in
+            try await editService.edit(
+              context,
+              title: title,
+              body: body,
+              pdsClient: try PDSClient.restore(from: CLISessionStore.make().store)
+            )
+          }
+        )
+      },
+      readEditBodyFile: { try CLITextFileReader().read(path: $0) },
       prepareResubmission: {
         let context = try await resubmissionService.prepare(pullRequestURI: $0)
         return PreparedPRResubmission(
@@ -332,6 +350,29 @@ struct PRCommandService: Sendable {
   func diff(pullRequestURI: String, roundNumber: Int?) async throws -> CLICommandOutput {
     let patch = try await dependencies.pullRequestPatch(pullRequestURI, roundNumber)
     return CLICommandOutput(stdoutData: patch.unifiedDiff)
+  }
+
+  func edit(
+    pullRequestURI: String,
+    title: String?,
+    body: String?,
+    bodyFile: String?,
+    json: Bool
+  ) async throws -> CLICommandOutput {
+    let prepared = try await dependencies.prepareEdit(pullRequestURI)
+    let resolvedBody: String?
+    if let bodyFile {
+      resolvedBody = try dependencies.readEditBodyFile(bodyFile)
+    } else if let body {
+      resolvedBody = body
+    } else {
+      resolvedBody = prepared.pullRequest.value.body
+    }
+    let record = try await prepared.apply(
+      title ?? prepared.pullRequest.value.title,
+      resolvedBody
+    )
+    return CLICommandOutput(stdout: try json ? formatter.json(record) : format(record))
   }
 
   func merge(
@@ -812,6 +853,11 @@ struct PreparedPRResubmission: Sendable {
   let submitBranch: @Sendable (Data, String) async throws -> PullRequestResubmissionResult
   let submitPatch: @Sendable (Data) async throws -> PullRequestResubmissionResult
   let submitFork: @Sendable () async throws -> PullRequestResubmissionResult
+}
+
+struct PreparedPREdit: Sendable {
+  let pullRequest: TangledRecord<PullRequest>
+  let apply: @Sendable (String, String?) async throws -> TangledRecord<PullRequest>
 }
 
 struct PreparedPRStackResubmission: Sendable {

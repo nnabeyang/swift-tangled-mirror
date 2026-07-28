@@ -716,6 +716,157 @@ import Testing
     #expect(await mock.recordedRequests().isEmpty)
   }
 
+  @Test func updatePullRequestPreservesRawFieldsAndUsesLatestCID() async throws {
+    let uri = "at://\(sessionDID)/sh.tangled.repo.pull/\(recordKey)"
+    let mock = try PDSXRPCMock(
+      listPages: [],
+      putOutput: .init(
+        cid: FormatString(rawValue: "bafyupdated"),
+        uri: FormatString(rawValue: uri)
+      )
+    )
+    let client = PDSClient(
+      client: mock,
+      repoDID: sessionDID,
+      authorizedScopes: ["atproto", "repo:sh.tangled.repo.pull"]
+    )
+    let current = try pullRequestEditSnapshot(uri: uri)
+
+    let result = try await client.updatePullRequest(
+      current: current,
+      title: " Updated title ",
+      body: " Updated body "
+    )
+
+    #expect(result.cid == "bafyupdated")
+    #expect(result.value.title == "Updated title")
+    #expect(result.value.body == "Updated body")
+    #expect(result.value.rounds == current.record.value.rounds)
+    #expect(result.value.source == current.record.value.source)
+    #expect(result.value.target == current.record.value.target)
+    #expect(result.value.createdAt == current.record.value.createdAt)
+    #expect(result.value.dependentOn == current.record.value.dependentOn)
+    #expect(result.value.mentions == current.record.value.mentions)
+    #expect(result.value.references == current.record.value.references)
+    let request = try #require(await mock.recordedRequests().last)
+    let requestBody = try #require(request.body)
+    let input = try #require(
+      JSONSerialization.jsonObject(with: requestBody) as? [String: Any]
+    )
+    #expect(input["rkey"] as? String == recordKey)
+    #expect(input["swapRecord"] as? String == "bafycurrent")
+    let record = try #require(input["record"] as? [String: Any])
+    #expect(record["title"] as? String == "Updated title")
+    #expect(record["body"] as? String == "Updated body")
+    #expect((record["futureField"] as? [String: Bool])?["enabled"] == true)
+    #expect((record["rounds"] as? [Any])?.count == 1)
+    #expect((record["source"] as? [String: Any])?["branch"] as? String == "feature")
+    #expect((record["target"] as? [String: Any])?["branch"] as? String == "main")
+  }
+
+  @Test func updatePullRequestClearsBodyAndValidatesBeforeWriting() async throws {
+    let uri = "at://\(sessionDID)/sh.tangled.repo.pull/\(recordKey)"
+    let mock = try PDSXRPCMock(
+      listPages: [],
+      putOutput: .init(
+        cid: FormatString(rawValue: "bafyupdated"),
+        uri: FormatString(rawValue: uri)
+      )
+    )
+    let scoped = PDSClient(
+      client: mock,
+      repoDID: sessionDID,
+      authorizedScopes: ["atproto", "repo:sh.tangled.repo.pull"]
+    )
+    let current = try pullRequestEditSnapshot(uri: uri)
+
+    let cleared = try await scoped.updatePullRequest(
+      current: current,
+      title: current.record.value.title,
+      body: ""
+    )
+    #expect(cleared.value.body == nil)
+    let clearRequest = try #require(await mock.recordedRequests().last)
+    let clearRequestBody = try #require(clearRequest.body)
+    let clearInput = try #require(
+      JSONSerialization.jsonObject(with: clearRequestBody) as? [String: Any]
+    )
+    let clearRecord = try #require(clearInput["record"] as? [String: Any])
+    #expect(clearRecord["body"] == nil)
+
+    let validationMock = try PDSXRPCMock(listPages: [])
+    let validationClient = PDSClient(
+      client: validationMock,
+      repoDID: sessionDID,
+      authorizedScopes: ["atproto", "repo:sh.tangled.repo.pull"]
+    )
+    let invalidSnapshots = [
+      try pullRequestEditSnapshot(
+        uri: "at://did:plc:other/sh.tangled.repo.pull/\(recordKey)"
+      ),
+      try pullRequestEditSnapshot(
+        uri: "at://\(sessionDID)/sh.tangled.repo.issue/\(recordKey)"
+      ),
+      try pullRequestEditSnapshot(
+        uri: "at://\(sessionDID)/sh.tangled.repo.pull"
+      ),
+      try pullRequestEditSnapshot(uri: uri, cid: nil),
+    ]
+    for snapshot in invalidSnapshots {
+      await #expect(throws: TangledError.self) {
+        _ = try await validationClient.updatePullRequest(
+          current: snapshot,
+          title: "Title",
+          body: nil
+        )
+      }
+    }
+    await #expect(throws: TangledError.self) {
+      _ = try await validationClient.updatePullRequest(
+        current: current,
+        title: " \n ",
+        body: nil
+      )
+    }
+    let unscoped = PDSClient(
+      client: validationMock,
+      repoDID: sessionDID,
+      authorizedScopes: ["atproto"]
+    )
+    await #expect(throws: TangledError.self) {
+      _ = try await unscoped.updatePullRequest(
+        current: current,
+        title: "Title",
+        body: nil
+      )
+    }
+    #expect(await validationMock.recordedRequests().isEmpty)
+  }
+
+  @Test func updatePullRequestReportsCIDConflictWithoutRetrying() async throws {
+    for failure in [PDSXRPCMock.Failure.oauthInvalidSwap, .xrpcInvalidSwap] {
+      let uri = "at://\(sessionDID)/sh.tangled.repo.pull/\(recordKey)"
+      let mock = try PDSXRPCMock(listPages: [], failure: failure)
+      let client = PDSClient(
+        client: mock,
+        repoDID: sessionDID,
+        authorizedScopes: ["atproto", "repo:sh.tangled.repo.pull"]
+      )
+
+      await #expect(throws: TangledError.self) {
+        _ = try await client.updatePullRequest(
+          current: try pullRequestEditSnapshot(uri: uri),
+          title: "Updated title",
+          body: nil
+        )
+      }
+      #expect(
+        await mock.recordedRequests().map(\.nsID)
+          == ["com.atproto.repo.putRecord"]
+      )
+    }
+  }
+
   @Test func appendPullRequestRoundPreservesRawRecordAndUsesCurrentCID() async throws {
     let uri = "at://\(sessionDID)/sh.tangled.repo.pull/\(recordKey)"
     let mock = try PDSXRPCMock(
@@ -1030,6 +1181,36 @@ import Testing
 }
 
 extension PDSClientTests {
+  private func pullRequestEditSnapshot(
+    uri: String,
+    cid: String? = "bafycurrent"
+  ) throws -> PullRequestRecordSnapshot {
+    let data = Data(
+      """
+      {
+        "$type":"sh.tangled.repo.pull",
+        "title":"Original title",
+        "body":"Original body",
+        "rounds":[{"createdAt":"2026-07-22T12:34:56.000Z","patchBlob":{"$type":"blob","ref":{"$link":"bafkreigh2akiscaildcw453ukxq2grj32w3w6v3ip5ir6v3g7h4xj5d4te"},"mimeType":"application/gzip","size":42}}],
+        "source":{"branch":"feature","repo":"did:plc:source"},
+        "target":{"branch":"main","repo":"\(repositoryDID)"},
+        "createdAt":"2026-07-22T12:34:56.000Z",
+        "dependentOn":"at://\(sessionDID)/sh.tangled.repo.pull/3parent",
+        "mentions":["did:plc:mentioned"],
+        "references":["at://did:plc:other/sh.tangled.repo.issue/related"],
+        "futureField":{"enabled":true}
+      }
+      """.utf8
+    )
+    let decoder = JSONDecoder()
+    decoder.userInfo[.atprotoLexiconDecodingMode] = LexiconDecodingMode.permissive
+    let raw = try decoder.decode(UnknownATPValue.self, from: data)
+    return PullRequestRecordSnapshot(
+      record: try TangledRecordDecoder.pullRequest(uri: uri, cid: cid, value: raw),
+      rawValue: raw
+    )
+  }
+
   private func stackSnapshot(
     uri: String,
     title: String,
