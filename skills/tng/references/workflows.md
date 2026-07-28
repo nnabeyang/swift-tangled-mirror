@@ -132,6 +132,21 @@ Omitting `--round` targets the latest round. Supply exactly one of `--body` and
 `--body-file`. Report the returned comment URI and CID. A successful write
 does not guarantee immediate visibility through Bobbin.
 
+## Edit a pull request
+
+Inspect the current record before editing:
+
+```sh
+tng pr view PULL_AT_URI --json
+tng pr edit PULL_AT_URI --title "Updated title" --body-file pull-request.md --json
+```
+
+The command reads the current record and CID from the Pull Request owner's PDS,
+then updates only its title and body with the CID as a compare-and-swap
+condition. Use `--body-file -` to read the body from standard input, or an empty
+`--body` value to remove it. On conflict, read the Pull Request again and do not
+retry until the user confirms how to reconcile the concurrent change.
+
 ## Close or reopen a pull request
 
 Inspect the Pull Request and verify its AT URI, Web URL, current state, and the
