@@ -784,7 +784,10 @@ extension PRCommandService {
       ("Rounds", String(pullRequest.rounds.count)),
       ("Created", pullRequest.createdAt.rawValue),
     ]
-    return formatter.details(fields + roundFields(pullRequest.rounds))
+    return formatter.details(
+      fields + roundFields(pullRequest.rounds),
+      markdownLabels: ["Body"]
+    )
   }
 
   fileprivate func format(_ comments: [TangledRecord<Comment>]) -> String {
@@ -802,19 +805,23 @@ extension PRCommandService {
     return "\nComments\n"
       + formatter.table(
         headers: ["URI", "ROUND", "BODY", "CREATED"],
-        rows: rows
+        rows: rows,
+        markdownColumns: [2]
       )
   }
 
   fileprivate func format(_ record: TangledRecord<Comment>) -> String {
-    formatter.details([
-      ("URI", record.uri),
-      ("CID", record.cid),
-      ("Subject", record.value.context.subject.uri),
-      ("Round", record.value.context.pullRequestRoundIndex.map(String.init)),
-      ("Body", record.value.body.displayText),
-      ("Created", record.value.createdAt.rawValue),
-    ])
+    formatter.details(
+      [
+        ("URI", record.uri),
+        ("CID", record.cid),
+        ("Subject", record.value.context.subject.uri),
+        ("Round", record.value.context.pullRequestRoundIndex.map(String.init)),
+        ("Body", record.value.body.displayText),
+        ("Created", record.value.createdAt.rawValue),
+      ],
+      markdownLabels: ["Body"]
+    )
   }
 
   fileprivate func roundFields(

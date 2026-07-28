@@ -256,16 +256,19 @@ extension IssueCommandService {
 
   fileprivate func format(_ record: TangledRecord<Issue>) -> String {
     let issue = record.value
-    return formatter.details([
-      ("URI", record.uri),
-      ("CID", record.cid),
-      ("Repository DID", issue.repositoryDID),
-      ("Title", issue.title),
-      ("Body", issue.body),
-      ("Mentions", issue.mentions.joined(separator: ", ")),
-      ("References", issue.references.joined(separator: ", ")),
-      ("Created", issue.createdAt.rawValue),
-    ])
+    return formatter.details(
+      [
+        ("URI", record.uri),
+        ("CID", record.cid),
+        ("Repository DID", issue.repositoryDID),
+        ("Title", issue.title),
+        ("Body", issue.body),
+        ("Mentions", issue.mentions.joined(separator: ", ")),
+        ("References", issue.references.joined(separator: ", ")),
+        ("Created", issue.createdAt.rawValue),
+      ],
+      markdownLabels: ["Body"]
+    )
   }
 
   fileprivate func format(_ comments: [TangledRecord<Comment>]) -> String {
@@ -280,17 +283,24 @@ extension IssueCommandService {
       ]
     }
     return "\nComments\n"
-      + formatter.table(headers: ["URI", "BODY", "CREATED"], rows: rows)
+      + formatter.table(
+        headers: ["URI", "BODY", "CREATED"],
+        rows: rows,
+        markdownColumns: [1]
+      )
   }
 
   fileprivate func format(_ record: TangledRecord<Comment>) -> String {
-    formatter.details([
-      ("URI", record.uri),
-      ("CID", record.cid),
-      ("Subject", record.value.context.subject.uri),
-      ("Body", record.value.body.displayText),
-      ("Created", record.value.createdAt.rawValue),
-    ])
+    formatter.details(
+      [
+        ("URI", record.uri),
+        ("CID", record.cid),
+        ("Subject", record.value.context.subject.uri),
+        ("Body", record.value.body.displayText),
+        ("Created", record.value.createdAt.rawValue),
+      ],
+      markdownLabels: ["Body"]
+    )
   }
 
   fileprivate func format(_ record: TangledRecord<IssueState>) -> String {

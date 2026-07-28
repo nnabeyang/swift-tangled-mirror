@@ -21,6 +21,7 @@ let package = Package(
     .package(url: "https://github.com/germ-network/GermConvenience.git", from: "0.2.4"),
     .package(url: "https://github.com/apple/swift-log.git", from: "1.6.0"),
     .package(url: "https://github.com/apple/swift-http-types.git", from: "1.5.1"),
+    .package(url: "https://github.com/steipete/Swiftdansi.git", exact: "0.2.2"),
     .package(
       url: "https://github.com/hummingbird-project/swift-websocket.git",
       exact: "1.6.1"
@@ -65,6 +66,11 @@ let package = Package(
       dependencies: [
         "SwiftTangled",
         .product(name: "ArgumentParser", package: "swift-argument-parser"),
+        .product(
+          name: "Swiftdansi",
+          package: "Swiftdansi",
+          condition: .when(platforms: [.macOS])
+        ),
       ],
       swiftSettings: [
         .enableUpcomingFeature("ApproachableConcurrency")

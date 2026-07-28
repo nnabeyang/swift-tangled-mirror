@@ -391,20 +391,23 @@ extension RepoCommandService {
 
   fileprivate func format(_ record: TangledRecord<Repository>) -> String {
     let repository = record.value
-    return formatter.details([
-      ("Name", displayName(record)),
-      ("URI", record.uri),
-      ("CID", record.cid),
-      ("Repository DID", repository.repoDID),
-      ("Knot", repository.knot),
-      ("Spindle", repository.spindle),
-      ("Description", repository.description),
-      ("Website", repository.website),
-      ("Source", repository.source),
-      ("Topics", repository.topics.joined(separator: ", ")),
-      ("Labels", repository.labels.joined(separator: ", ")),
-      ("Created", repository.createdAt.rawValue),
-    ])
+    return formatter.details(
+      [
+        ("Name", displayName(record)),
+        ("URI", record.uri),
+        ("CID", record.cid),
+        ("Repository DID", repository.repoDID),
+        ("Knot", repository.knot),
+        ("Spindle", repository.spindle),
+        ("Description", repository.description),
+        ("Website", repository.website),
+        ("Source", repository.source),
+        ("Topics", repository.topics.joined(separator: ", ")),
+        ("Labels", repository.labels.joined(separator: ", ")),
+        ("Created", repository.createdAt.rawValue),
+      ],
+      markdownLabels: ["Description"]
+    )
   }
 
   fileprivate func format(_ repositories: [TangledRecord<Repository>]) -> String {
@@ -418,7 +421,8 @@ extension RepoCommandService {
     }
     return formatter.table(
       headers: ["NAME", "REPO DID", "KNOT", "DESCRIPTION"],
-      rows: rows
+      rows: rows,
+      markdownColumns: [3]
     )
   }
 

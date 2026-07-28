@@ -1,5 +1,9 @@
 import Foundation
 
+#if os(macOS)
+  import Swiftdansi
+#endif
+
 struct CLIFormatter: Sendable {
   let terminal: CLITerminalContext
 
@@ -13,7 +17,28 @@ struct CLIFormatter: Sendable {
 
   static let plain = CLIFormatter(terminal: .plain)
 
-  func table(headers: [String], rows: [[String?]]) -> String {
+  func table(
+    headers: [String],
+    rows: [[String?]],
+    markdownColumns: Set<Int> = []
+  ) -> String {
+    #if os(macOS)
+      if terminal.isTerminal {
+        let header = "| " + headers.map { markdownCell($0) }.joined(separator: " | ") + " |"
+        let separator = "| " + headers.map { _ in "---" }.joined(separator: " | ") + " |"
+        let body = rows.map { row in
+          let cells = headers.indices.map { index in
+            let value = index < row.count ? row[index] : nil
+            return markdownColumns.contains(index)
+              ? markdownTableContent(value)
+              : markdownCell(cell(value))
+          }
+          return "| " + cells.joined(separator: " | ") + " |"
+        }
+        return renderMarkdown(([header, separator] + body).joined(separator: "\n"))
+      }
+    #endif
+
     let header = headers.map { decorateLabel(cell($0)) }.joined(separator: "\t")
     let body = rows.map { row in
       row.map(cell).joined(separator: "\t")
@@ -21,8 +46,24 @@ struct CLIFormatter: Sendable {
     return ([header] + body).joined(separator: "\n") + "\n"
   }
 
-  func details(_ fields: [(label: String, value: String?)]) -> String {
-    fields.map { field in
+  func details(
+    _ fields: [(label: String, value: String?)],
+    markdownLabels: Set<String> = []
+  ) -> String {
+    #if os(macOS)
+      if terminal.isTerminal {
+        let markdown = fields.map { field in
+          if markdownLabels.contains(field.label) {
+            return
+              "**\(markdownCell(field.label)):**\n\n\(markdownContent(field.value))"
+          }
+          return "**\(markdownCell(field.label)):** \(markdownCell(cell(field.value)))"
+        }.joined(separator: "\n\n")
+        return renderMarkdown(markdown)
+      }
+    #endif
+
+    return fields.map { field in
       "\(decorateLabel(cell(field.label)))\t\(cell(field.value))"
     }.joined(separator: "\n") + "\n"
   }
@@ -73,6 +114,75 @@ struct CLIFormatter: Sendable {
     }
     let sanitized = String(result)
     return sanitized.isEmpty ? "-" : sanitized
+  }
+
+  #if os(macOS)
+    private func renderMarkdown(_ markdown: String) -> String {
+      let output = Swiftdansi.render(
+        markdown,
+        options: RenderOptions(
+          wrap: true,
+          width: terminal.markdownWidth,
+          hyperlinks: false,
+          color: terminal.colorEnabled,
+          theme: .default,
+          tableBorder: .unicode,
+          tablePadding: 0,
+          tableDense: false,
+          tableTruncate: true
+        )
+      )
+      return output.hasSuffix("\n") ? output : output + "\n"
+    }
+
+    private func markdownContent(_ value: String?) -> String {
+      guard let value, !value.isEmpty else { return "-" }
+      let sanitized = sanitize(value, preserveNewlines: true)
+      return sanitized.isEmpty ? "-" : sanitized
+    }
+
+    private func markdownTableContent(_ value: String?) -> String {
+      markdownContent(value)
+        .replacingOccurrences(of: "\n", with: "<br>")
+        .replacingOccurrences(of: "|", with: "\\|")
+    }
+
+    private func markdownCell(_ value: String) -> String {
+      var result = value.replacingOccurrences(of: "\\", with: "\\\\")
+      for character in ["`", "*", "_", "{", "}", "[", "]", "<", ">", "(", ")", "#", "+", "-", ".", "!", "|"] {
+        result = result.replacingOccurrences(of: character, with: "\\\(character)")
+      }
+      return result
+    }
+  #endif
+
+  private func sanitize(_ value: String, preserveNewlines: Bool) -> String {
+    var result = String.UnicodeScalarView()
+    var escapeState = 0
+    for scalar in value.unicodeScalars {
+      if escapeState == 1 {
+        escapeState = scalar.value == 0x5B ? 2 : 0
+        continue
+      }
+      if escapeState == 2 {
+        if (0x40 ... 0x7E).contains(scalar.value) {
+          escapeState = 0
+        }
+        continue
+      }
+      if scalar.value == 0x1B {
+        escapeState = 1
+      } else if scalar == "\n", preserveNewlines {
+        result.append(scalar)
+      } else if scalar == "\t" || scalar == "\r" || scalar == "\n" {
+        result.append(" ")
+      } else if scalar.value >= 0x20, scalar.value != 0x7F,
+        !(0x80 ... 0x9F).contains(scalar.value)
+      {
+        result.append(scalar)
+      }
+    }
+    return String(result)
   }
 
   private func decorateLabel(_ value: String) -> String {
