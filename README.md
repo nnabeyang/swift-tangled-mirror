@@ -91,6 +91,30 @@ Most repository-aware commands infer the repository from the Git `origin`.
 Pass `--repo OWNER/REPOSITORY` to target one explicitly. Commands intended for
 automation support `--json` where documented by their help.
 
+### Terminal output
+
+When standard output is a terminal, `tng` may use ANSI styling for
+human-readable output. When output is piped or redirected, `tng` keeps the
+output plain and avoids terminal-width-dependent formatting. List commands keep
+one record per line so their output remains convenient for lightweight Unix
+pipelines. Use `--json` when scripts or agents need a stable, structured
+contract.
+
+The following environment variables control terminal detection, width, and
+ANSI styling:
+
+| Variable | Behavior |
+| --- | --- |
+| `TNG_FORCE_TTY` | Force terminal-style output. A positive integer sets the viewport width; a positive percentage uses that share of the detected terminal width. |
+| `TNG_MDWIDTH` | Set the maximum width available to width-aware Markdown rendering. The current tabular formatter does not wrap Markdown. |
+| `NO_COLOR` | Disable ANSI styling when set to a nonempty value. |
+| `CLICOLOR` | Disable ANSI styling when set to `0`. |
+| `CLICOLOR_FORCE` | Force ANSI styling, including for piped output, when set to a nonempty value other than `0`. |
+
+`NO_COLOR` and `CLICOLOR=0` take precedence over forced color. JSON, raw,
+binary, and streaming output never gain human-readable decoration from these
+settings.
+
 `tng` selects the read source according to the operation:
 
 | Operation | Source |
