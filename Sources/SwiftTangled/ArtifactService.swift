@@ -277,7 +277,7 @@ extension ArtifactService {
     if let existing {
       let owner = try ArtifactValidation.recordOwner(
         existing.uri,
-        collection: "sh.tangled.repo.artifact"
+        collection: Sh.Tangled.RepoArtifact.nsId
       )
       guard owner.rawValue == pdsClient.repoDID else {
         throw ArtifactError.notOwned(uri: existing.uri)
@@ -420,7 +420,7 @@ extension ArtifactService {
   ) async throws -> HTTPBodyStream {
     let owner = try ArtifactValidation.recordOwner(
       record.uri,
-      collection: "sh.tangled.repo.artifact"
+      collection: Sh.Tangled.RepoArtifact.nsId
     )
     guard let document = try await resolver.resolve(did: owner) else {
       throw TangledError.handleNotResolved("DID document not found: \(owner.rawValue)")

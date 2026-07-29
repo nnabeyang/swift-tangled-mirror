@@ -46,10 +46,12 @@ extension PDSClient {
   ) async throws -> TangledRecord<Artifact> {
     let collection = Sh.Tangled.RepoArtifact.nsId
     guard let repository = FormatString<ATURI>(rawValue: repositoryURI).typed,
-      repository.collection?.rawValue == "sh.tangled.repo",
+      repository.collection?.rawValue == Sh.Tangled.Repo.nsId,
       repository.rkey != nil
     else {
-      throw TangledError.invalidRequest("repository URI must identify a sh.tangled.repo record")
+      throw TangledError.invalidRequest(
+        "repository URI must identify a \(Sh.Tangled.Repo.nsId) record"
+      )
     }
     guard let parsedRepositoryDID = FormatString<DID>(rawValue: repositoryDID).typed else {
       throw TangledError.invalidRequest("invalid repository DID: \(repositoryDID)")

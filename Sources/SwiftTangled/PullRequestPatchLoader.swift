@@ -91,9 +91,9 @@ extension PullRequestPatchLoader {
     } catch {
       throw TangledError.invalidRequest("invalid pull request AT URI")
     }
-    guard uri.collection?.rawValue == "sh.tangled.repo.pull", uri.rkey != nil else {
+    guard uri.collection?.rawValue == Sh.Tangled.RepoPull.nsId, uri.rkey != nil else {
       throw TangledError.invalidRequest(
-        "pull request URI must identify a sh.tangled.repo.pull record"
+        "pull request URI must identify a \(Sh.Tangled.RepoPull.nsId) record"
       )
     }
     guard case .did(let did) = uri.authority else {

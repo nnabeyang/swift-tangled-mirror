@@ -1,5 +1,6 @@
 import Foundation
 import SwiftAtproto
+import TangledLexicons
 
 extension BobbinClient {
   func percentEncodedQueryItem(_ item: URLQueryItem) -> URLQueryItem {
@@ -19,9 +20,11 @@ extension BobbinClient {
   func validateGitRepositoryURI(_ value: String) throws {
     try requireNonempty(value, name: "repository URI")
     guard let uri = FormatString<ATURI>(rawValue: value).typed,
-      uri.collection?.rawValue == "sh.tangled.repo"
+      uri.collection?.rawValue == Sh.Tangled.Repo.nsId
     else {
-      throw TangledError.invalidRequest("repository URI must be a sh.tangled.repo AT URI")
+      throw TangledError.invalidRequest(
+        "repository URI must be a \(Sh.Tangled.Repo.nsId) AT URI"
+      )
     }
   }
 

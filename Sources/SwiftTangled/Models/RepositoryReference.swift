@@ -1,5 +1,6 @@
 import Foundation
 import SwiftAtproto
+import TangledLexicons
 
 public enum RepositoryReference: Equatable, Hashable, Sendable {
   case atURI(String)
@@ -19,10 +20,12 @@ public enum RepositoryReference: Equatable, Hashable, Sendable {
       } catch {
         throw TangledError.invalidRequest("invalid repository AT URI: \(value)")
       }
-      guard uri.collection?.rawValue == "sh.tangled.repo", uri.rkey != nil,
+      guard uri.collection?.rawValue == Sh.Tangled.Repo.nsId, uri.rkey != nil,
         uri.fragment == nil
       else {
-        throw TangledError.invalidRequest("AT URI must identify a sh.tangled.repo record")
+        throw TangledError.invalidRequest(
+          "AT URI must identify a \(Sh.Tangled.Repo.nsId) record"
+        )
       }
       self = .atURI(value)
       return

@@ -1,7 +1,8 @@
 import Foundation
+import TangledLexicons
 
 public struct PipelineRetryService: Sendable {
-  private static let method = "sh.tangled.ci.triggerPipeline"
+  private static let method = Sh.Tangled.CiTriggerPipeline.id
 
   private let dependencies: PipelineRetryDependencies
 

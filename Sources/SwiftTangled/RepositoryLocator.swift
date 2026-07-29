@@ -125,7 +125,7 @@ extension RepositoryLocator {
       )
     }
     let uri =
-      "at://\(description.ownerDid.rawValue)/sh.tangled.repo/\(description.rkey.rawValue)"
+      "at://\(description.ownerDid.rawValue)/\(Sh.Tangled.Repo.nsId)/\(description.rkey.rawValue)"
     let record = try await recordReader.repository(uri: uri).record
     try validate(record: record, repoDID: rawRepoDID)
     return record
@@ -188,7 +188,7 @@ extension RepositoryLocator {
       let page = try await client.search(
         name,
         options: SearchOptions(
-          nsid: "sh.tangled.repo",
+          nsid: Sh.Tangled.Repo.nsId,
           authorDID: ownerDID,
           cursor: cursor,
           limit: 100

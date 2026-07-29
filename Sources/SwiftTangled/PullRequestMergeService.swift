@@ -1,5 +1,6 @@
 import Foundation
 import SwiftAtproto
+import TangledLexicons
 
 public struct PullRequestMergeService: Sendable {
   private let dependencies: PullRequestMergeDependencies
@@ -104,7 +105,7 @@ public struct PullRequestMergeService: Sendable {
     let token = try await dependencies.serviceAuthToken(
       pdsClient,
       audience,
-      "sh.tangled.repo.merge"
+      Sh.Tangled.RepoMerge.id
     )
     try await dependencies.merge(
       prepared.repository.value.knot,

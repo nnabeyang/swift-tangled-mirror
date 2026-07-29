@@ -8,12 +8,12 @@ import TangledLexicons
 #endif
 
 public struct PDSClient: Sendable {
-  private static let starCollection = "sh.tangled.feed.star"
-  private static let issueCollection = "sh.tangled.repo.issue"
-  private static let issueStateCollection = "sh.tangled.repo.issue.state"
-  package static let pullCollection = "sh.tangled.repo.pull"
-  private static let commentCollection = "sh.tangled.feed.comment"
-  private static let pullStatusCollection = "sh.tangled.repo.pull.status"
+  private static let starCollection = Sh.Tangled.FeedStar.nsId
+  private static let issueCollection = Sh.Tangled.RepoIssue.nsId
+  private static let issueStateCollection = Sh.Tangled.Repo.IssueState.nsId
+  package static let pullCollection = Sh.Tangled.RepoPull.nsId
+  private static let commentCollection = Sh.Tangled.FeedComment.nsId
+  private static let pullStatusCollection = Sh.Tangled.Repo.PullStatus.nsId
 
   package let client: any XRPCCallable
   package let repoDID: String

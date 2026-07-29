@@ -1,5 +1,6 @@
 import Foundation
 import SwiftAtproto
+import TangledLexicons
 
 public struct PullRequestResubmissionContext: Sendable {
   public let pullRequest: TangledRecord<PullRequest>
@@ -172,7 +173,7 @@ public struct PullRequestResubmissionService: Sendable {
     let audience = try knotServiceAudience(fork.repository.value.knot)
     let token = try await pdsClient.serviceAuthToken(
       audience: audience,
-      lxm: "sh.tangled.repo.hiddenRef"
+      lxm: Sh.Tangled.RepoHiddenRef.id
     )
     let hiddenRef = try await dependencies.updateHiddenRef(
       fork.repository.value.knot,

@@ -19,7 +19,7 @@ public struct PDSRecordClient: Sendable {
   }
 
   public func repository(uri: String) async throws -> TangledRecord<Repository> {
-    let output = try await record(uri: uri, collection: "sh.tangled.repo")
+    let output = try await record(uri: uri, collection: Sh.Tangled.Repo.nsId)
     return try TangledRecordDecoder.repository(
       uri: output.uri.rawValue,
       cid: output.cid?.rawValue,
@@ -52,7 +52,7 @@ public struct PDSRecordClient: Sendable {
   ) async throws -> Page<TangledRecord<Repository>> {
     let (ownerDID, output) = try await records(
       ownerDID: rawOwnerDID,
-      collection: "sh.tangled.repo",
+      collection: Sh.Tangled.Repo.nsId,
       cursor: cursor,
       limit: limit,
       reverse: reverse
@@ -62,12 +62,12 @@ public struct PDSRecordClient: Sendable {
         try validate(
           uri: record.uri.rawValue,
           ownerDID: ownerDID,
-          collection: "sh.tangled.repo"
+          collection: Sh.Tangled.Repo.nsId
         )
         let returnedType = try TangledRecordDecoder.recordType(of: record.value)
-        guard returnedType == "sh.tangled.repo" else {
+        guard returnedType == Sh.Tangled.Repo.nsId else {
           throw TangledError.upstreamFailed(
-            "PDS returned record type \(returnedType), expected sh.tangled.repo"
+            "PDS returned record type \(returnedType), expected \(Sh.Tangled.Repo.nsId)"
           )
         }
         return try TangledRecordDecoder.repository(

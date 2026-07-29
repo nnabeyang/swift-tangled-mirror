@@ -1,5 +1,6 @@
 import Foundation
 import SwiftAtproto
+import TangledLexicons
 
 public struct PullRequestStackResubmissionOperation: Codable, Equatable, Sendable {
   public enum Kind: String, Codable, Sendable {
@@ -231,7 +232,7 @@ public struct PullRequestStackResubmissionService: Sendable {
         assigned.append(
           (
             commit,
-            "at://\(authorDID)/sh.tangled.repo.pull/\(dependencies.nextRecordKey())",
+            "at://\(authorDID)/\(Sh.Tangled.RepoPull.nsId)/\(dependencies.nextRecordKey())",
             nil
           )
         )
@@ -338,7 +339,7 @@ public struct PullRequestStackResubmissionService: Sendable {
     let audience = try knotServiceAudience(sourceRepository.value.knot)
     let token = try await pdsClient.serviceAuthToken(
       audience: audience,
-      lxm: "sh.tangled.repo.hiddenRef"
+      lxm: Sh.Tangled.RepoHiddenRef.id
     )
     let hidden = try await dependencies.updateHiddenRef(
       sourceRepository.value.knot,
