@@ -236,12 +236,17 @@ tng capabilities --json</code></pre>
     <code>tng issue view</code>, <code>tng pr view</code>, and
     <code>tng pr diff</code> use the pager configured by
     <code>TNG_PAGER</code> or <code>PAGER</code>. <code>TNG_PAGER</code>
-    takes precedence. If neither variable is set, or the selected command is
-    <code>cat</code>, output is written directly to the terminal.
+    takes precedence, including when set to an empty value. If neither
+    variable is set, <code>tng</code> uses <code>less</code> by default. An
+    empty selected value, <code>cat</code>, or <code>TERM=dumb</code> disables
+    paging. If the selected pager is unavailable, <code>tng</code> warns and
+    writes the output directly. A pager that fails after starting produces a
+    warning without changing the command's exit status or repeating
+    potentially partial output.
   </p>
   <ul>
-    <li><code>TNG_PAGER</code> sets the pager command and takes precedence over <code>PAGER</code>.</li>
-    <li><code>PAGER</code> sets the pager command when <code>TNG_PAGER</code> is not set.</li>
+    <li><code>TNG_PAGER</code> sets the pager command and takes precedence over <code>PAGER</code>; an empty value disables paging.</li>
+    <li><code>PAGER</code> sets the pager command when <code>TNG_PAGER</code> is not set; an empty value disables paging. If neither pager variable is set, <code>tng</code> uses <code>less</code>.</li>
     <li><code>TNG_FORCE_TTY</code> forces terminal-style output and can specify a column count or percentage.</li>
     <li><code>TNG_MDWIDTH</code> limits the width available to width-aware Markdown rendering.</li>
     <li><code>NO_COLOR</code> or <code>CLICOLOR=0</code> disables ANSI styling.</li>

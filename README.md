@@ -104,17 +104,21 @@ stable, structured contract.
 
 For terminal-style output, `tng repo view`, `tng issue view`, `tng pr view`,
 and `tng pr diff` use the pager configured by `TNG_PAGER` or `PAGER`.
-`TNG_PAGER` takes precedence. If neither variable is set, or the selected
-command is `cat`, output is written directly to the terminal. JSON, list, raw,
-binary, and streaming output is never sent to a pager.
+`TNG_PAGER` takes precedence, including when it is set to an empty value. If
+neither variable is set, `tng` uses `less` by default. An empty selected value,
+`cat`, or `TERM=dumb` disables paging. If the selected pager is unavailable,
+`tng` warns and writes the output directly. A pager that fails after starting
+produces a warning without changing the command's exit status or repeating
+potentially partial output. JSON, list, raw, binary, and streaming output is
+never sent to a pager.
 
 The following environment variables control paging, terminal detection, width,
 and ANSI styling:
 
 | Variable | Behavior |
 | --- | --- |
-| `TNG_PAGER` | Set the pager command for supported human-readable output. Takes precedence over `PAGER`. |
-| `PAGER` | Set the pager command when `TNG_PAGER` is not set. |
+| `TNG_PAGER` | Set the pager command for supported human-readable output. Takes precedence over `PAGER`; an empty value disables paging. |
+| `PAGER` | Set the pager command when `TNG_PAGER` is not set. An empty value disables paging. If neither pager variable is set, `tng` uses `less`. |
 | `TNG_FORCE_TTY` | Force terminal-style output. A positive integer sets the viewport width; a positive percentage uses that share of the detected terminal width. |
 | `TNG_MDWIDTH` | Set the maximum width available to width-aware Markdown, table, and details rendering. |
 | `NO_COLOR` | Disable ANSI styling when set to a nonempty value. |
