@@ -2726,6 +2726,165 @@ extension Sh.Tangled {
       try _unknownValues.encode(to: encoder)
     }
   }
+  /// Trigger a pipeline at an explicit commit. Runs the named workflows, or every workflow defined in the repo when none are named.
+  public enum CiTriggerPipeline: XRPCProcedure {
+    public static let id = "sh.tangled.ci.triggerPipeline"
+    public static let contentType = "application/json"
+    public typealias RequestBody = CiTriggerPipeline_Input
+    public typealias ResponseBody = CiTriggerPipeline_Output
+    public indirect enum Error: XRPCError {
+      /// Invalid request parameters
+      case invalidrequest(Swift.String?)
+      case unexpected(error: Swift.String?, message: Swift.String?)
+
+      public init(error: UnExpectedError) {
+        switch error.error {
+        case "InvalidRequest":
+          self = .invalidrequest(error.message)
+        default:
+          self = .unexpected(error: error.error, message: error.message)
+        }
+      }
+
+      public var error: Swift.String? {
+        switch self {
+        case .invalidrequest:
+          return "InvalidRequest"
+        case .unexpected(let error, _):
+          return error
+        }
+      }
+
+      public var message: Swift.String? {
+        switch self {
+        case .invalidrequest(let message):
+          return message
+        case .unexpected(_, let message):
+          return message
+        }
+      }
+    }
+  }
+
+  public struct CiTriggerPipeline_Input: Codable, Hashable, Sendable {
+    /// Target repository DID. Auth is checked against this repo.
+    public var repo: FormatString<DID>
+    /// Trigger metadata for this dispatch.
+    public var trigger: CiTriggerPipeline_Input_Trigger
+    /// Workflow names to run. When not provided, every dispatchable workflow is run.
+    public var workflows: [Swift.String]?
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(repo: FormatString<DID>, trigger: CiTriggerPipeline_Input_Trigger, workflows: [Swift.String]? = nil) {
+      self.repo = repo
+      self.trigger = trigger
+      self.workflows = workflows
+      self._unknownValues = [:]
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case repo
+      case trigger
+      case workflows
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      self.repo = try keyedContainer.decode(FormatString<DID>.self, forKey: .repo)
+      self.trigger = try keyedContainer.decode(CiTriggerPipeline_Input_Trigger.self, forKey: .trigger)
+      self.workflows = try keyedContainer.decodeIfPresent([Swift.String].self, forKey: .workflows)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      self._unknownValues = _unknownValues
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encode(self.repo, forKey: .repo)
+      try container.encode(self.trigger, forKey: .trigger)
+      try container.encodeIfPresent(self.workflows, forKey: .workflows)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
+
+  /// Trigger metadata for this dispatch.
+  public indirect enum CiTriggerPipeline_Input_Trigger: Codable, Hashable, Sendable {
+    case ciTriggerManual(CiTrigger_Manual)
+    case ciTriggerPullRequest(CiTrigger_PullRequest)
+    case _other(UnknownRecord)
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case type = "$type"
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let container = try decoder.container(keyedBy: CodingKeys.self)
+      let type = try container.decode(Swift.String.self, forKey: .type)
+      switch type {
+      case "sh.tangled.ci.trigger#manual":
+        self = try .ciTriggerManual(.init(from: decoder))
+      case "sh.tangled.ci.trigger#pullRequest":
+        self = try .ciTriggerPullRequest(.init(from: decoder))
+      default:
+        self = try ._other(.init(from: decoder))
+      }
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      switch self {
+      case .ciTriggerManual(let value):
+        try container.encode("sh.tangled.ci.trigger#manual", forKey: .type)
+        try value.encode(to: encoder)
+      case .ciTriggerPullRequest(let value):
+        try container.encode("sh.tangled.ci.trigger#pullRequest", forKey: .type)
+        try value.encode(to: encoder)
+      case ._other(let value):
+        try value.encode(to: encoder)
+      }
+    }
+  }
+
+  public struct CiTriggerPipeline_Output: Codable, Hashable, Sendable {
+    /// AT-URI of the created pipeline
+    public var pipeline: FormatString<ATURI>
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(pipeline: FormatString<ATURI>) {
+      self.pipeline = pipeline
+      self._unknownValues = [:]
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case pipeline
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      self.pipeline = try keyedContainer.decode(FormatString<ATURI>.self, forKey: .pipeline)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      self._unknownValues = _unknownValues
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encode(self.pipeline, forKey: .pipeline)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
   public struct FeedComment: ATProtoRecord {
     public static let nsId = "sh.tangled.feed.comment"
     public var type: Swift.String {
@@ -13240,6 +13399,8 @@ public protocol XRPCCallable: _XRPCCallable {
   func CiGetPipeline(pipeline: FormatString<TID>) async throws -> Sh.Tangled.CiGetPipeline.ResponseBody
   /// Query pipelines in git repository
   func CiQueryPipelines(commits: [Swift.String]?, cursor: Swift.String?, kinds: [Sh.Tangled.kinds__Elem]?, limit: Swift.Int?, repo: FormatString<DID>) async throws -> Sh.Tangled.CiQueryPipelines.ResponseBody
+  /// Trigger a pipeline at an explicit commit. Runs the named workflows, or every workflow defined in the repo when none are named.
+  func CiTriggerPipeline(input: Sh.Tangled.CiTriggerPipeline_Input) async throws -> Sh.Tangled.CiTriggerPipeline.ResponseBody
   func FeedCountComments(subject: FormatString<ATURI>) async throws -> Sh.Tangled.FeedCountComments.ResponseBody
   func FeedCountCommentsBy(subject: FormatString<DID>) async throws -> Sh.Tangled.FeedCountCommentsBy.ResponseBody
   func FeedCountReactions(subject: FormatString<ATURI>) async throws -> Sh.Tangled.FeedCountReactions.ResponseBody
@@ -13365,6 +13526,10 @@ extension XRPCCallable {
   /// Query pipelines in git repository
   public func CiQueryPipelines(commits: [Swift.String]? = nil, cursor: Swift.String? = nil, kinds: [Sh.Tangled.kinds__Elem]? = nil, limit: Swift.Int? = nil, repo: FormatString<DID>) async throws -> Sh.Tangled.CiQueryPipelines.ResponseBody {
     try await call(Sh.Tangled.CiQueryPipelines.self, input: .init(commits: commits, cursor: cursor, kinds: kinds, limit: limit, repo: repo))
+  }
+  /// Trigger a pipeline at an explicit commit. Runs the named workflows, or every workflow defined in the repo when none are named.
+  public func CiTriggerPipeline(input: Sh.Tangled.CiTriggerPipeline_Input) async throws -> Sh.Tangled.CiTriggerPipeline.ResponseBody {
+    try await call(Sh.Tangled.CiTriggerPipeline.self, input: input)
   }
   public func FeedCountComments(subject: FormatString<ATURI>) async throws -> Sh.Tangled.FeedCountComments.ResponseBody {
     try await call(Sh.Tangled.FeedCountComments.self, input: .init(subject: subject))

@@ -68,6 +68,7 @@
             "sh.tangled.ci.pipeline",
             "sh.tangled.ci.queryPipelines",
             "sh.tangled.ci.trigger",
+            "sh.tangled.ci.triggerPipeline",
             "sh.tangled.repo.archive",
             "sh.tangled.repo.artifact",
             "sh.tangled.repo.blob",

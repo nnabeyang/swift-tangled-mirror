@@ -134,6 +134,50 @@ import TangledLexicons
     #expect(queryValues(named: "pipeline", in: request) == ["3mr7m2f6ger22"])
   }
 
+  @Test func triggerPipelineUsesAuthenticatedGeneratedProcedure() async throws {
+    let transport = PipelineTransport([
+      .init(
+        statusCode: 200,
+        body: Data(
+          #"{"pipeline":"at://did:web:spindle.example/sh.tangled.pipeline/retry-pipeline"}"#.utf8
+        )
+      )
+    ])
+    let client = makeClient(transport: transport)
+
+    let result = try await client.triggerPipeline(
+      repositoryDID: "did:plc:repository",
+      trigger: .manual(
+        PipelineManualTrigger(
+          sha: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          ref: "refs/heads/main",
+          sourceRepositoryDID: "did:plc:source",
+          inputs: [.init(key: "configuration", value: "release")]
+        )
+      ),
+      workflows: ["verify.yml"],
+      token: "service-token"
+    )
+
+    #expect(
+      result == "at://did:web:spindle.example/sh.tangled.pipeline/retry-pipeline"
+    )
+    let request = try #require(await transport.recordedRequests().first)
+    #expect(request.httpMethod == "POST")
+    #expect(request.url?.lastPathComponent == "sh.tangled.ci.triggerPipeline")
+    #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer service-token")
+    let body = try #require(request.httpBody)
+    let object = try #require(
+      JSONSerialization.jsonObject(with: body) as? [String: Any]
+    )
+    #expect(object["repo"] as? String == "did:plc:repository")
+    #expect(object["workflows"] as? [String] == ["verify.yml"])
+    let trigger = try #require(object["trigger"] as? [String: Any])
+    #expect(trigger["$type"] as? String == "sh.tangled.ci.trigger#manual")
+    #expect(trigger["sha"] as? String == "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+    #expect(trigger["sourceRepo"] as? String == "did:plc:source")
+  }
+
   @Test func rawValueModelsAndUnknownTriggerRoundTrip() throws {
     let unknownStatus = try JSONDecoder().decode(
       PipelineWorkflowStatus.self,

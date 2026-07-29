@@ -7,6 +7,7 @@ public struct SpindleClient: XRPCCallable, Sendable {
   public let retryPolicy: BobbinRetryPolicy
 
   private let queryClient: BobbinClient
+  package let transport: any HTTPTransport
 
   public init(
     baseURL: URL,
@@ -15,6 +16,7 @@ public struct SpindleClient: XRPCCallable, Sendable {
   ) {
     self.baseURL = baseURL
     self.retryPolicy = retryPolicy
+    self.transport = transport
     self.queryClient = BobbinClient(
       baseURL: baseURL,
       transport: transport,

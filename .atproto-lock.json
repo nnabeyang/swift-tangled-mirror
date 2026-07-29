@@ -66,6 +66,7 @@
             "sh.tangled.ci.pipeline",
             "sh.tangled.ci.queryPipelines",
             "sh.tangled.ci.trigger",
+            "sh.tangled.ci.triggerPipeline",
             "sh.tangled.repo.archive",
             "sh.tangled.repo.artifact",
             "sh.tangled.repo.blob",
@@ -128,5 +129,5 @@
   ],
   "generator" : "0.42.2",
   "module" : "Sources/TangledLexicons",
-  "originHash" : "d08d712d2439a103ee4ce6c3848331448b38213006da055978c43be72dfeff91"
+  "originHash" : "3a8454d8a0577ab035770febf3639aa781a9eb017779a0297c49cafaeba15e76"
 }
