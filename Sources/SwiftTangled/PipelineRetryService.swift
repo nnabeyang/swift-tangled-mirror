@@ -1,9 +1,6 @@
 import Foundation
-import TangledLexicons
 
 public struct PipelineRetryService: Sendable {
-  private static let method = Sh.Tangled.CiTriggerPipeline.id
-
   private let dependencies: PipelineRetryDependencies
 
   public init(spindleClient: SpindleClient, pdsClient: PDSClient) {
@@ -40,7 +37,7 @@ public struct PipelineRetryService: Sendable {
     let workflows = try selectedWorkflows(workflow, from: pipeline.workflows)
     let trigger = try retryTrigger(pipeline.trigger, pipeline: pipeline, commit: commit)
     let audience = try dependencies.serviceAudience()
-    let token = try await dependencies.serviceAuthToken(audience, Self.method)
+    let token = try await dependencies.serviceAuthToken(audience, pipelineTriggerMethod)
     return try await dependencies.trigger(repositoryDID, trigger, workflows, token)
   }
 }
@@ -131,19 +128,4 @@ extension PipelineRetryService {
       )
     }
   }
-}
-
-private func spindleServiceAudience(_ url: URL) throws -> String {
-  guard url.scheme?.lowercased() == "https", let host = url.host else {
-    throw TangledError.invalidRequest(
-      "authenticated Spindle operations require an HTTPS endpoint"
-    )
-  }
-  let authority =
-    if let port = url.port {
-      "\(host):\(port)".replacingOccurrences(of: ":", with: "%3A")
-    } else {
-      host
-    }
-  return "did:web:\(authority)"
 }

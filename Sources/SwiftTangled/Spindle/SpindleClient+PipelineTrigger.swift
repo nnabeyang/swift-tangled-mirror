@@ -2,11 +2,13 @@ import Foundation
 import SwiftAtproto
 import TangledLexicons
 
+package let pipelineTriggerMethod = Sh.Tangled.CiTriggerPipeline.id
+
 extension SpindleClient {
   package func triggerPipeline(
     repositoryDID: String,
     trigger: PipelineTrigger,
-    workflows: [String],
+    workflows: [String]?,
     token: String
   ) async throws -> String {
     let generatedTrigger: Sh.Tangled.CiTriggerPipeline_Input_Trigger
@@ -33,7 +35,9 @@ extension SpindleClient {
         )
       )
     case .push, .unknown:
-      throw TangledError.invalidRequest("pipeline retry requires a manual or pull-request trigger")
+      throw TangledError.invalidRequest(
+        "pipeline trigger requires a manual or pull-request trigger"
+      )
     }
 
     let client = HTTPXRPCClient(
@@ -55,12 +59,27 @@ extension SpindleClient {
       ),
       parsed.rkey != nil
     else {
-      throw TangledError.decoding(PipelineRetryError.invalidPipelineURI(uri))
+      throw TangledError.decoding(PipelineTriggerError.invalidPipelineURI(uri))
     }
     return uri
   }
 }
 
-private enum PipelineRetryError: Error, Sendable {
+private enum PipelineTriggerError: Error, Sendable {
   case invalidPipelineURI(String)
+}
+
+package func spindleServiceAudience(_ url: URL) throws -> String {
+  guard url.scheme?.lowercased() == "https", let host = url.host else {
+    throw TangledError.invalidRequest(
+      "authenticated Spindle operations require an HTTPS endpoint"
+    )
+  }
+  let authority =
+    if let port = url.port {
+      "\(host):\(port)".replacingOccurrences(of: ":", with: "%3A")
+    } else {
+      host
+    }
+  return "did:web:\(authority)"
 }

@@ -178,6 +178,36 @@ import TangledLexicons
     #expect(trigger["sourceRepo"] as? String == "did:plc:source")
   }
 
+  @Test func triggerPipelineOmitsUnspecifiedWorkflows() async throws {
+    let transport = PipelineTransport([
+      .init(
+        statusCode: 200,
+        body: Data(
+          #"{"pipeline":"at://did:web:spindle.example/sh.tangled.ci.pipeline/manual-pipeline"}"#.utf8
+        )
+      )
+    ])
+    let client = makeClient(transport: transport)
+
+    _ = try await client.triggerPipeline(
+      repositoryDID: "did:plc:repository",
+      trigger: .manual(
+        PipelineManualTrigger(
+          sha: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        )
+      ),
+      workflows: nil,
+      token: "service-token"
+    )
+
+    let request = try #require(await transport.recordedRequests().first)
+    let body = try #require(request.httpBody)
+    let object = try #require(
+      JSONSerialization.jsonObject(with: body) as? [String: Any]
+    )
+    #expect(object["workflows"] == nil)
+  }
+
   @Test func rawValueModelsAndUnknownTriggerRoundTrip() throws {
     let unknownStatus = try JSONDecoder().decode(
       PipelineWorkflowStatus.self,

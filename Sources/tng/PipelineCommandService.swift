@@ -7,6 +7,10 @@ struct PipelineCommandDependencies: Sendable {
   let pipelines: @Sendable (String, String, String?, Int) async throws -> PipelinePage
   let pipeline: @Sendable (String, String) async throws -> Pipeline
   let retry: @Sendable (String, String, String, String?) async throws -> String
+  let run:
+    @Sendable (
+      String, String, String, String?, [String], [PipelineManualInput]
+    ) async throws -> String
   let originURL: @Sendable () throws -> String
   let sleep: @Sendable (TimeInterval) async throws -> Void
 
@@ -19,6 +23,12 @@ struct PipelineCommandDependencies: Sendable {
       String = { _, _, _, _ in
         throw TangledError.invalidRequest("pipeline retry is unavailable")
       },
+    run:
+      @escaping @Sendable (
+        String, String, String, String?, [String], [PipelineManualInput]
+      ) async throws -> String = { _, _, _, _, _, _ in
+        throw TangledError.invalidRequest("pipeline run is unavailable")
+      },
     originURL: @escaping @Sendable () throws -> String,
     sleep: @escaping @Sendable (TimeInterval) async throws -> Void
   ) {
@@ -26,6 +36,7 @@ struct PipelineCommandDependencies: Sendable {
     self.pipelines = pipelines
     self.pipeline = pipeline
     self.retry = retry
+    self.run = run
     self.originURL = originURL
     self.sleep = sleep
   }
@@ -54,6 +65,19 @@ struct PipelineCommandDependencies: Sendable {
           pipelineID: pipelineID,
           repositoryDID: repositoryDID,
           workflow: workflow
+        )
+      },
+      run: { spindle, repositoryDID, commit, ref, workflows, inputs in
+        let pdsClient = try PDSClient.restore(from: CLISessionStore.make().store)
+        return try await PipelineRunService(
+          spindleClient: SpindleClient(spindle: spindle),
+          pdsClient: pdsClient
+        ).run(
+          repositoryDID: repositoryDID,
+          commit: commit,
+          ref: ref,
+          workflows: workflows,
+          inputs: inputs
         )
       },
       originURL: { try GitOriginReader().read() },
@@ -172,18 +196,47 @@ struct PipelineCommandService: Sendable {
       pipelineID,
       workflow
     )
-    return CLICommandOutput(
-      stdout: try json
-        ? formatter.json(PipelineRetryOutput(pipeline: pipelineURI))
+    return try pipelineTriggerOutput(pipelineURI, json: json)
+  }
+
+  func run(
+    commit: String,
+    repository: String?,
+    spindle: String?,
+    ref: String?,
+    workflows: [String],
+    inputs: [PipelineManualInput],
+    json: Bool
+  ) async throws -> CLICommandOutput {
+    let explicitSpindle = try normalizedSpindle(spindle)
+    let record = try await resolveRepositoryRecord(repository)
+    let pipelineURI = try await dependencies.run(
+      try explicitSpindle ?? repositorySpindle(record),
+      try repositoryDID(record),
+      commit,
+      ref,
+      workflows,
+      inputs
+    )
+    return try pipelineTriggerOutput(pipelineURI, json: json)
+  }
+
+  private func pipelineTriggerOutput(
+    _ pipelineURI: String,
+    json: Bool
+  ) throws -> CLICommandOutput {
+    try CLICommandOutput(
+      stdout: json
+        ? formatter.json(PipelineTriggerOutput(pipeline: pipelineURI))
         : formatter.details([
-          ("Pipeline ID", try self.pipelineID(from: pipelineURI)),
+          ("Pipeline ID", try pipelineID(from: pipelineURI)),
           ("Pipeline URI", pipelineURI),
         ])
     )
   }
 }
 
-private struct PipelineRetryOutput: Encodable {
+private struct PipelineTriggerOutput: Encodable {
   let pipeline: String
 }
 

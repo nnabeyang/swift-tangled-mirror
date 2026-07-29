@@ -6,7 +6,7 @@ import Testing
 @testable import tng
 
 @Suite struct PipelineCommandTests {
-  @Test func parsesListViewStatusWatchAndRetryArguments() throws {
+  @Test func parsesListViewStatusWatchRetryAndRunArguments() throws {
     let list = try PipelineListCommand.parse([
       "alice.example/core", "--spindle", "spindle.example", "--limit", "25",
       "--cursor", "next", "--json",
@@ -55,6 +55,30 @@ import Testing
     #expect(retry.workflow == "verify.yml")
     #expect(retry.json)
 
+    let run = try PipelineRunCommand.parse([
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "--repo", "alice.example/core",
+      "--spindle", "spindle.example",
+      "--ref", "refs/heads/main",
+      "--workflow", "verify.yml",
+      "--workflow", "deploy.yml",
+      "--input", "configuration=release",
+      "--input", "expression=one=two",
+      "--json",
+    ])
+    #expect(run.commit == "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+    #expect(run.repository == "alice.example/core")
+    #expect(run.spindle == "spindle.example")
+    #expect(run.ref == "refs/heads/main")
+    #expect(run.workflow == ["verify.yml", "deploy.yml"])
+    #expect(
+      run.input == [
+        PipelineRunInput(key: "configuration", value: "release"),
+        PipelineRunInput(key: "expression", value: "one=two"),
+      ]
+    )
+    #expect(run.json)
+
     #expect(throws: (any Error).self) {
       _ = try PipelineListCommand.parse(["--limit", "0"])
     }
@@ -81,6 +105,26 @@ import Testing
     }
     #expect(throws: (any Error).self) {
       _ = try PipelineRetryCommand.parse([samplePipelineID, "--workflow", ""])
+    }
+    #expect(throws: (any Error).self) {
+      _ = try PipelineRunCommand.parse([
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "--ref", "",
+      ])
+    }
+    #expect(throws: (any Error).self) {
+      _ = try PipelineRunCommand.parse([
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "--workflow", "",
+      ])
+    }
+    #expect(throws: (any Error).self) {
+      _ = try PipelineRunCommand.parse([
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "--input", "missing-separator",
+      ])
+    }
+    #expect(throws: (any Error).self) {
+      _ = try PipelineRunCommand.parse([
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "--input", "=missing-key",
+      ])
     }
   }
 
@@ -233,6 +277,63 @@ import Testing
     )
 
     #expect(human.stdout.contains("Pipeline ID\t3mrruwyseci22"))
+    #expect(human.stdout.contains("Pipeline URI\t\(pipelineURI)"))
+    let object = try #require(
+      JSONSerialization.jsonObject(with: Data(json.stdout.utf8)) as? [String: String]
+    )
+    #expect(object == ["pipeline": pipelineURI])
+  }
+
+  @Test func runResolvesRepositoryAndFormatsDerivedID() async throws {
+    let repository = sampleRepositoryRecord()
+    let pipelineURI =
+      "at://did:web:knot1.tangled.sh/sh.tangled.ci.pipeline/3mrrunpipeline"
+    let service = PipelineCommandService(
+      dependencies: PipelineCommandDependencies(
+        resolveRepository: { reference in
+          #expect(reference == "alice.example/core")
+          return repository
+        },
+        pipelines: { _, _, _, _ in PipelinePage(pipelines: [], total: 0) },
+        pipeline: { _, _ in samplePipeline() },
+        run: { spindle, repositoryDID, commit, ref, workflows, inputs in
+          #expect(spindle == "https://explicit.spindle.example")
+          #expect(repositoryDID == "did:plc:repository")
+          #expect(commit == "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+          #expect(ref == "refs/heads/main")
+          #expect(workflows == ["verify.yml", "deploy.yml"])
+          #expect(
+            inputs == [
+              PipelineManualInput(key: "configuration", value: "release")
+            ]
+          )
+          return pipelineURI
+        },
+        originURL: { "unused" },
+        sleep: { _ in }
+      )
+    )
+
+    let human = try await service.run(
+      commit: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      repository: "alice.example/core",
+      spindle: "explicit.spindle.example",
+      ref: "refs/heads/main",
+      workflows: ["verify.yml", "deploy.yml"],
+      inputs: [PipelineManualInput(key: "configuration", value: "release")],
+      json: false
+    )
+    let json = try await service.run(
+      commit: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      repository: "alice.example/core",
+      spindle: "explicit.spindle.example",
+      ref: "refs/heads/main",
+      workflows: ["verify.yml", "deploy.yml"],
+      inputs: [PipelineManualInput(key: "configuration", value: "release")],
+      json: true
+    )
+
+    #expect(human.stdout.contains("Pipeline ID\t3mrrunpipeline"))
     #expect(human.stdout.contains("Pipeline URI\t\(pipelineURI)"))
     let object = try #require(
       JSONSerialization.jsonObject(with: Data(json.stdout.utf8)) as? [String: String]
