@@ -78,30 +78,33 @@ OAuth login uses a loopback callback server. In a Dev Container or remote
 environment, pass `--no-browser` and `--callback-port PORT`, open the printed
 URL on the host, and forward that port when it is not forwarded automatically.
 
-### Tangled Spindle CI
+### Linux CI
 
-The Linux CI workflow runs on Tangled Spindle for pushes to `main`, pull
-requests targeting `main`, and manual runs. It builds a Swift 6.3.2 Ubuntu
-Noble environment with the same system-package installer used by the Dev
-Container, then runs:
+Tangled is the canonical repository. The maintainers mirror Pull Request
+source commits to the read-only
+[GitHub repository](https://github.com/nnabeyang/swift-tangled-mirror), where
+the Linux workflow runs for every pushed branch and can also be started
+manually. It builds a Swift 6.3.2 Ubuntu Noble environment with the same
+system-package installer used by the Dev Container, then runs:
 
 ```sh
 swift build
 swift test
+./generate-manual-site.sh --check
 swift run --skip-build tng --version
 swift run --skip-build tng capabilities --json
 swift run --skip-build tng repo view nnabeyang.tngl.sh/swift-tangled --json
 ```
 
-Open the repository's **Pipelines** page to inspect each step and its logs, or
-to start the `linux` workflow manually. Environment preparation, build, test,
-and smoke checks rely on Spindle's workflow timeout so a slow but progressing
-command is not interrupted by a shorter repository-level limit.
+Open the mirror's **Actions** page to inspect each step and its logs, or to
+start the `Linux` workflow manually. Pull Requests, Issues, and Discussions
+remain on Tangled; the GitHub repository is only a source mirror and CI
+runner.
 
 The workflow does not require credentials. If a future workflow needs a
-secret, add it through the Tangled repository settings. Never put tokens, SSH
-keys, `.env` contents, or other credentials in a workflow file, command,
-pipeline log, or artifact.
+secret, add it through the GitHub repository settings. Never put tokens, SSH
+keys, `.env` contents, or other credentials in a workflow file, command, log,
+or artifact.
 
 ## Design Guidelines
 
