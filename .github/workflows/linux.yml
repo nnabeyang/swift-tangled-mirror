@@ -1,0 +1,79 @@
+name: Linux
+
+on:
+  push:
+    branches:
+      - "**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  linux:
+    name: Linux
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Prepare Swift 6.3.2 environment
+        run: |
+          docker build \
+            --file .tangled/ci/Dockerfile \
+            --tag swift-tangled-ci:6.3.2 \
+            .tangled/ci
+
+      - name: Build
+        run: |
+          docker run --rm \
+            --env CI=true \
+            --volume "$PWD:/workspace" \
+            --workdir /workspace \
+            swift-tangled-ci:6.3.2 \
+            swift build
+
+      - name: Test
+        run: |
+          docker run --rm \
+            --env CI=true \
+            --volume "$PWD:/workspace" \
+            --workdir /workspace \
+            swift-tangled-ci:6.3.2 \
+            swift test
+
+      - name: Manual documentation
+        run: |
+          docker run --rm \
+            --env CI=true \
+            --volume "$PWD:/workspace" \
+            --workdir /workspace \
+            swift-tangled-ci:6.3.2 \
+            ./generate-manual-site.sh --check
+
+      - name: CLI smoke tests
+        run: |
+          docker run --rm \
+            --env CI=true \
+            --volume "$PWD:/workspace" \
+            --workdir /workspace \
+            swift-tangled-ci:6.3.2 \
+            bash -euo pipefail -c '
+              version=$(swift run --skip-build tng --version)
+              grep -Eq "^[0-9]+\.[0-9]+\.[0-9]+$" <<<"$version"
+
+              swift run --skip-build tng capabilities --json \
+                >/tmp/tng-capabilities.json
+              python3 -m json.tool /tmp/tng-capabilities.json >/dev/null
+
+              swift run --skip-build tng repo view \
+                nnabeyang.tngl.sh/swift-tangled --json \
+                >/tmp/tng-repository.json
+              python3 -m json.tool /tmp/tng-repository.json >/dev/null
+            '
