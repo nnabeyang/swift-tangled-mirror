@@ -4,7 +4,7 @@ import Testing
 @testable import tng
 
 @Suite struct CLIPagerTests {
-  @Test func commandUsesTNGPagerThenPagerAndIgnoresEmptyValues() {
+  @Test func commandUsesTNGPagerThenPagerAndTreatsEmptyValuesAsDisabled() {
     #expect(
       CLIPager.command(
         environment: [
@@ -19,10 +19,11 @@ import Testing
           "TNG_PAGER": "",
           "PAGER": "more",
         ]
-      ) == "more"
+      ) == nil
     )
     #expect(CLIPager.command(environment: ["TNG_PAGER": "", "PAGER": ""]) == nil)
-    #expect(CLIPager.command(environment: [:]) == nil)
+    #expect(CLIPager.command(environment: [:]) == "less")
+    #expect(CLIPager.command(environment: ["TERM": "dumb"]) == nil)
   }
 
   @Test func pagerEnvironmentAddsOnlyMissingDefaults() {
@@ -43,8 +44,8 @@ import Testing
     let recorder = PagerRecorder()
     let writer = outputWriter(recorder: recorder, terminal: true, pager: "pager --flag")
 
-    try writer.write(CLICommandOutput(stdout: "paged\n", stderr: "warning\n", isPageable: true))
-    try writer.write(CLICommandOutput(stdout: "direct\n"))
+    writer.write(CLICommandOutput(stdout: "paged\n", stderr: "warning\n", isPageable: true))
+    writer.write(CLICommandOutput(stdout: "direct\n"))
 
     #expect(recorder.pagerCommands == ["pager --flag"])
     #expect(recorder.pagerInputs == [Data("paged\n".utf8)])
@@ -54,27 +55,37 @@ import Testing
     #expect(recorder.stderr == Data("warning\n".utf8))
   }
 
-  @Test func writerBypassesPagerForNonTerminalMissingAndCatConfigurations() throws {
+  @Test func writerUsesDefaultPagerForEligibleTerminalOutput() {
+    let recorder = PagerRecorder()
+    outputWriter(recorder: recorder, terminal: true, pager: nil)
+      .write(CLICommandOutput(stdout: "default\n", isPageable: true))
+
+    #expect(recorder.pagerCommands == ["less"])
+    #expect(recorder.pagerInputs == [Data("default\n".utf8)])
+    #expect(recorder.stdout.isEmpty)
+  }
+
+  @Test func writerBypassesPagerForNonTerminalDisabledAndCatConfigurations() {
     let nonTerminal = PagerRecorder()
-    try outputWriter(recorder: nonTerminal, terminal: false, pager: "less")
+    outputWriter(recorder: nonTerminal, terminal: false, pager: "less")
       .write(CLICommandOutput(stdout: "plain\n", isPageable: true))
     #expect(nonTerminal.pagerCommands.isEmpty)
     #expect(nonTerminal.stdout == Data("plain\n".utf8))
 
-    let missing = PagerRecorder()
-    try outputWriter(recorder: missing, terminal: true, pager: nil)
-      .write(CLICommandOutput(stdout: "missing\n", isPageable: true))
-    #expect(missing.pagerCommands.isEmpty)
-    #expect(missing.stdout == Data("missing\n".utf8))
+    let disabled = PagerRecorder()
+    outputWriter(recorder: disabled, terminal: true, pager: "")
+      .write(CLICommandOutput(stdout: "disabled\n", isPageable: true))
+    #expect(disabled.pagerCommands.isEmpty)
+    #expect(disabled.stdout == Data("disabled\n".utf8))
 
     let cat = PagerRecorder()
-    try outputWriter(recorder: cat, terminal: true, pager: "cat")
+    outputWriter(recorder: cat, terminal: true, pager: "cat")
       .write(CLICommandOutput(stdout: "cat\n", isPageable: true))
     #expect(cat.pagerCommands.isEmpty)
     #expect(cat.stdout == Data("cat\n".utf8))
   }
 
-  @Test func writerPagesWhenTerminalOutputIsForced() throws {
+  @Test func writerPagesWhenTerminalOutputIsForced() {
     let recorder = PagerRecorder()
     let terminal = CLITerminalContext.resolve(
       environment: ["TNG_FORCE_TTY": "80"],
@@ -93,11 +104,53 @@ import Testing
       stderr: { recorder.stderr.append($0) }
     )
 
-    try writer.write(CLICommandOutput(stdout: "forced\n", isPageable: true))
+    writer.write(CLICommandOutput(stdout: "forced\n", isPageable: true))
 
     #expect(recorder.pagerCommands == ["less"])
     #expect(recorder.pagerInputs == [Data("forced\n".utf8)])
     #expect(recorder.stdout.isEmpty)
+  }
+
+  @Test(
+    arguments: [
+      CLIPagerError.launch(command: "missing-pager", message: "not found"),
+      CLIPagerError.exit(command: "missing-pager", status: 127),
+    ]
+  )
+  func writerFallsBackToDirectOutputWhenPagerIsUnavailable(error: CLIPagerError) {
+    let recorder = PagerRecorder()
+    let writer = failingOutputWriter(recorder: recorder, error: error)
+
+    writer.write(
+      CLICommandOutput(
+        stdout: "result\n",
+        stderr: "command warning\n",
+        isPageable: true
+      )
+    )
+
+    #expect(recorder.stdout == Data("result\n".utf8))
+    #expect(recorder.stderr == Data("command warning\n\(error.warning)".utf8))
+  }
+
+  @Test(
+    arguments: [
+      CLIPagerError.write(command: "pager", message: "closed input"),
+      CLIPagerError.exit(command: "pager", status: 2),
+      CLIPagerError.signal(command: "pager", signal: 15),
+    ]
+  )
+  func writerWarnsWithoutRepeatingOutputAfterPagerStarts(error: CLIPagerError) {
+    let recorder = PagerRecorder()
+    let writer = failingOutputWriter(recorder: recorder, error: error)
+
+    writer.write(CLICommandOutput(stdout: "result\n", isPageable: true))
+
+    #expect(recorder.stdout.isEmpty)
+    #expect(
+      recorder.stderr
+        == Data("warning: pager failed: \(error); output may be incomplete\n".utf8)
+    )
   }
 
   @Test func liveProcessWritesDataAndConfiguredEnvironment() throws {
@@ -179,6 +232,24 @@ import Testing
         recorder.pagerInputs.append(data)
         recorder.pagerEnvironments.append(environment)
       },
+      stdout: { recorder.stdout.append($0) },
+      stderr: { recorder.stderr.append($0) }
+    )
+  }
+
+  private func failingOutputWriter(
+    recorder: PagerRecorder,
+    error: CLIPagerError
+  ) -> CLIOutputWriter {
+    CLIOutputWriter(
+      terminal: CLITerminalContext(
+        isTerminal: true,
+        viewportWidth: 80,
+        markdownWidth: 80,
+        colorEnabled: true
+      ),
+      environment: ["TNG_PAGER": "pager"],
+      pager: CLIPager { _, _, _ in throw error },
       stdout: { recorder.stdout.append($0) },
       stderr: { recorder.stderr.append($0) }
     )

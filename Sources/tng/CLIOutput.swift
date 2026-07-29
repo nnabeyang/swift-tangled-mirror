@@ -63,7 +63,7 @@ func runCLICommand(
 ) async throws {
   do {
     let output = try await operation()
-    try CLIOutputWriter.live.write(output)
+    CLIOutputWriter.live.write(output)
   } catch {
     let report = errorReport(for: error)
     if jsonErrors {

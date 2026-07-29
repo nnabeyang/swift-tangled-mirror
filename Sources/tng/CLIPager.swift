@@ -24,6 +24,24 @@ enum CLIPagerError: Error, Equatable, Sendable, CustomStringConvertible {
       "'\(command)' terminated by signal \(signal)"
     }
   }
+
+  var shouldWriteDirectly: Bool {
+    switch self {
+    case .launch:
+      true
+    case .exit(_, let status):
+      status == 127
+    case .write, .signal:
+      false
+    }
+  }
+
+  var warning: String {
+    if shouldWriteDirectly {
+      return "warning: pager unavailable: \(description); writing output directly\n"
+    }
+    return "warning: pager failed: \(description); output may be incomplete\n"
+  }
 }
 
 struct CLIPager: Sendable {
@@ -40,11 +58,10 @@ struct CLIPager: Sendable {
 
   static func command(environment: [String: String]) -> String? {
     for name in ["TNG_PAGER", "PAGER"] {
-      if let value = environment[name], !value.isEmpty {
-        return value
-      }
+      guard let value = environment[name] else { continue }
+      return value.isEmpty ? nil : value
     }
-    return nil
+    return environment["TERM"] == "dumb" ? nil : "less"
   }
 
   static func pagerEnvironment(_ environment: [String: String]) -> [String: String] {
@@ -128,23 +145,40 @@ struct CLIOutputWriter {
     )
   }
 
-  func write(_ output: CLICommandOutput) throws {
+  func write(_ output: CLICommandOutput) {
+    var pagerWarning: String?
     if output.isPageable,
       terminal.isTerminal,
       let command = CLIPager.command(environment: environment),
       command != "cat"
     {
-      try pager.run(
-        command,
-        output.stdoutData,
-        CLIPager.pagerEnvironment(environment)
-      )
+      do {
+        try pager.run(
+          command,
+          output.stdoutData,
+          CLIPager.pagerEnvironment(environment)
+        )
+      } catch let error as CLIPagerError {
+        if error.shouldWriteDirectly, !output.stdoutData.isEmpty {
+          stdout(output.stdoutData)
+        }
+        pagerWarning = error.warning
+      } catch {
+        if !output.stdoutData.isEmpty {
+          stdout(output.stdoutData)
+        }
+        pagerWarning =
+          "warning: pager unavailable: \(error); writing output directly\n"
+      }
     } else if !output.stdoutData.isEmpty {
       stdout(output.stdoutData)
     }
 
     if !output.stderr.isEmpty {
       stderr(Data(output.stderr.utf8))
+    }
+    if let pagerWarning {
+      stderr(Data(pagerWarning.utf8))
     }
   }
 }
