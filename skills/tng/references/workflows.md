@@ -134,6 +134,26 @@ triggers become manual triggers at the original commit. Report the new pipeline
 ID and AT URI, then use `pipeline watch` or `pipeline status` to verify it. Do
 not retry an ambiguous write automatically.
 
+## Run a pipeline
+
+Verify the repository, full commit SHA, optional ref, workflow names, and
+manual inputs before starting a pipeline:
+
+```sh
+tng pipeline run COMMIT --repo OWNER/REPOSITORY --json
+tng pipeline run COMMIT --repo OWNER/REPOSITORY \
+  --ref refs/heads/main \
+  --workflow verify.yml \
+  --input configuration=release \
+  --json
+```
+
+Omitting `--workflow` lets Spindle select every workflow for the manual
+dispatch. Repeat `--workflow` or `--input` to pass multiple values. Report the
+new pipeline ID and AT URI, then use `pipeline watch` or `pipeline status` to
+verify it. Do not repeat a run with an ambiguous result until absence of the
+first write has been established.
+
 ## Comment on a pull request
 
 Verify the pull request URI, selected round, and complete comment body before

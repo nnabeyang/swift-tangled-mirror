@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Work with artifacts attached to annotated Git tags">
-  <title>tng artifact manual · tng CLI</title>
+  <meta name="description" content="Run a Tangled CI pipeline at an explicit commit">
+  <title>tng pipeline run manual · tng CLI</title>
   <link rel="stylesheet" href="../../assets/manual.css">
   <script src="../../assets/manual.js" defer></script>
 </head>
@@ -70,7 +70,7 @@
     </li>    <li class="command-group" data-command-group>
       <span>tng artifact</span>
       <ul>  <li data-command-item data-search="tng artifact work with artifacts attached to annotated git tags">
-    <a href="../../manual/tng_artifact/" aria-current="page">tng artifact</a>
+    <a href="../../manual/tng_artifact/">tng artifact</a>
   </li>  <li data-command-item data-search="tng artifact delete delete an artifact record without deleting its git tag">
     <a href="../../manual/tng_artifact_delete/">tng artifact delete</a>
   </li>  <li data-command-item data-search="tng artifact download download and verify an artifact">
@@ -135,7 +135,7 @@
   </li>  <li data-command-item data-search="tng pipeline retry retry a tangled ci pipeline">
     <a href="../../manual/tng_pipeline_retry/">tng pipeline retry</a>
   </li>  <li data-command-item data-search="tng pipeline run run a tangled ci pipeline at an explicit commit">
-    <a href="../../manual/tng_pipeline_run/">tng pipeline run</a>
+    <a href="../../manual/tng_pipeline_run/" aria-current="page">tng pipeline run</a>
   </li>  <li data-command-item data-search="tng pipeline status view workflow statuses for a tangled ci pipeline">
     <a href="../../manual/tng_pipeline_status/">tng pipeline status</a>
   </li>  <li data-command-item data-search="tng pipeline view view a tangled ci pipeline">
@@ -180,26 +180,11 @@
   </nav>
     <main id="content" tabindex="-1">
         <nav class="breadcrumbs" aria-label="Breadcrumb">
-    <a href="../tng/">tng</a><span aria-hidden="true">/</span><span aria-current="page">artifact</span>
-  </nav><h1><code>tng artifact</code></h1><p class="lead">Work with artifacts attached to annotated Git tags</p>  <section>
+    <a href="../tng/">tng</a><span aria-hidden="true">/</span><a href="../tng_pipeline/">pipeline</a><span aria-hidden="true">/</span><span aria-current="page">run</span>
+  </nav><h1><code>tng pipeline run</code></h1><p class="lead">Run a Tangled CI pipeline at an explicit commit</p>  <section>
     <h2>Usage</h2>
-    <pre class="usage"><code>tng artifact [--version] [--help]</code></pre>
-  </section><section><h2>Available commands</h2><dl class="command-list">  <div>
-    <dt><a href="../tng_artifact_list/"><code>tng artifact list</code></a></dt>
-    <dd>List artifacts in a repository</dd>
-  </div>  <div>
-    <dt><a href="../tng_artifact_view/"><code>tng artifact view</code></a></dt>
-    <dd>View artifacts attached to an annotated Git tag</dd>
-  </div>  <div>
-    <dt><a href="../tng_artifact_upload/"><code>tng artifact upload</code></a></dt>
-    <dd>Upload a file to an annotated Git tag</dd>
-  </div>  <div>
-    <dt><a href="../tng_artifact_download/"><code>tng artifact download</code></a></dt>
-    <dd>Download and verify an artifact</dd>
-  </div>  <div>
-    <dt><a href="../tng_artifact_delete/"><code>tng artifact delete</code></a></dt>
-    <dd>Delete an artifact record without deleting its Git tag</dd>
-  </div></dl></section><section><h2>Options</h2><dl class="arguments"><div><dt><code>--version</code></dt><dd><p>Show the version.</p></dd></div><div><dt><code>-h, --help</code></dt><dd><p>Show help information.</p></dd></div></dl></section>  <p class="root-reference">
+    <pre class="usage"><code>tng pipeline run &lt;commit&gt; [--repo &lt;repo&gt;] [--spindle &lt;spindle&gt;] [--ref &lt;ref&gt;] [--workflow &lt;workflow&gt;...] [--input &lt;input&gt;...] [--json] [--version] [--help]</code></pre>
+  </section><section><h2>Arguments</h2><dl class="arguments"><div><dt><code>&lt;commit&gt;</code></dt><dd><p>Full 40-character commit SHA</p></dd></div></dl></section><section><h2>Options</h2><dl class="arguments"><div><dt><code>--repo &lt;repo&gt;</code></dt><dd><p>Repository reference used to locate its Spindle (defaults to Git origin)</p></dd></div><div><dt><code>--spindle &lt;spindle&gt;</code></dt><dd><p>Spindle hostname or URL; overrides repository discovery</p></dd></div><div><dt><code>--ref &lt;ref&gt;</code></dt><dd><p>Git ref associated with the commit</p></dd></div><div><dt><code>--workflow &lt;workflow&gt;</code></dt><dd><p>Run only the named workflow; repeat for multiple workflows</p><p class="argument-metadata">Repeatable</p></dd></div><div><dt><code>--input &lt;input&gt;</code></dt><dd><p>Manual input in key=value form; repeat for multiple inputs</p><p class="argument-metadata">Repeatable</p></dd></div><div><dt><code>--json</code></dt><dd><p>Output the new pipeline AT URI as JSON</p></dd></div><div><dt><code>--version</code></dt><dd><p>Show the version.</p></dd></div><div><dt><code>-h, --help</code></dt><dd><p>Show help information.</p></dd></div></dl></section>  <p class="root-reference">
     See also <a href="../tng/"><code>tng</code></a>.
   </p>
       <footer>
