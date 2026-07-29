@@ -6,7 +6,7 @@ import Testing
 @testable import tng
 
 @Suite struct PipelineCommandTests {
-  @Test func parsesListViewStatusAndWatchArguments() throws {
+  @Test func parsesListViewStatusWatchAndRetryArguments() throws {
     let list = try PipelineListCommand.parse([
       "alice.example/core", "--spindle", "spindle.example", "--limit", "25",
       "--cursor", "next", "--json",
@@ -45,6 +45,16 @@ import Testing
     #expect(watch.interval == 0.5)
     #expect(watch.json)
 
+    let retry = try PipelineRetryCommand.parse([
+      samplePipelineID, "--repo", "alice.example/core", "--spindle", "spindle.example",
+      "--workflow", "verify.yml", "--json",
+    ])
+    #expect(retry.pipelineID == samplePipelineID)
+    #expect(retry.repository == "alice.example/core")
+    #expect(retry.spindle == "spindle.example")
+    #expect(retry.workflow == "verify.yml")
+    #expect(retry.json)
+
     #expect(throws: (any Error).self) {
       _ = try PipelineListCommand.parse(["--limit", "0"])
     }
@@ -68,6 +78,9 @@ import Testing
     }
     #expect(throws: (any Error).self) {
       _ = try PipelineWatchCommand.parse([samplePipelineID, "--spindle", ""])
+    }
+    #expect(throws: (any Error).self) {
+      _ = try PipelineRetryCommand.parse([samplePipelineID, "--workflow", ""])
     }
   }
 
@@ -181,6 +194,50 @@ import Testing
           count: 4
         )
     )
+  }
+
+  @Test func retryFormatsDerivedIDAndXRPCShapedJSON() async throws {
+    let repository = sampleRepositoryRecord()
+    let pipelineURI =
+      "at://did:web:knot1.tangled.sh/sh.tangled.pipeline/3mrruwyseci22"
+    let service = PipelineCommandService(
+      dependencies: PipelineCommandDependencies(
+        resolveRepository: { _ in repository },
+        pipelines: { _, _, _, _ in PipelinePage(pipelines: [], total: 0) },
+        pipeline: { _, _ in samplePipeline() },
+        retry: { spindle, repositoryDID, pipelineID, workflow in
+          #expect(spindle == "spindle.tangled.sh")
+          #expect(repositoryDID == "did:plc:repository")
+          #expect(pipelineID == samplePipelineID)
+          #expect(workflow == "verify.yml")
+          return pipelineURI
+        },
+        originURL: { "unused" },
+        sleep: { _ in }
+      )
+    )
+
+    let human = try await service.retry(
+      pipelineID: samplePipelineID,
+      repository: "alice.example/core",
+      spindle: nil,
+      workflow: "verify.yml",
+      json: false
+    )
+    let json = try await service.retry(
+      pipelineID: samplePipelineID,
+      repository: "alice.example/core",
+      spindle: nil,
+      workflow: "verify.yml",
+      json: true
+    )
+
+    #expect(human.stdout.contains("Pipeline ID\t3mrruwyseci22"))
+    #expect(human.stdout.contains("Pipeline URI\t\(pipelineURI)"))
+    let object = try #require(
+      JSONSerialization.jsonObject(with: Data(json.stdout.utf8)) as? [String: String]
+    )
+    #expect(object == ["pipeline": pipelineURI])
   }
 
   @Test func listRejectsMissingDIDAndReadsRejectMissingSpindle() async {

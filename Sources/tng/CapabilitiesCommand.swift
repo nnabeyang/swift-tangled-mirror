@@ -113,6 +113,7 @@ enum CapabilityCatalog {
     "pipeline view": Metadata(access: .read, authenticationRequired: false),
     "pipeline status": Metadata(access: .read, authenticationRequired: false),
     "pipeline watch": Metadata(access: .read, authenticationRequired: false),
+    "pipeline retry": Metadata(access: .write, authenticationRequired: true),
     "events watch": Metadata(access: .read, authenticationRequired: false),
     "search": Metadata(access: .read, authenticationRequired: false),
     "api": Metadata(access: .read, authenticationRequired: false),

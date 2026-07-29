@@ -1,12 +1,34 @@
 import Foundation
+import SwiftAtproto
 import SwiftTangled
 
 struct PipelineCommandDependencies: Sendable {
   let resolveRepository: @Sendable (String) async throws -> TangledRecord<Repository>
   let pipelines: @Sendable (String, String, String?, Int) async throws -> PipelinePage
   let pipeline: @Sendable (String, String) async throws -> Pipeline
+  let retry: @Sendable (String, String, String, String?) async throws -> String
   let originURL: @Sendable () throws -> String
   let sleep: @Sendable (TimeInterval) async throws -> Void
+
+  init(
+    resolveRepository: @escaping @Sendable (String) async throws -> TangledRecord<Repository>,
+    pipelines: @escaping @Sendable (String, String, String?, Int) async throws -> PipelinePage,
+    pipeline: @escaping @Sendable (String, String) async throws -> Pipeline,
+    retry:
+      @escaping @Sendable (String, String, String, String?) async throws ->
+      String = { _, _, _, _ in
+        throw TangledError.invalidRequest("pipeline retry is unavailable")
+      },
+    originURL: @escaping @Sendable () throws -> String,
+    sleep: @escaping @Sendable (TimeInterval) async throws -> Void
+  ) {
+    self.resolveRepository = resolveRepository
+    self.pipelines = pipelines
+    self.pipeline = pipeline
+    self.retry = retry
+    self.originURL = originURL
+    self.sleep = sleep
+  }
 
   static let live: PipelineCommandDependencies = {
     let bobbinClient = BobbinClient()
@@ -22,6 +44,17 @@ struct PipelineCommandDependencies: Sendable {
       },
       pipeline: { spindle, pipelineID in
         try await SpindleClient(spindle: spindle).pipeline(id: pipelineID)
+      },
+      retry: { spindle, repositoryDID, pipelineID, workflow in
+        let pdsClient = try PDSClient.restore(from: CLISessionStore.make().store)
+        return try await PipelineRetryService(
+          spindleClient: SpindleClient(spindle: spindle),
+          pdsClient: pdsClient
+        ).retry(
+          pipelineID: pipelineID,
+          repositoryDID: repositoryDID,
+          workflow: workflow
+        )
       },
       originURL: { try GitOriginReader().read() },
       sleep: { interval in
@@ -123,6 +156,35 @@ struct PipelineCommandService: Sendable {
       try await dependencies.sleep(interval)
     }
   }
+
+  func retry(
+    pipelineID: String,
+    repository: String?,
+    spindle: String?,
+    workflow: String?,
+    json: Bool
+  ) async throws -> CLICommandOutput {
+    let explicitSpindle = try normalizedSpindle(spindle)
+    let record = try await resolveRepositoryRecord(repository)
+    let pipelineURI = try await dependencies.retry(
+      try explicitSpindle ?? repositorySpindle(record),
+      try repositoryDID(record),
+      pipelineID,
+      workflow
+    )
+    return CLICommandOutput(
+      stdout: try json
+        ? formatter.json(PipelineRetryOutput(pipeline: pipelineURI))
+        : formatter.details([
+          ("Pipeline ID", try self.pipelineID(from: pipelineURI)),
+          ("Pipeline URI", pipelineURI),
+        ])
+    )
+  }
+}
+
+private struct PipelineRetryOutput: Encodable {
+  let pipeline: String
 }
 
 extension PipelineCommandService {
@@ -163,6 +225,13 @@ extension PipelineCommandService {
 
   fileprivate func normalizedSpindle(_ spindle: String?) throws -> String? {
     try spindle.map { try SpindleClient(spindle: $0).baseURL.absoluteString }
+  }
+
+  fileprivate func pipelineID(from uri: String) throws -> String {
+    guard let id = FormatString<ATURI>(rawValue: uri).typed?.rkey?.rawValue else {
+      throw TangledError.decoding(PipelineCommandError.invalidPipelineURI(uri))
+    }
+    return id
   }
 
   fileprivate func format(_ pipelines: [Pipeline]) -> String {
@@ -279,6 +348,10 @@ extension PipelineCommandService {
       ]
     }
   }
+}
+
+private enum PipelineCommandError: Error {
+  case invalidPipelineURI(String)
 }
 
 private struct PipelineWorkflowState: Equatable {

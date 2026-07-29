@@ -20,7 +20,7 @@ import Testing
 
     #expect(document.schemaVersion == 1)
     #expect(document.cliVersion == SwiftTangled.version)
-    #expect(paths.count == 45)
+    #expect(paths.count == 46)
     #expect(paths.contains("capabilities"))
     #expect(paths.contains("pr create"))
     #expect(paths.contains("pr edit"))
@@ -33,6 +33,7 @@ import Testing
     #expect(paths.contains("issue close"))
     #expect(paths.contains("issue reopen"))
     #expect(paths.contains("pipeline watch"))
+    #expect(paths.contains("pipeline retry"))
     #expect(paths.contains("events watch"))
     #expect(paths.contains("artifact list"))
     #expect(paths.contains("artifact view"))
@@ -84,6 +85,9 @@ import Testing
         ["pipeline", "status"],
       ].contains($0.path)
     }
+    let pipelineRetry = try #require(
+      document.commands.first { $0.path == ["pipeline", "retry"] }
+    )
 
     #expect(pullCreate.access == .write)
     #expect(pullCreate.authenticationRequired)
@@ -136,6 +140,9 @@ import Testing
         command.options.contains { $0.names == ["--spindle"] }
       }
     )
+    #expect(pipelineRetry.access == .write)
+    #expect(pipelineRetry.authenticationRequired)
+    #expect(pipelineRetry.options.contains { $0.names == ["--workflow"] })
   }
 
   @Test func capabilityJSONRoundTrips() throws {
