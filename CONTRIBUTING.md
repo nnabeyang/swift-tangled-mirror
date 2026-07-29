@@ -7,8 +7,7 @@ practical `tng` command-line workflows.
 
 Use [Tangled Issues](https://tangled.org/nnabeyang.tngl.sh/swift-tangled/issues)
 for bug reports and feature requests. Search existing issues first to avoid
-duplicates. The maintainers may use YouTrack for internal planning, but
-contributors do not need a YouTrack ticket.
+duplicates.
 
 Bug reports should include the swift-tangled version or commit, the operating
 system and Swift version, steps to reproduce the problem, expected behavior,
