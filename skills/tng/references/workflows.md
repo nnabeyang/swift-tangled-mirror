@@ -118,6 +118,22 @@ State changes create immutable state records. Report their URI and CID.
    Do not treat comments on an older round as automatically applying to the
    latest round.
 
+## Retry a pipeline
+
+Inspect the original pipeline before writing, then retry every original
+workflow or one workflow that belonged to it:
+
+```sh
+tng pipeline view PIPELINE_ID --repo OWNER/REPOSITORY --json
+tng pipeline retry PIPELINE_ID --repo OWNER/REPOSITORY --json
+tng pipeline retry PIPELINE_ID --repo OWNER/REPOSITORY --workflow verify.yml --json
+```
+
+The retry preserves manual and pull-request trigger context. Push and unknown
+triggers become manual triggers at the original commit. Report the new pipeline
+ID and AT URI, then use `pipeline watch` or `pipeline status` to verify it. Do
+not retry an ambiguous write automatically.
+
 ## Comment on a pull request
 
 Verify the pull request URI, selected round, and complete comment body before

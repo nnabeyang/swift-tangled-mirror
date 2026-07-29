@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Show a pull request round as a unified diff">
-  <title>tng pr diff manual · tng CLI</title>
+  <meta name="description" content="Retry a Tangled CI pipeline">
+  <title>tng pipeline retry manual · tng CLI</title>
   <link rel="stylesheet" href="../../assets/manual.css">
   <script src="../../assets/manual.js" defer></script>
 </head>
@@ -112,7 +112,7 @@
   </li>  <li data-command-item data-search="tng pr create create a pull request from a pushed branch">
     <a href="../../manual/tng_pr_create/">tng pr create</a>
   </li>  <li data-command-item data-search="tng pr diff show a pull request round as a unified diff">
-    <a href="../../manual/tng_pr_diff/" aria-current="page">tng pr diff</a>
+    <a href="../../manual/tng_pr_diff/">tng pr diff</a>
   </li>  <li data-command-item data-search="tng pr edit edit a tangled pull request">
     <a href="../../manual/tng_pr_edit/">tng pr edit</a>
   </li>  <li data-command-item data-search="tng pr list list pull requests for a tangled repository">
@@ -133,7 +133,7 @@
   </li>  <li data-command-item data-search="tng pipeline list list ci pipelines for a tangled repository">
     <a href="../../manual/tng_pipeline_list/">tng pipeline list</a>
   </li>  <li data-command-item data-search="tng pipeline retry retry a tangled ci pipeline">
-    <a href="../../manual/tng_pipeline_retry/">tng pipeline retry</a>
+    <a href="../../manual/tng_pipeline_retry/" aria-current="page">tng pipeline retry</a>
   </li>  <li data-command-item data-search="tng pipeline status view workflow statuses for a tangled ci pipeline">
     <a href="../../manual/tng_pipeline_status/">tng pipeline status</a>
   </li>  <li data-command-item data-search="tng pipeline view view a tangled ci pipeline">
@@ -178,11 +178,11 @@
   </nav>
     <main id="content" tabindex="-1">
         <nav class="breadcrumbs" aria-label="Breadcrumb">
-    <a href="../tng/">tng</a><span aria-hidden="true">/</span><a href="../tng_pr/">pr</a><span aria-hidden="true">/</span><span aria-current="page">diff</span>
-  </nav><h1><code>tng pr diff</code></h1><p class="lead">Show a pull request round as a unified diff</p>  <section>
+    <a href="../tng/">tng</a><span aria-hidden="true">/</span><a href="../tng_pipeline/">pipeline</a><span aria-hidden="true">/</span><span aria-current="page">retry</span>
+  </nav><h1><code>tng pipeline retry</code></h1><p class="lead">Retry a Tangled CI pipeline</p>  <section>
     <h2>Usage</h2>
-    <pre class="usage"><code>tng pr diff &lt;pull-request-uri&gt; [--round &lt;round&gt;] [--version] [--help]</code></pre>
-  </section><section><h2>Arguments</h2><dl class="arguments"><div><dt><code>&lt;pull-request-uri&gt;</code></dt><dd><p>Pull request AT URI</p></dd></div></dl></section><section><h2>Options</h2><dl class="arguments"><div><dt><code>--round &lt;round&gt;</code></dt><dd><p>Round number to show, starting at 0 (defaults to the latest round)</p></dd></div><div><dt><code>--version</code></dt><dd><p>Show the version.</p></dd></div><div><dt><code>-h, --help</code></dt><dd><p>Show help information.</p></dd></div></dl></section>  <p class="root-reference">
+    <pre class="usage"><code>tng pipeline retry &lt;pipeline-id&gt; [--repo &lt;repo&gt;] [--spindle &lt;spindle&gt;] [--workflow &lt;workflow&gt;] [--json] [--version] [--help]</code></pre>
+  </section><section><h2>Arguments</h2><dl class="arguments"><div><dt><code>&lt;pipeline-id&gt;</code></dt><dd><p>Spindle-local pipeline TID</p></dd></div></dl></section><section><h2>Options</h2><dl class="arguments"><div><dt><code>--repo &lt;repo&gt;</code></dt><dd><p>Repository reference used to locate its Spindle (defaults to Git origin)</p></dd></div><div><dt><code>--spindle &lt;spindle&gt;</code></dt><dd><p>Spindle hostname or URL; overrides repository discovery</p></dd></div><div><dt><code>--workflow &lt;workflow&gt;</code></dt><dd><p>Retry only the named workflow</p></dd></div><div><dt><code>--json</code></dt><dd><p>Output the new pipeline AT URI as JSON</p></dd></div><div><dt><code>--version</code></dt><dd><p>Show the version.</p></dd></div><div><dt><code>-h, --help</code></dt><dd><p>Show help information.</p></dd></div></dl></section>  <p class="root-reference">
     See also <a href="../tng/"><code>tng</code></a>.
   </p>
       <footer>
