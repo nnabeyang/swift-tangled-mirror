@@ -130,14 +130,32 @@ struct CLIPager: Sendable {
 
 struct CLIOutputWriter {
   let terminal: CLITerminalContext
+  let diagnosticFormatter: CLIDiagnosticFormatter
   let environment: [String: String]
   let pager: CLIPager
   let stdout: (Data) -> Void
   let stderr: (Data) -> Void
 
+  init(
+    terminal: CLITerminalContext,
+    diagnosticFormatter: CLIDiagnosticFormatter = .plain,
+    environment: [String: String],
+    pager: CLIPager,
+    stdout: @escaping (Data) -> Void,
+    stderr: @escaping (Data) -> Void
+  ) {
+    self.terminal = terminal
+    self.diagnosticFormatter = diagnosticFormatter
+    self.environment = environment
+    self.pager = pager
+    self.stdout = stdout
+    self.stderr = stderr
+  }
+
   static var live: CLIOutputWriter {
     CLIOutputWriter(
       terminal: .live,
+      diagnosticFormatter: .live,
       environment: ProcessInfo.processInfo.environment,
       pager: .live,
       stdout: { FileHandle.standardOutput.write($0) },
@@ -175,10 +193,10 @@ struct CLIOutputWriter {
     }
 
     if !output.stderr.isEmpty {
-      stderr(Data(output.stderr.utf8))
+      stderr(Data(diagnosticFormatter.format(output.stderr).utf8))
     }
     if let pagerWarning {
-      stderr(Data(pagerWarning.utf8))
+      stderr(Data(diagnosticFormatter.format(pagerWarning).utf8))
     }
   }
 }

@@ -153,6 +153,37 @@ import Testing
     )
   }
 
+  @Test func writerUsesStderrDiagnosticContextIndependentlyFromStdout() {
+    let recorder = PagerRecorder()
+    let stderrTerminal = CLITerminalContext(
+      isTerminal: true,
+      viewportWidth: 80,
+      markdownWidth: 80,
+      colorEnabled: true
+    )
+    let writer = CLIOutputWriter(
+      terminal: .plain,
+      diagnosticFormatter: CLIDiagnosticFormatter(terminal: stderrTerminal),
+      environment: [:],
+      pager: CLIPager { _, _, _ in },
+      stdout: { recorder.stdout.append($0) },
+      stderr: { recorder.stderr.append($0) }
+    )
+
+    writer.write(
+      CLICommandOutput(
+        stdout: "plain stdout\n",
+        stderr: "warning: styled stderr\n"
+      )
+    )
+
+    #expect(recorder.stdout == Data("plain stdout\n".utf8))
+    #expect(
+      recorder.stderr
+        == Data("\u{001B}[1;33mwarning:\u{001B}[0m styled stderr\n".utf8)
+    )
+  }
+
   @Test func liveProcessWritesDataAndConfiguredEnvironment() throws {
     let directory = try PagerTemporaryDirectory()
     let output = directory.url.appendingPathComponent("output")

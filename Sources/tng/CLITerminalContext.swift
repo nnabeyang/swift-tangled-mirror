@@ -23,6 +23,14 @@ struct CLITerminalContext: Equatable, Sendable {
     )
   }
 
+  static var standardError: CLITerminalContext {
+    resolve(
+      environment: ProcessInfo.processInfo.environment,
+      outputIsTerminal: standardErrorIsTerminal(),
+      detectedWidth: nil
+    )
+  }
+
   static let plain = CLITerminalContext(
     isTerminal: false,
     viewportWidth: defaultViewportWidth,
@@ -89,6 +97,16 @@ private func standardOutputIsTerminal() -> Bool {
     Darwin.isatty(FileHandle.standardOutput.fileDescriptor) == 1
   #elseif canImport(Glibc)
     Glibc.isatty(FileHandle.standardOutput.fileDescriptor) == 1
+  #else
+    false
+  #endif
+}
+
+private func standardErrorIsTerminal() -> Bool {
+  #if canImport(Darwin)
+    Darwin.isatty(FileHandle.standardError.fileDescriptor) == 1
+  #elseif canImport(Glibc)
+    Glibc.isatty(FileHandle.standardError.fileDescriptor) == 1
   #else
     false
   #endif

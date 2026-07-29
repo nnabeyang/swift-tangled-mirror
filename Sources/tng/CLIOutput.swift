@@ -69,7 +69,7 @@ func runCLICommand(
     if jsonErrors {
       writeCLIJSONError(jsonErrorReport(for: error))
     } else {
-      write(report.diagnostic, to: .standardError)
+      writeHumanDiagnostic(report.diagnostic)
     }
     throw report.exitCode.argumentParserValue
   }
@@ -97,7 +97,7 @@ func runCLIStreamingCommand(
     if jsonErrors {
       writeCLIJSONError(jsonErrorReport(for: error))
     } else {
-      write(report.diagnostic, to: .standardError)
+      writeHumanDiagnostic(report.diagnostic)
     }
     throw report.exitCode.argumentParserValue
   }
@@ -125,6 +125,10 @@ func writeCLIJSONError(_ report: CLIJSONErrorReport) {
   encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
   guard let data = try? encoder.encode(CLIJSONErrorEnvelope(error: report)) else { return }
   write(data + Data("\n".utf8), to: .standardError)
+}
+
+func writeHumanDiagnostic(_ diagnostic: String) {
+  write(CLIDiagnosticFormatter.live.format(diagnostic), to: .standardError)
 }
 
 func jsonErrorReport(for error: any Error) -> CLIJSONErrorReport {
@@ -393,11 +397,5 @@ func describeArtifactError(_ error: ArtifactError) -> String {
     "download checksum mismatch for \(expectedCID) (actual digest: \(actualDigest))"
   case .unsafeDestination(let path):
     "unsafe download destination: \(path)"
-  }
-}
-
-struct StderrOutput: TextOutputStream {
-  mutating func write(_ string: String) {
-    FileHandle.standardError.write(Data(string.utf8))
   }
 }

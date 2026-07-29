@@ -100,20 +100,68 @@ import Testing
   }
 
   @Test func jsonModeReturnsStructuredOperationalAndUsageErrors() throws {
-    let api = try TngProcess.run(["repo", "view", "not-valid", "--json"])
-    let usage = try TngProcess.run(["repo", "list", "--limit", "0", "--json"])
+    let forcedColor = [
+      "NO_COLOR": "",
+      "CLICOLOR": "1",
+      "CLICOLOR_FORCE": "1",
+      "TNG_FORCE_TTY": "80",
+    ]
+    let api = try TngProcess.run(
+      ["repo", "view", "not-valid", "--json"],
+      environment: forcedColor
+    )
+    let usage = try TngProcess.run(
+      ["repo", "list", "--limit", "0", "--json"],
+      environment: forcedColor
+    )
 
     #expect(api.status == CLIExitCode.api.rawValue)
     #expect(api.stdout.isEmpty)
+    #expect(api.stderr.contains("\u{001B}") == false)
     #expect(api.stderr.contains("\"category\":\"api\""))
     #expect(api.stderr.contains("\"code\":\"invalid_request\""))
     #expect(api.stderr.contains("\"schemaVersion\":1"))
 
     #expect(usage.status == CLIExitCode.usage.rawValue)
     #expect(usage.stdout.isEmpty)
+    #expect(usage.stderr.contains("\u{001B}") == false)
     #expect(usage.stderr.contains("\"category\":\"usage\""))
     #expect(usage.stderr.contains("\"code\":\"invalid_usage\""))
     #expect(usage.stderr.contains("\"exitCode\":64"))
+  }
+
+  @Test func humanErrorsUseStderrColorRules() throws {
+    let forcedColor = [
+      "NO_COLOR": "",
+      "CLICOLOR": "1",
+      "CLICOLOR_FORCE": "1",
+    ]
+    let api = try TngProcess.run(
+      ["repo", "view", "not-valid"],
+      environment: forcedColor
+    )
+    let usage = try TngProcess.run(
+      ["repo", "list", "--limit", "0"],
+      environment: forcedColor
+    )
+    let disabled = try TngProcess.run(
+      ["repo", "view", "not-valid"],
+      environment: [
+        "NO_COLOR": "1",
+        "CLICOLOR_FORCE": "1",
+      ]
+    )
+
+    #expect(
+      api.stderr.hasPrefix("\u{001B}[1;31mAPI error:\u{001B}[0m invalid request:")
+    )
+    #expect(
+      usage.stderr.hasPrefix(
+        "\u{001B}[1;31mError:\u{001B}[0m --limit must be between 1 and 1000"
+      )
+    )
+    #expect(disabled.stderr.hasPrefix("API error: invalid request:"))
+    #expect(disabled.stderr.contains("\u{001B}") == false)
   }
 
   @Test func completionCommandGeneratesScriptsFromTheArgumentParserCommandTree() throws {

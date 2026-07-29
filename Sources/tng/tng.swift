@@ -50,10 +50,24 @@ struct Tng: AsyncParsableCommand {
     } catch let exitCode as ExitCode {
       terminate(with: exitCode.rawValue)
     } catch let cleanExit as CleanExit {
-      exit(withError: cleanExit)
+      let output = Tng.fullMessage(for: cleanExit)
+      if !output.isEmpty {
+        print(output)
+      }
+      terminate(with: Tng.exitCode(for: cleanExit).rawValue)
     } catch {
+      let exitCode = Tng.exitCode(for: error)
+      if exitCode == .success {
+        let output = Tng.fullMessage(for: error)
+        if !output.isEmpty {
+          print(output)
+        }
+        terminate(with: exitCode.rawValue)
+      }
       guard arguments.contains("--json") else {
-        exit(withError: error)
+        let diagnostic = Tng.fullMessage(for: error) + "\n"
+        writeHumanDiagnostic(diagnostic)
+        terminate(with: exitCode.rawValue)
       }
       writeCLIJSONError(
         CLIJSONErrorReport(

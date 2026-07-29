@@ -30,14 +30,13 @@ struct AuthLogoutCommand: AsyncParsableCommand {
       do {
         try await TokenRevoker(session: session).revoke()
       } catch {
-        diagnostic += "Warning: token revoke failed (\(error)); clearing local session anyway.\n"
+        diagnostic += "warning: token revoke failed (\(error)); clearing local session anyway.\n"
       }
       do {
         try store.clear()
       } catch let error as TangledError {
         if !diagnostic.isEmpty {
-          var stderr = StderrOutput()
-          print(diagnostic, terminator: "", to: &stderr)
+          writeHumanDiagnostic(diagnostic)
         }
         throw CLICommandError.authentication(
           "failed to clear stored session: \(describeTangledError(error))"
