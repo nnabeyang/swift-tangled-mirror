@@ -94,7 +94,7 @@ public struct PullRequestMergeService: Sendable {
     }
     guard !mergeCheck.isConflicted else {
       let files = mergeCheck.conflicts.map(\.filename).joined(separator: ", ")
-      throw TangledError.invalidRequest(
+      throw TangledError.conflict(
         files.isEmpty ? "pull request has merge conflicts" : "merge conflicts: \(files)"
       )
     }
@@ -174,10 +174,11 @@ extension PullRequestMergeService {
     requireFreshIndexedState: Bool
   ) async throws -> PreparedPullRequestMerge {
     var records: [TangledRecord<PullRequest>] = []
-    var nextURI: String? = pullRequestURI
+    var nextURI = pullRequestURI
     var seen = Set<String>()
 
-    while let uri = nextURI {
+    while true {
+      let uri = nextURI
       guard seen.insert(uri).inserted else {
         throw TangledError.invalidRequest("circular pull request dependency: \(uri)")
       }
@@ -198,11 +199,12 @@ extension PullRequestMergeService {
         }
       }
       records.append(record)
-      nextURI = record.value.dependentOn
+      guard let dependencyURI = record.value.dependentOn else {
+        break
+      }
+      nextURI = dependencyURI
     }
-    guard let selected = records.first else {
-      throw TangledError.notFound("no mergeable pull request")
-    }
+    let selected = records[0]
 
     let repositoryDID = selected.value.target.repositoryDID
     let targetBranch = selected.value.target.branch
@@ -240,8 +242,8 @@ extension PullRequestMergeService {
       pullRequestCIDs: try Dictionary(
         uniqueKeysWithValues: records.map { record in
           guard let cid = record.cid, !cid.isEmpty else {
-            throw TangledError.invalidRequest(
-              "pull request does not expose a CID: \(record.uri)"
+            throw TangledError.upstreamFailed(
+              "PDS pull request record does not expose a CID: \(record.uri)"
             )
           }
           return (record.uri, cid)
@@ -262,14 +264,17 @@ extension PullRequestMergeService {
     for uri in prepared.pullRequestURIs {
       let record = try await dependencies.pullRequest(uri)
       guard record.cid == prepared.pullRequestCIDs[uri] else {
-        throw TangledError.invalidRequest(
-          "pull request changed during merge check: \(uri); rerun the merge"
+        throw TangledError.conflict(
+          "pull request changed during merge check: \(uri); fetch the latest state and retry"
         )
       }
       let indexedState = try await dependencies.indexedState(uri)
       try validate(indexedState: indexedState, matches: record)
       guard indexedState.status == .open else {
-        throw TangledError.invalidRequest("pull request is not open: \(uri)")
+        throw TangledError.conflict(
+          "pull request is no longer open after merge check: \(uri); "
+            + "review the latest status before merging"
+        )
       }
     }
   }
@@ -279,16 +284,15 @@ extension PullRequestMergeService {
     matches authoritativeRecord: TangledRecord<PullRequest>
   ) throws {
     guard let authoritativeCID = authoritativeRecord.cid, !authoritativeCID.isEmpty else {
-      throw TangledError.invalidRequest(
-        "pull request does not expose a CID: \(authoritativeRecord.uri)"
+      throw TangledError.upstreamFailed(
+        "PDS pull request record does not expose a CID: \(authoritativeRecord.uri)"
       )
     }
     guard indexedState.record.uri == authoritativeRecord.uri,
       indexedState.record.cid == authoritativeCID
     else {
       throw TangledError.upstreamFailed(
-        "pull request state is not indexed for the latest record: "
-          + "\(authoritativeRecord.uri); retry after Bobbin catches up"
+        "Bobbin has not indexed the latest pull request record: \(authoritativeRecord.uri)"
       )
     }
   }

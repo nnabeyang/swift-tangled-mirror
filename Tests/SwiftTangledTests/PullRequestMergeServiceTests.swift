@@ -91,12 +91,17 @@ import Testing
       )
     )
 
-    await #expect(throws: TangledError.self) {
+    do {
       _ = try await service.merge(
         pullRequestURI: uri,
         allowStack: false,
         pdsClient: self.unusedPDSClient()
       )
+      Issue.record("expected stale Bobbin state to fail")
+    } catch TangledError.upstreamFailed(let message) {
+      #expect(message == "Bobbin has not indexed the latest pull request record: \(uri)")
+    } catch {
+      Issue.record("unexpected error: \(error)")
     }
     #expect(await recorder.checkedPatch() == nil)
   }
@@ -115,12 +120,17 @@ import Testing
       )
     )
 
-    await #expect(throws: TangledError.self) {
+    do {
       _ = try await service.merge(
         pullRequestURI: uri,
         allowStack: false,
         pdsClient: self.unusedPDSClient()
       )
+      Issue.record("expected closed pull request to fail")
+    } catch TangledError.invalidRequest(let message) {
+      #expect(message == "pull request is not open: \(uri)")
+    } catch {
+      Issue.record("unexpected error: \(error)")
     }
     #expect(await recorder.checkedPatch() == nil)
   }
@@ -145,14 +155,116 @@ import Testing
       )
     )
 
-    await #expect(throws: TangledError.self) {
+    do {
       _ = try await service.merge(
         pullRequestURI: uri,
         allowStack: false,
         pdsClient: self.unusedPDSClient()
       )
+      Issue.record("expected changed pull request to fail")
+    } catch TangledError.conflict(let message) {
+      #expect(
+        message
+          == "pull request changed during merge check: \(uri); fetch the latest state and retry"
+      )
+    } catch {
+      Issue.record("unexpected error: \(error)")
     }
     #expect(await recorder.checkedPatch() == "latest patch")
+  }
+
+  @Test func mergeClassifiesKnotConflicts() async throws {
+    let uri = "at://did:plc:author/sh.tangled.repo.pull/selected"
+    let recorder = MergeRecorder()
+    let record = pullRequest(uri: uri, dependentOn: nil)
+    let service = PullRequestMergeService(
+      dependencies: singleDependencies(
+        record: { _ in record },
+        indexedState: { _ in PullRequestIndexedState(record: record, status: .open) },
+        recorder: recorder,
+        mergeCheck: {
+          PullRequestMergeCheckResponse(
+            isConflicted: true,
+            conflicts: [.init(filename: "Sources/Feature.swift", reason: "content")]
+          )
+        }
+      )
+    )
+
+    do {
+      _ = try await service.merge(
+        pullRequestURI: uri,
+        allowStack: false,
+        pdsClient: unusedPDSClient()
+      )
+      Issue.record("expected merge conflict")
+    } catch TangledError.conflict(let message) {
+      #expect(message == "merge conflicts: Sources/Feature.swift")
+    } catch {
+      Issue.record("unexpected error: \(error)")
+    }
+  }
+
+  @Test func mergeClassifiesStatusChangeAfterMergeCheck() async throws {
+    let uri = "at://did:plc:author/sh.tangled.repo.pull/selected"
+    let recorder = MergeRecorder()
+    let record = pullRequest(uri: uri, dependentOn: nil)
+    let states = PullRequestIndexedStateSequence(states: [
+      PullRequestIndexedState(record: record, status: .open),
+      PullRequestIndexedState(record: record, status: .closed),
+    ])
+    let service = PullRequestMergeService(
+      dependencies: singleDependencies(
+        record: { _ in record },
+        indexedState: { _ in try await states.next() },
+        recorder: recorder
+      )
+    )
+
+    do {
+      _ = try await service.merge(
+        pullRequestURI: uri,
+        allowStack: false,
+        pdsClient: unusedPDSClient()
+      )
+      Issue.record("expected status conflict")
+    } catch TangledError.conflict(let message) {
+      #expect(
+        message
+          == "pull request is no longer open after merge check: \(uri); review the latest status before merging"
+      )
+    } catch {
+      Issue.record("unexpected error: \(error)")
+    }
+  }
+
+  @Test func mergeClassifiesMissingAuthoritativeCIDAsUpstreamFailure() async throws {
+    let uri = "at://did:plc:author/sh.tangled.repo.pull/selected"
+    let recorder = MergeRecorder()
+    let record = TangledRecord(
+      uri: uri,
+      value: pullRequest(uri: uri, dependentOn: nil).value
+    )
+    let service = PullRequestMergeService(
+      dependencies: singleDependencies(
+        record: { _ in record },
+        indexedState: { _ in PullRequestIndexedState(record: record, status: .open) },
+        recorder: recorder
+      )
+    )
+
+    do {
+      _ = try await service.merge(
+        pullRequestURI: uri,
+        allowStack: false,
+        pdsClient: unusedPDSClient()
+      )
+      Issue.record("expected missing CID to fail")
+    } catch TangledError.upstreamFailed(let message) {
+      #expect(message == "PDS pull request record does not expose a CID: \(uri)")
+    } catch {
+      Issue.record("unexpected error: \(error)")
+    }
   }
 
   @Test func mergeReturnsPartialSuccessWhenStatusRecordsFail() async throws {
@@ -276,6 +388,10 @@ import Testing
     record: @escaping @Sendable (String) async throws -> TangledRecord<PullRequest>,
     indexedState: @escaping @Sendable (String) async throws -> PullRequestIndexedState,
     recorder: MergeRecorder,
+    mergeCheck:
+      @escaping @Sendable () async throws -> PullRequestMergeCheckResponse = {
+        PullRequestMergeCheckResponse(isConflicted: false)
+      },
     markPullRequestsMerged:
       @escaping @Sendable (PDSClient, [String]) async throws -> [TangledRecord<PullRequestStatusChange>] = { _, _ in [] }
   ) -> PullRequestMergeDependencies {
@@ -296,7 +412,7 @@ import Testing
       },
       mergeCheck: { _, _, _, _, _, patch in
         await recorder.recordCheckedPatch(patch)
-        return PullRequestMergeCheckResponse(isConflicted: false)
+        return try await mergeCheck()
       },
       merge: { _, _, _, _, _, _, _, _, _ in
         await recorder.recordMerge()
@@ -360,6 +476,21 @@ private actor PullRequestReadSequence {
       throw TangledError.notFound("no pull request record")
     }
     return records.removeFirst()
+  }
+}
+
+private actor PullRequestIndexedStateSequence {
+  private var states: [PullRequestIndexedState]
+
+  init(states: [PullRequestIndexedState]) {
+    self.states = states
+  }
+
+  func next() throws -> PullRequestIndexedState {
+    guard !states.isEmpty else {
+      throw TangledError.notFound("no indexed pull request state")
+    }
+    return states.removeFirst()
   }
 }
 
