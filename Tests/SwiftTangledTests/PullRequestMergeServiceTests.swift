@@ -155,6 +155,59 @@ import Testing
     #expect(await recorder.checkedPatch() == "latest patch")
   }
 
+  @Test func mergeReturnsPartialSuccessWhenStatusRecordsFail() async throws {
+    let uri = "at://did:plc:author/sh.tangled.repo.pull/selected"
+    let recorder = MergeRecorder()
+    let record = pullRequest(uri: uri, dependentOn: nil)
+    let service = PullRequestMergeService(
+      dependencies: singleDependencies(
+        record: { _ in record },
+        indexedState: { _ in PullRequestIndexedState(record: record, status: .open) },
+        recorder: recorder,
+        markPullRequestsMerged: { _, _ in
+          throw TangledError.upstreamFailed("status write failed")
+        }
+      )
+    )
+
+    let result = try await service.merge(
+      pullRequestURI: uri,
+      allowStack: false,
+      pdsClient: unusedPDSClient()
+    )
+
+    #expect(result.outcome == .mergedStatusRecordsFailed)
+    #expect(result.statusRecords.isEmpty)
+    #expect(result.statusRecordError?.contains("status write failed") == true)
+    #expect(await recorder.mergeCount() == 1)
+  }
+
+  @Test func mergeReturnsStatusRecordsOnFullSuccess() async throws {
+    let uri = "at://did:plc:author/sh.tangled.repo.pull/selected"
+    let recorder = MergeRecorder()
+    let record = pullRequest(uri: uri, dependentOn: nil)
+    let status = statusRecord(pullRequestURI: uri)
+    let service = PullRequestMergeService(
+      dependencies: singleDependencies(
+        record: { _ in record },
+        indexedState: { _ in PullRequestIndexedState(record: record, status: .open) },
+        recorder: recorder,
+        markPullRequestsMerged: { _, _ in [status] }
+      )
+    )
+
+    let result = try await service.merge(
+      pullRequestURI: uri,
+      allowStack: false,
+      pdsClient: unusedPDSClient()
+    )
+
+    #expect(result.outcome == .merged)
+    #expect(result.statusRecords == [status])
+    #expect(result.statusRecordError == nil)
+    #expect(await recorder.mergeCount() == 1)
+  }
+
   private func dependencies(
     selectedURI: String,
     dependencyURI: String,
@@ -194,7 +247,11 @@ import Testing
         await recorder.recordCheckedPatch(patch)
         return PullRequestMergeCheckResponse(isConflicted: false)
       },
-      merge: { _, _, _, _, _, _, _, _, _ in }
+      merge: { _, _, _, _, _, _, _, _, _ in
+        await recorder.recordMerge()
+      },
+      serviceAuthToken: { _, _, _ in "token" },
+      markPullRequestsMerged: { _, _ in [] }
     )
   }
 
@@ -218,7 +275,9 @@ import Testing
   private func singleDependencies(
     record: @escaping @Sendable (String) async throws -> TangledRecord<PullRequest>,
     indexedState: @escaping @Sendable (String) async throws -> PullRequestIndexedState,
-    recorder: MergeRecorder
+    recorder: MergeRecorder,
+    markPullRequestsMerged:
+      @escaping @Sendable (PDSClient, [String]) async throws -> [TangledRecord<PullRequestStatusChange>] = { _, _ in [] }
   ) -> PullRequestMergeDependencies {
     PullRequestMergeDependencies(
       pullRequest: record,
@@ -239,7 +298,23 @@ import Testing
         await recorder.recordCheckedPatch(patch)
         return PullRequestMergeCheckResponse(isConflicted: false)
       },
-      merge: { _, _, _, _, _, _, _, _, _ in }
+      merge: { _, _, _, _, _, _, _, _, _ in
+        await recorder.recordMerge()
+      },
+      serviceAuthToken: { _, _, _ in "token" },
+      markPullRequestsMerged: markPullRequestsMerged
+    )
+  }
+
+  private func statusRecord(pullRequestURI: String) -> TangledRecord<PullRequestStatusChange> {
+    TangledRecord(
+      uri: "at://did:plc:author/sh.tangled.repo.pull.status/merged",
+      cid: "bafystatus",
+      value: PullRequestStatusChange(
+        pullRequestURI: pullRequestURI,
+        status: .merged,
+        createdAt: FormatString<Date>(rawValue: "2026-07-24T00:00:00Z")
+      )
     )
   }
 
@@ -254,6 +329,7 @@ import Testing
 
 private actor MergeRecorder {
   private var patch: String?
+  private var merges = 0
 
   func recordCheckedPatch(_ patch: String) {
     self.patch = patch
@@ -261,6 +337,14 @@ private actor MergeRecorder {
 
   func checkedPatch() -> String? {
     patch
+  }
+
+  func recordMerge() {
+    merges += 1
+  }
+
+  func mergeCount() -> Int {
+    merges
   }
 }
 

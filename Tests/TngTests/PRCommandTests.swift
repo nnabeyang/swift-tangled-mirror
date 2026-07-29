@@ -160,6 +160,44 @@ import Testing
     )
     #expect(merged.stdout.contains("\"pullRequestURIs\""))
     #expect(merged.stdout.contains(samplePullRequestURI))
+    #expect(merged.stdout.contains("\"outcome\" : \"merged\""))
+  }
+
+  @Test func mergeFormatsPartialSuccessWithoutSuggestingRetry() async throws {
+    let recorder = PRCommandRecorder()
+    let partialResult = PullRequestMergeResult(
+      check: PullRequestMergeCheck(
+        pullRequestURIs: [samplePullRequestURI],
+        repositoryDID: "did:plc:repository",
+        targetBranch: "main",
+        isConflicted: false
+      ),
+      statusRecords: [],
+      outcome: .mergedStatusRecordsFailed,
+      statusRecordError: "status write failed"
+    )
+    let service = PRCommandService(
+      dependencies: dependencies(recorder: recorder, mergeResult: partialResult)
+    )
+
+    let human = try await service.merge(
+      pullRequestURI: samplePullRequestURI,
+      checkOnly: false,
+      allowStack: false,
+      json: false
+    )
+    let json = try await service.merge(
+      pullRequestURI: samplePullRequestURI,
+      checkOnly: false,
+      allowStack: false,
+      json: true
+    )
+
+    #expect(human.stdout.hasPrefix("Merge succeeded: \(samplePullRequestURI)\n"))
+    #expect(human.stdout.contains("Merged status records were not written: status write failed"))
+    #expect(human.stdout.contains("Do not rerun `tng pr merge` for \(samplePullRequestURI)"))
+    #expect(json.stdout.contains("\"outcome\" : \"merged_status_records_failed\""))
+    #expect(json.stdout.contains("\"statusRecordError\" : \"status write failed\""))
   }
 
   @Test func editUsesAuthoritativePreparedRecordAndReadsBodyFiles() async throws {
@@ -975,6 +1013,7 @@ extension PRCommandTests {
     authoritativePullRequestRecord: TangledRecord<PullRequest>? = nil,
     authoritativePullRequestError: TangledError? = nil,
     editError: TangledError? = nil,
+    mergeResult: PullRequestMergeResult? = nil,
     resolvedRepositories: [String: TangledRecord<Repository>] = [:],
     originURL: @escaping @Sendable () throws -> String = { "unused" }
   ) -> PRCommandDependencies {
@@ -1278,15 +1317,16 @@ extension PRCommandTests {
         )
       },
       merge: { uri, _ in
-        PullRequestMergeResult(
-          check: PullRequestMergeCheck(
-            pullRequestURIs: [uri],
-            repositoryDID: "did:plc:repository",
-            targetBranch: "main",
-            isConflicted: false
-          ),
-          statusRecords: []
-        )
+        mergeResult
+          ?? PullRequestMergeResult(
+            check: PullRequestMergeCheck(
+              pullRequestURIs: [uri],
+              repositoryDID: "did:plc:repository",
+              targetBranch: "main",
+              isConflicted: false
+            ),
+            statusRecords: []
+          )
       },
       setStatus: { uri, status in
         await recorder.record(statusURI: uri, status: status)

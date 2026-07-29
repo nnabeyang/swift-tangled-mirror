@@ -50,6 +50,12 @@ public struct PullRequestMergeService: Sendable {
           commitMessage: $7,
           commitBody: $8
         )
+      },
+      serviceAuthToken: { client, audience, lxm in
+        try await client.serviceAuthToken(audience: audience, lxm: lxm)
+      },
+      markPullRequestsMerged: { client, uris in
+        try await client.markPullRequestsMerged(uris)
       }
     )
   }
@@ -95,9 +101,10 @@ public struct PullRequestMergeService: Sendable {
     try await validateFreshMergeState(prepared)
 
     let audience = try knotServiceAudience(prepared.repository.value.knot)
-    let token = try await pdsClient.serviceAuthToken(
-      audience: audience,
-      lxm: "sh.tangled.repo.merge"
+    let token = try await dependencies.serviceAuthToken(
+      pdsClient,
+      audience,
+      "sh.tangled.repo.merge"
     )
     try await dependencies.merge(
       prepared.repository.value.knot,
@@ -111,12 +118,17 @@ public struct PullRequestMergeService: Sendable {
       prepared.body
     )
     do {
-      let statuses = try await pdsClient.markPullRequestsMerged(prepared.pullRequestURIs)
+      let statuses = try await dependencies.markPullRequestsMerged(
+        pdsClient,
+        prepared.pullRequestURIs
+      )
       return PullRequestMergeResult(check: mergeCheck, statusRecords: statuses)
     } catch {
-      throw TangledError.upstreamFailed(
-        "merge succeeded for \(prepared.pullRequestURIs.joined(separator: ", ")), "
-          + "but merged status records failed: \(error)"
+      return PullRequestMergeResult(
+        check: mergeCheck,
+        statusRecords: [],
+        outcome: .mergedStatusRecordsFailed,
+        statusRecordError: String(describing: error)
       )
     }
   }
@@ -134,6 +146,8 @@ struct PullRequestMergeDependencies: Sendable {
     @Sendable (String, String, String, String, String, String, String, String, String?) async throws
       ->
       Void
+  let serviceAuthToken: @Sendable (PDSClient, String, String) async throws -> String
+  let markPullRequestsMerged: @Sendable (PDSClient, [String]) async throws -> [TangledRecord<PullRequestStatusChange>]
 }
 
 struct PullRequestIndexedState: Sendable {

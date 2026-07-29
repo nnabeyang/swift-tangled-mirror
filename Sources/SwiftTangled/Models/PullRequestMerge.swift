@@ -40,15 +40,26 @@ public struct PullRequestMergeCheck: Codable, Equatable, Hashable, Sendable {
   }
 }
 
+public enum PullRequestMergeOutcome: String, Codable, Equatable, Sendable {
+  case merged
+  case mergedStatusRecordsFailed = "merged_status_records_failed"
+}
+
 public struct PullRequestMergeResult: Codable, Equatable, Sendable {
   public let check: PullRequestMergeCheck
   public let statusRecords: [TangledRecord<PullRequestStatusChange>]
+  public let outcome: PullRequestMergeOutcome
+  public let statusRecordError: String?
 
   public init(
     check: PullRequestMergeCheck,
-    statusRecords: [TangledRecord<PullRequestStatusChange>]
+    statusRecords: [TangledRecord<PullRequestStatusChange>],
+    outcome: PullRequestMergeOutcome = .merged,
+    statusRecordError: String? = nil
   ) {
     self.check = check
     self.statusRecords = statusRecords
+    self.outcome = outcome
+    self.statusRecordError = statusRecordError
   }
 }

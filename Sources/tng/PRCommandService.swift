@@ -664,7 +664,16 @@ extension PRCommandService {
   }
 
   fileprivate func format(_ result: PullRequestMergeResult) -> String {
-    formatter.details([
+    if result.outcome == .mergedStatusRecordsFailed {
+      let uris = result.check.pullRequestURIs.joined(separator: ", ")
+      return """
+        Merge succeeded: \(uris)
+        Merged status records were not written: \(result.statusRecordError ?? "unknown error")
+        Do not rerun `tng pr merge` for \(uris); inspect these Pull Requests and repair their merged status records separately.
+        """
+          + "\n"
+    }
+    return formatter.details([
       ("Merged", result.check.pullRequestURIs.joined(separator: ", ")),
       ("Target", "\(result.check.repositoryDID):\(result.check.targetBranch)"),
       ("Status records", String(result.statusRecords.count)),
