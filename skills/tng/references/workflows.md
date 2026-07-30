@@ -154,6 +154,24 @@ new pipeline ID and AT URI, then use `pipeline watch` or `pipeline status` to
 verify it. Do not repeat a run with an ambiguous result until absence of the
 first write has been established.
 
+## Cancel a pipeline
+
+Inspect the pipeline before canceling every active workflow or selected
+workflows:
+
+```sh
+tng pipeline view PIPELINE_ID --repo OWNER/REPOSITORY --json
+tng pipeline cancel PIPELINE_ID --repo OWNER/REPOSITORY --json
+tng pipeline cancel PIPELINE_ID --repo OWNER/REPOSITORY \
+  --workflow verify.yml \
+  --json
+```
+
+Repeat `--workflow` to select multiple workflows. The command excludes
+workflows that have already finished and reports the workflows sent to
+Spindle. Verify the resulting state with `pipeline status`. Do not repeat a
+cancel command when its result is ambiguous.
+
 ## Comment on a pull request
 
 Verify the pull request URI, selected round, and complete comment body before

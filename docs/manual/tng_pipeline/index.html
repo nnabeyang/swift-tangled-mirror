@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="View Tangled CI pipelines">
+  <meta name="description" content="Manage Tangled CI pipelines">
   <title>tng pipeline manual · tng CLI</title>
   <link rel="stylesheet" href="../../assets/manual.css">
   <script src="../../assets/manual.js" defer></script>
@@ -128,8 +128,10 @@
   </li>      </ul>
     </li>    <li class="command-group" data-command-group>
       <span>tng pipeline</span>
-      <ul>  <li data-command-item data-search="tng pipeline view tangled ci pipelines">
+      <ul>  <li data-command-item data-search="tng pipeline manage tangled ci pipelines">
     <a href="../../manual/tng_pipeline/" aria-current="page">tng pipeline</a>
+  </li>  <li data-command-item data-search="tng pipeline cancel cancel a running tangled ci pipeline">
+    <a href="../../manual/tng_pipeline_cancel/">tng pipeline cancel</a>
   </li>  <li data-command-item data-search="tng pipeline list list ci pipelines for a tangled repository">
     <a href="../../manual/tng_pipeline_list/">tng pipeline list</a>
   </li>  <li data-command-item data-search="tng pipeline retry retry a tangled ci pipeline">
@@ -181,7 +183,7 @@
     <main id="content" tabindex="-1">
         <nav class="breadcrumbs" aria-label="Breadcrumb">
     <a href="../tng/">tng</a><span aria-hidden="true">/</span><span aria-current="page">pipeline</span>
-  </nav><h1><code>tng pipeline</code></h1><p class="lead">View Tangled CI pipelines</p>  <section>
+  </nav><h1><code>tng pipeline</code></h1><p class="lead">Manage Tangled CI pipelines</p>  <section>
     <h2>Usage</h2>
     <pre class="usage"><code>tng pipeline [--version] [--help]</code></pre>
   </section><section><h2>Available commands</h2><dl class="command-list">  <div>
@@ -202,6 +204,9 @@
   </div>  <div>
     <dt><a href="../tng_pipeline_run/"><code>tng pipeline run</code></a></dt>
     <dd>Run a Tangled CI pipeline at an explicit commit</dd>
+  </div>  <div>
+    <dt><a href="../tng_pipeline_cancel/"><code>tng pipeline cancel</code></a></dt>
+    <dd>Cancel a running Tangled CI pipeline</dd>
   </div></dl></section><section><h2>Options</h2><dl class="arguments"><div><dt><code>--version</code></dt><dd><p>Show the version.</p></dd></div><div><dt><code>-h, --help</code></dt><dd><p>Show help information.</p></dd></div></dl></section>  <p class="root-reference">
     See also <a href="../tng/"><code>tng</code></a>.
   </p>

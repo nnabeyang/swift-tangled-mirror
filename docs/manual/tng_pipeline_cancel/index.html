@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Reopen a Tangled pull request">
-  <title>tng pr reopen manual · tng CLI</title>
+  <meta name="description" content="Cancel a running Tangled CI pipeline">
+  <title>tng pipeline cancel manual · tng CLI</title>
   <link rel="stylesheet" href="../../assets/manual.css">
   <script src="../../assets/manual.js" defer></script>
 </head>
@@ -120,7 +120,7 @@
   </li>  <li data-command-item data-search="tng pr merge check or merge a tangled pull request">
     <a href="../../manual/tng_pr_merge/">tng pr merge</a>
   </li>  <li data-command-item data-search="tng pr reopen reopen a tangled pull request">
-    <a href="../../manual/tng_pr_reopen/" aria-current="page">tng pr reopen</a>
+    <a href="../../manual/tng_pr_reopen/">tng pr reopen</a>
   </li>  <li data-command-item data-search="tng pr resubmit add a round from an updated branch or patch file">
     <a href="../../manual/tng_pr_resubmit/">tng pr resubmit</a>
   </li>  <li data-command-item data-search="tng pr view view a tangled pull request">
@@ -131,7 +131,7 @@
       <ul>  <li data-command-item data-search="tng pipeline manage tangled ci pipelines">
     <a href="../../manual/tng_pipeline/">tng pipeline</a>
   </li>  <li data-command-item data-search="tng pipeline cancel cancel a running tangled ci pipeline">
-    <a href="../../manual/tng_pipeline_cancel/">tng pipeline cancel</a>
+    <a href="../../manual/tng_pipeline_cancel/" aria-current="page">tng pipeline cancel</a>
   </li>  <li data-command-item data-search="tng pipeline list list ci pipelines for a tangled repository">
     <a href="../../manual/tng_pipeline_list/">tng pipeline list</a>
   </li>  <li data-command-item data-search="tng pipeline retry retry a tangled ci pipeline">
@@ -182,11 +182,11 @@
   </nav>
     <main id="content" tabindex="-1">
         <nav class="breadcrumbs" aria-label="Breadcrumb">
-    <a href="../tng/">tng</a><span aria-hidden="true">/</span><a href="../tng_pr/">pr</a><span aria-hidden="true">/</span><span aria-current="page">reopen</span>
-  </nav><h1><code>tng pr reopen</code></h1><p class="lead">Reopen a Tangled pull request</p>  <section>
+    <a href="../tng/">tng</a><span aria-hidden="true">/</span><a href="../tng_pipeline/">pipeline</a><span aria-hidden="true">/</span><span aria-current="page">cancel</span>
+  </nav><h1><code>tng pipeline cancel</code></h1><p class="lead">Cancel a running Tangled CI pipeline</p>  <section>
     <h2>Usage</h2>
-    <pre class="usage"><code>tng pr reopen &lt;pull-request-uri&gt; [--json] [--version] [--help]</code></pre>
-  </section><section><h2>Arguments</h2><dl class="arguments"><div><dt><code>&lt;pull-request-uri&gt;</code></dt><dd><p>Pull request AT URI</p></dd></div></dl></section><section><h2>Options</h2><dl class="arguments"><div><dt><code>--json</code></dt><dd><p>Output the created status record as JSON</p></dd></div><div><dt><code>--version</code></dt><dd><p>Show the version.</p></dd></div><div><dt><code>-h, --help</code></dt><dd><p>Show help information.</p></dd></div></dl></section>  <p class="root-reference">
+    <pre class="usage"><code>tng pipeline cancel &lt;pipeline-id&gt; [--repo &lt;repo&gt;] [--spindle &lt;spindle&gt;] [--workflow &lt;workflow&gt;...] [--json] [--version] [--help]</code></pre>
+  </section><section><h2>Arguments</h2><dl class="arguments"><div><dt><code>&lt;pipeline-id&gt;</code></dt><dd><p>Spindle-local pipeline TID</p></dd></div></dl></section><section><h2>Options</h2><dl class="arguments"><div><dt><code>--repo &lt;repo&gt;</code></dt><dd><p>Repository reference used to locate its Spindle (defaults to Git origin)</p></dd></div><div><dt><code>--spindle &lt;spindle&gt;</code></dt><dd><p>Spindle hostname or URL; overrides repository discovery</p></dd></div><div><dt><code>--workflow &lt;workflow&gt;</code></dt><dd><p>Cancel only the named workflow; repeat for multiple workflows</p><p class="argument-metadata">Repeatable</p></dd></div><div><dt><code>--json</code></dt><dd><p>Output the cancellation result as JSON</p></dd></div><div><dt><code>--version</code></dt><dd><p>Show the version.</p></dd></div><div><dt><code>-h, --help</code></dt><dd><p>Show help information.</p></dd></div></dl></section>  <p class="root-reference">
     See also <a href="../tng/"><code>tng</code></a>.
   </p>
       <footer>

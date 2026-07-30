@@ -44,12 +44,12 @@ handling pagination and failures.
   the write. Verify the repository, annotated tag, artifact name, local file,
   and replacement scope first. Use `--yes` for an authorized noninteractive
   deletion; it deletes the artifact record, not the Git tag.
-- Perform `pipeline retry` or `pipeline run` only when the user authorizes the
-  write. For retry, inspect the original pipeline and verify the repository and
-  optional workflow first. For run, verify the repository, commit, optional
-  ref, workflows, and inputs. Report the new pipeline ID and AT URI; do not
-  repeat the command when the result is ambiguous until absence of the first
-  write has been established.
+- Perform `pipeline retry`, `pipeline run`, or `pipeline cancel` only when the
+  user authorizes the write. For retry or cancel, inspect the original pipeline
+  and verify the repository and selected workflows first. For run, verify the
+  repository, commit, optional ref, workflows, and inputs. Report the affected
+  pipeline and do not repeat a command when the result is ambiguous until the
+  first write's outcome has been established.
 - Before editing or changing an Issue state, inspect the Issue and verify its
   AT URI. Do not automatically retry an edit rejected because its CID changed;
   read the latest record and ask the user to review conflicting changes.
