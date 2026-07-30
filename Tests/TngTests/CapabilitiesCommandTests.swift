@@ -20,7 +20,7 @@ import Testing
 
     #expect(document.schemaVersion == 1)
     #expect(document.cliVersion == SwiftTangled.version)
-    #expect(paths.count == 47)
+    #expect(paths.count == 48)
     #expect(paths.contains("capabilities"))
     #expect(paths.contains("pr create"))
     #expect(paths.contains("pr edit"))
@@ -35,6 +35,7 @@ import Testing
     #expect(paths.contains("pipeline watch"))
     #expect(paths.contains("pipeline retry"))
     #expect(paths.contains("pipeline run"))
+    #expect(paths.contains("pipeline cancel"))
     #expect(paths.contains("events watch"))
     #expect(paths.contains("artifact list"))
     #expect(paths.contains("artifact view"))
@@ -91,6 +92,9 @@ import Testing
     )
     let pipelineRun = try #require(
       document.commands.first { $0.path == ["pipeline", "run"] }
+    )
+    let pipelineCancel = try #require(
+      document.commands.first { $0.path == ["pipeline", "cancel"] }
     )
 
     #expect(pullCreate.access == .write)
@@ -162,6 +166,18 @@ import Testing
     #expect(
       pipelineRun.options.contains {
         $0.names == ["--input"] && $0.repeating
+      }
+    )
+    #expect(pipelineCancel.access == .write)
+    #expect(pipelineCancel.authenticationRequired)
+    #expect(
+      pipelineCancel.arguments == [
+        CapabilityArgument(name: "pipeline-id", required: true, repeating: false)
+      ]
+    )
+    #expect(
+      pipelineCancel.options.contains {
+        $0.names == ["--workflow"] && $0.repeating
       }
     )
   }

@@ -11,6 +11,7 @@ struct PipelineCommandDependencies: Sendable {
     @Sendable (
       String, String, String, String?, [String], [PipelineManualInput]
     ) async throws -> String
+  let cancel: @Sendable (String, String, String, [String]) async throws -> PipelineCancellation
   let originURL: @Sendable () throws -> String
   let sleep: @Sendable (TimeInterval) async throws -> Void
 
@@ -29,6 +30,11 @@ struct PipelineCommandDependencies: Sendable {
       ) async throws -> String = { _, _, _, _, _, _ in
         throw TangledError.invalidRequest("pipeline run is unavailable")
       },
+    cancel:
+      @escaping @Sendable (String, String, String, [String]) async throws ->
+      PipelineCancellation = { _, _, _, _ in
+        throw TangledError.invalidRequest("pipeline cancel is unavailable")
+      },
     originURL: @escaping @Sendable () throws -> String,
     sleep: @escaping @Sendable (TimeInterval) async throws -> Void
   ) {
@@ -37,6 +43,7 @@ struct PipelineCommandDependencies: Sendable {
     self.pipeline = pipeline
     self.retry = retry
     self.run = run
+    self.cancel = cancel
     self.originURL = originURL
     self.sleep = sleep
   }
@@ -78,6 +85,17 @@ struct PipelineCommandDependencies: Sendable {
           ref: ref,
           workflows: workflows,
           inputs: inputs
+        )
+      },
+      cancel: { spindle, repositoryDID, pipelineID, workflows in
+        let pdsClient = try PDSClient.restore(from: CLISessionStore.make().store)
+        return try await PipelineCancelService(
+          spindleClient: SpindleClient(spindle: spindle),
+          pdsClient: pdsClient
+        ).cancel(
+          pipelineID: pipelineID,
+          repositoryDID: repositoryDID,
+          workflows: workflows
         )
       },
       originURL: { try GitOriginReader().read() },
@@ -219,6 +237,31 @@ struct PipelineCommandService: Sendable {
       inputs
     )
     return try pipelineTriggerOutput(pipelineURI, json: json)
+  }
+
+  func cancel(
+    pipelineID: String,
+    repository: String?,
+    spindle: String?,
+    workflows: [String],
+    json: Bool
+  ) async throws -> CLICommandOutput {
+    let explicitSpindle = try normalizedSpindle(spindle)
+    let record = try await resolveRepositoryRecord(repository)
+    let cancellation = try await dependencies.cancel(
+      try explicitSpindle ?? repositorySpindle(record),
+      try repositoryDID(record),
+      pipelineID,
+      workflows
+    )
+    return CLICommandOutput(
+      stdout: try json
+        ? formatter.json(cancellation)
+        : formatter.details([
+          ("Pipeline ID", cancellation.pipeline),
+          ("Cancellation requested", cancellation.workflows.joined(separator: ", ")),
+        ])
+    )
   }
 
   private func pipelineTriggerOutput(

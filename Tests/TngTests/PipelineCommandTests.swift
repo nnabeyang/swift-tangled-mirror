@@ -6,7 +6,7 @@ import Testing
 @testable import tng
 
 @Suite struct PipelineCommandTests {
-  @Test func parsesListViewStatusWatchRetryAndRunArguments() throws {
+  @Test func parsesPipelineArguments() throws {
     let list = try PipelineListCommand.parse([
       "alice.example/core", "--spindle", "spindle.example", "--limit", "25",
       "--cursor", "next", "--json",
@@ -79,6 +79,20 @@ import Testing
     )
     #expect(run.json)
 
+    let cancel = try PipelineCancelCommand.parse([
+      samplePipelineID,
+      "--repo", "alice.example/core",
+      "--spindle", "spindle.example",
+      "--workflow", "verify.yml",
+      "--workflow", "deploy.yml",
+      "--json",
+    ])
+    #expect(cancel.pipelineID == samplePipelineID)
+    #expect(cancel.repository == "alice.example/core")
+    #expect(cancel.spindle == "spindle.example")
+    #expect(cancel.workflow == ["verify.yml", "deploy.yml"])
+    #expect(cancel.json)
+
     #expect(throws: (any Error).self) {
       _ = try PipelineListCommand.parse(["--limit", "0"])
     }
@@ -125,6 +139,12 @@ import Testing
       _ = try PipelineRunCommand.parse([
         "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "--input", "=missing-key",
       ])
+    }
+    #expect(throws: (any Error).self) {
+      _ = try PipelineCancelCommand.parse([samplePipelineID, "--spindle", ""])
+    }
+    #expect(throws: (any Error).self) {
+      _ = try PipelineCancelCommand.parse([samplePipelineID, "--workflow", ""])
     }
   }
 
@@ -339,6 +359,58 @@ import Testing
       JSONSerialization.jsonObject(with: Data(json.stdout.utf8)) as? [String: String]
     )
     #expect(object == ["pipeline": pipelineURI])
+  }
+
+  @Test func cancelResolvesRepositoryAndFormatsSelectedWorkflows() async throws {
+    let repository = sampleRepositoryRecord()
+    let service = PipelineCommandService(
+      dependencies: PipelineCommandDependencies(
+        resolveRepository: { reference in
+          #expect(reference == "alice.example/core")
+          return repository
+        },
+        pipelines: { _, _, _, _ in PipelinePage(pipelines: [], total: 0) },
+        pipeline: { _, _ in samplePipeline() },
+        cancel: { spindle, repositoryDID, pipelineID, workflows in
+          #expect(spindle == "https://explicit.spindle.example")
+          #expect(repositoryDID == "did:plc:repository")
+          #expect(pipelineID == samplePipelineID)
+          #expect(workflows == ["build.yml", "test.yml"])
+          return PipelineCancellation(
+            pipeline: pipelineID,
+            workflows: ["test.yml"]
+          )
+        },
+        originURL: { "unused" },
+        sleep: { _ in }
+      )
+    )
+
+    let human = try await service.cancel(
+      pipelineID: samplePipelineID,
+      repository: "alice.example/core",
+      spindle: "explicit.spindle.example",
+      workflows: ["build.yml", "test.yml"],
+      json: false
+    )
+    let json = try await service.cancel(
+      pipelineID: samplePipelineID,
+      repository: "alice.example/core",
+      spindle: "explicit.spindle.example",
+      workflows: ["build.yml", "test.yml"],
+      json: true
+    )
+
+    #expect(human.stdout.contains("Pipeline ID\t\(samplePipelineID)"))
+    #expect(human.stdout.contains("Cancellation requested\ttest.yml"))
+    let cancellation = try JSONDecoder().decode(
+      PipelineCancellation.self,
+      from: Data(json.stdout.utf8)
+    )
+    #expect(
+      cancellation
+        == PipelineCancellation(pipeline: samplePipelineID, workflows: ["test.yml"])
+    )
   }
 
   @Test func listRejectsMissingDIDAndReadsRejectMissingSpindle() async {

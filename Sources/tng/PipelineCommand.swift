@@ -3,7 +3,7 @@ import ArgumentParser
 struct PipelineCommand: AsyncParsableCommand {
   static let configuration = CommandConfiguration(
     commandName: "pipeline",
-    abstract: "View Tangled CI pipelines",
+    abstract: "Manage Tangled CI pipelines",
     subcommands: [
       PipelineListCommand.self,
       PipelineViewCommand.self,
@@ -11,6 +11,7 @@ struct PipelineCommand: AsyncParsableCommand {
       PipelineWatchCommand.self,
       PipelineRetryCommand.self,
       PipelineRunCommand.self,
+      PipelineCancelCommand.self,
     ]
   )
 }
