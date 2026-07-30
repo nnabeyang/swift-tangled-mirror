@@ -99,8 +99,24 @@ public struct URLSessionATPResolver: ATPResolver {
       return plcDirectory.appendingPathComponent(did.rawValue)
     case "web":
       let identifier = String(did.rawValue.dropFirst("did:web:".count))
-      let host = identifier.replacingOccurrences(of: "%3A", with: ":")
-      guard let url = URL(string: "https://\(host)/.well-known/did.json") else {
+      guard !identifier.contains(":"),
+        let authority = identifier.removingPercentEncoding,
+        var urlComponents = URLComponents(string: "https://\(authority)"),
+        urlComponents.scheme?.lowercased() == "https",
+        let host = urlComponents.host?.lowercased(),
+        !host.isEmpty,
+        host == "localhost" || (try? Handle(string: host)) != nil,
+        urlComponents.port == nil || host == "localhost",
+        urlComponents.user == nil,
+        urlComponents.password == nil,
+        urlComponents.query == nil,
+        urlComponents.fragment == nil,
+        urlComponents.percentEncodedPath.isEmpty || urlComponents.percentEncodedPath == "/"
+      else {
+        throw TangledError.handleNotResolved("invalid did:web target: \(did.rawValue)")
+      }
+      urlComponents.percentEncodedPath = "/.well-known/did.json"
+      guard let url = urlComponents.url else {
         throw TangledError.handleNotResolved("invalid did:web target: \(did.rawValue)")
       }
       return url

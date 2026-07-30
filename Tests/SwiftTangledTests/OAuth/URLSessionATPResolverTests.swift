@@ -69,6 +69,56 @@ import Testing
     }
   }
 
+  @Test func didWebResolutionUsesWellKnownPathForBareDomain() async throws {
+    ResolverURLProtocol.reset()
+    let resolver = makeResolver()
+
+    _ = try await resolver.resolve(did: DID(string: "did:web:example.com"))
+
+    let requests = ResolverURLProtocol.recordedRequests()
+    #expect(requests.count == 1)
+    let request = try #require(requests.first)
+    #expect(request.url?.absoluteString == "https://example.com/.well-known/did.json")
+  }
+
+  @Test func didWebResolutionAllowsEncodedPortForLocalhost() async throws {
+    ResolverURLProtocol.reset()
+    let resolver = makeResolver()
+
+    _ = try await resolver.resolve(
+      did: DID(string: "did:web:localhost%3A3000")
+    )
+
+    let requests = ResolverURLProtocol.recordedRequests()
+    #expect(requests.count == 1)
+    let request = try #require(requests.first)
+    #expect(request.url?.absoluteString == "https://localhost:3000/.well-known/did.json")
+  }
+
+  @Test func invalidDidWebTargetsFailBeforeNetworkRequest() async throws {
+    for rawValue in [
+      "did:web::user",
+      "did:web:example.com:user:alice",
+      "did:web:example.com::alice",
+      "did:web:example.com%3A8443",
+      "did:web:example.com%ZZ",
+      "did:web:example.com%2Fpath",
+    ] {
+      ResolverURLProtocol.reset()
+
+      do {
+        _ = try await makeResolver().resolve(did: DID(string: rawValue))
+        Issue.record("Expected \(rawValue) to fail")
+      } catch TangledError.handleNotResolved {
+        // Expected.
+      } catch {
+        Issue.record("Unexpected error for \(rawValue): \(error)")
+      }
+
+      #expect(ResolverURLProtocol.recordedRequests().isEmpty)
+    }
+  }
+
   private func makeResolver() -> URLSessionATPResolver {
     let configuration = URLSessionConfiguration.ephemeral
     configuration.protocolClasses = [ResolverURLProtocol.self]
@@ -104,7 +154,13 @@ private final class ResolverURLProtocol: URLProtocol {
       .value
     let statusCode: Int
     let body: Data
-    if !isFallback {
+    if request.url?.path.hasSuffix("/did.json") == true {
+      statusCode = 200
+      body = Data(
+        #"{"@context":["https://www.w3.org/ns/did/v1"],"id":"did:web:resolved.example"}"#
+          .utf8
+      )
+    } else if !isFallback {
       statusCode = 500
       body = Data()
     } else if handle == "malformed.example" {
