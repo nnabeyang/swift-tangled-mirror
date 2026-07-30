@@ -64,6 +64,7 @@
             "sh.tangled.label.definition",
             "sh.tangled.label.op",
             "sh.tangled.markup.markdown",
+            "sh.tangled.ci.cancelPipeline",
             "sh.tangled.ci.getPipeline",
             "sh.tangled.ci.pipeline",
             "sh.tangled.ci.queryPipelines",

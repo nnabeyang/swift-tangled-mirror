@@ -2053,6 +2053,84 @@ extension Sh.Tangled {
       try rawValue.encode(to: encoder)
     }
   }
+  /// Cancel running pipeline or specific workflows
+  public enum CiCancelPipeline: XRPCProcedure {
+    public static let id = "sh.tangled.ci.cancelPipeline"
+    public static let contentType = "application/json"
+    public typealias RequestBody = CiCancelPipeline_Input
+    public typealias ResponseBody = EmptyResponse
+    public indirect enum Error: XRPCError {
+      case unexpected(error: Swift.String?, message: Swift.String?)
+
+      public init(error: UnExpectedError) {
+        switch error.error {
+        default:
+          self = .unexpected(error: error.error, message: error.message)
+        }
+      }
+
+      public var error: Swift.String? {
+        switch self {
+        case .unexpected(let error, _):
+          return error
+        }
+      }
+
+      public var message: Swift.String? {
+        switch self {
+        case .unexpected(_, let message):
+          return message
+        }
+      }
+    }
+  }
+
+  public struct CiCancelPipeline_Input: Codable, Hashable, Sendable {
+    /// pipeline TID
+    public var pipeline: FormatString<TID>
+    /// git repository DID
+    public var repo: FormatString<DID>
+    /// Workflow names to filter. When not provided, entire pipeline will be canceled.
+    public var workflows: [Swift.String]?
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(pipeline: FormatString<TID>, repo: FormatString<DID>, workflows: [Swift.String]? = nil) {
+      self.pipeline = pipeline
+      self.repo = repo
+      self.workflows = workflows
+      self._unknownValues = [:]
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case pipeline
+      case repo
+      case workflows
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      self.pipeline = try keyedContainer.decode(FormatString<TID>.self, forKey: .pipeline)
+      self.repo = try keyedContainer.decode(FormatString<DID>.self, forKey: .repo)
+      self.workflows = try keyedContainer.decodeIfPresent([Swift.String].self, forKey: .workflows)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      self._unknownValues = _unknownValues
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encode(self.pipeline, forKey: .pipeline)
+      try container.encode(self.repo, forKey: .repo)
+      try container.encodeIfPresent(self.workflows, forKey: .workflows)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
   public enum CiGetPipeline: XRPCQuery {
     public static let id = "sh.tangled.ci.getPipeline"
     public typealias ResponseBody = Sh.Tangled.CiPipeline
@@ -13396,6 +13474,8 @@ public protocol XRPCCallable: _XRPCCallable {
   func SyncGetLatestCommit(did: FormatString<DID>) async throws -> Com.Atproto.SyncGetLatestCommit.ResponseBody
   func ActorGetProfile(actor: FormatString<ATURI>) async throws -> Sh.Tangled.ActorGetProfile.ResponseBody
   func ActorGetProfiles(actors: [FormatString<ATURI>]) async throws -> Sh.Tangled.ActorGetProfiles.ResponseBody
+  /// Cancel running pipeline or specific workflows
+  func CiCancelPipeline(input: Sh.Tangled.CiCancelPipeline_Input) async throws -> Sh.Tangled.CiCancelPipeline.ResponseBody
   func CiGetPipeline(pipeline: FormatString<TID>) async throws -> Sh.Tangled.CiGetPipeline.ResponseBody
   /// Query pipelines in git repository
   func CiQueryPipelines(commits: [Swift.String]?, cursor: Swift.String?, kinds: [Sh.Tangled.kinds__Elem]?, limit: Swift.Int?, repo: FormatString<DID>) async throws -> Sh.Tangled.CiQueryPipelines.ResponseBody
@@ -13519,6 +13599,10 @@ extension XRPCCallable {
   }
   public func ActorGetProfiles(actors: [FormatString<ATURI>]) async throws -> Sh.Tangled.ActorGetProfiles.ResponseBody {
     try await call(Sh.Tangled.ActorGetProfiles.self, input: .init(actors: actors))
+  }
+  /// Cancel running pipeline or specific workflows
+  public func CiCancelPipeline(input: Sh.Tangled.CiCancelPipeline_Input) async throws -> Sh.Tangled.CiCancelPipeline.ResponseBody {
+    try await call(Sh.Tangled.CiCancelPipeline.self, input: input)
   }
   public func CiGetPipeline(pipeline: FormatString<TID>) async throws -> Sh.Tangled.CiGetPipeline.ResponseBody {
     try await call(Sh.Tangled.CiGetPipeline.self, input: .init(pipeline: pipeline))

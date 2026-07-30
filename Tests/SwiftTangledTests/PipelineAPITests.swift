@@ -208,6 +208,73 @@ import TangledLexicons
     #expect(object["workflows"] == nil)
   }
 
+  @Test func cancelPipelineUsesAuthenticatedGeneratedProcedure() async throws {
+    let transport = PipelineTransport([
+      .init(statusCode: 200, body: Data())
+    ])
+    let client = makeClient(transport: transport)
+
+    try await client.cancelPipeline(
+      repositoryDID: "did:plc:repository",
+      pipelineID: "3mr7m2f6ger22",
+      workflows: ["verify.yml"],
+      token: "service-token"
+    )
+
+    let request = try #require(await transport.recordedRequests().first)
+    #expect(request.httpMethod == "POST")
+    #expect(request.url?.lastPathComponent == "sh.tangled.ci.cancelPipeline")
+    #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer service-token")
+    let body = try #require(request.httpBody)
+    let object = try #require(
+      JSONSerialization.jsonObject(with: body) as? [String: Any]
+    )
+    #expect(object["repo"] as? String == "did:plc:repository")
+    #expect(object["pipeline"] as? String == "3mr7m2f6ger22")
+    #expect(object["workflows"] as? [String] == ["verify.yml"])
+  }
+
+  @Test func cancelPipelineOmitsUnspecifiedWorkflowsAndPreservesErrors() async throws {
+    let transport = PipelineTransport([
+      .init(statusCode: 200, body: Data()),
+      .init(
+        statusCode: 400,
+        body: Data(
+          #"{"error":"AccessControl","message":"actor cannot modify repository"}"#.utf8
+        )
+      ),
+    ])
+    let client = makeClient(transport: transport)
+
+    try await client.cancelPipeline(
+      repositoryDID: "did:plc:repository",
+      pipelineID: "3mr7m2f6ger22",
+      workflows: nil,
+      token: "service-token"
+    )
+    let request = try #require(await transport.recordedRequests().first)
+    let body = try #require(request.httpBody)
+    let object = try #require(
+      JSONSerialization.jsonObject(with: body) as? [String: Any]
+    )
+    #expect(object["workflows"] == nil)
+
+    do {
+      try await client.cancelPipeline(
+        repositoryDID: "did:plc:repository",
+        pipelineID: "3mr7m2f6ger22",
+        workflows: ["verify.yml"],
+        token: "service-token"
+      )
+      Issue.record("Expected AccessControl")
+    } catch Sh.Tangled.CiCancelPipeline.Error.unexpected(let error, let message) {
+      #expect(error == "AccessControl")
+      #expect(message == "actor cannot modify repository")
+    } catch {
+      Issue.record("Unexpected error: \(error)")
+    }
+  }
+
   @Test func rawValueModelsAndUnknownTriggerRoundTrip() throws {
     let unknownStatus = try JSONDecoder().decode(
       PipelineWorkflowStatus.self,
@@ -276,6 +343,30 @@ import TangledLexicons
     }
     await expectInvalidRequest {
       _ = try await client.pipeline(id: "not-a-tid")
+    }
+    await expectInvalidRequest {
+      try await client.cancelPipeline(
+        repositoryDID: "not-a-did",
+        pipelineID: "3mr7m2f6ger22",
+        workflows: nil,
+        token: "service-token"
+      )
+    }
+    await expectInvalidRequest {
+      try await client.cancelPipeline(
+        repositoryDID: "did:plc:repository",
+        pipelineID: "not-a-tid",
+        workflows: nil,
+        token: "service-token"
+      )
+    }
+    await expectInvalidRequest {
+      try await client.cancelPipeline(
+        repositoryDID: "did:plc:repository",
+        pipelineID: "3mr7m2f6ger22",
+        workflows: [""],
+        token: "service-token"
+      )
     }
     #expect(await transport.requestCount() == 0)
   }
