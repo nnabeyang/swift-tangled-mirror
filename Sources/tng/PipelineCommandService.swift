@@ -2,10 +2,13 @@ import Foundation
 import SwiftAtproto
 import SwiftTangled
 
+typealias PipelineLogEventStream = AsyncThrowingStream<PipelineLogEvent, any Error>
+
 struct PipelineCommandDependencies: Sendable {
   let resolveRepository: @Sendable (String) async throws -> TangledRecord<Repository>
   let pipelines: @Sendable (String, String, String?, Int) async throws -> PipelinePage
   let pipeline: @Sendable (String, String) async throws -> Pipeline
+  let pipelineLogs: @Sendable (String, String, [String]) async throws -> PipelineLogEventStream
   let retry: @Sendable (String, String, String, String?) async throws -> String
   let run:
     @Sendable (
@@ -19,6 +22,11 @@ struct PipelineCommandDependencies: Sendable {
     resolveRepository: @escaping @Sendable (String) async throws -> TangledRecord<Repository>,
     pipelines: @escaping @Sendable (String, String, String?, Int) async throws -> PipelinePage,
     pipeline: @escaping @Sendable (String, String) async throws -> Pipeline,
+    pipelineLogs:
+      @escaping @Sendable (String, String, [String]) async throws ->
+      PipelineLogEventStream = { _, _, _ in
+        throw TangledError.invalidRequest("pipeline logs are unavailable")
+      },
     retry:
       @escaping @Sendable (String, String, String, String?) async throws ->
       String = { _, _, _, _ in
@@ -41,6 +49,7 @@ struct PipelineCommandDependencies: Sendable {
     self.resolveRepository = resolveRepository
     self.pipelines = pipelines
     self.pipeline = pipeline
+    self.pipelineLogs = pipelineLogs
     self.retry = retry
     self.run = run
     self.cancel = cancel
@@ -62,6 +71,12 @@ struct PipelineCommandDependencies: Sendable {
       },
       pipeline: { spindle, pipelineID in
         try await SpindleClient(spindle: spindle).pipeline(id: pipelineID)
+      },
+      pipelineLogs: { spindle, pipelineID, workflows in
+        try await SpindleClient(spindle: spindle).pipelineLogs(
+          pipelineID: pipelineID,
+          workflows: workflows
+        )
       },
       retry: { spindle, repositoryDID, pipelineID, workflow in
         let pdsClient = try PDSClient.restore(from: CLISessionStore.make().store)
@@ -196,6 +211,37 @@ struct PipelineCommandService: Sendable {
         return
       }
       try await dependencies.sleep(interval)
+    }
+  }
+
+  func logs(
+    pipelineID: String,
+    repository: String?,
+    spindle: String?,
+    workflows: [String],
+    json: Bool
+  ) async throws {
+    let resolvedSpindle = try await resolveSpindle(repository: repository, spindle: spindle)
+    let events = try await dependencies.pipelineLogs(
+      resolvedSpindle,
+      pipelineID,
+      workflows
+    )
+    for try await event in events {
+      if json {
+        streamWriter.writeStandardOutput(try formatter.jsonLine(event))
+        continue
+      }
+      switch event {
+      case .control(let control):
+        streamWriter.writeStandardError(format(control))
+      case .data(let data):
+        if data.stream == .stderr {
+          streamWriter.writeStandardError(data.content)
+        } else {
+          streamWriter.writeStandardOutput(data.content)
+        }
+      }
     }
   }
 
@@ -379,6 +425,24 @@ extension PipelineCommandService {
 
   fileprivate func formatWatch(_ pipeline: Pipeline) -> String {
     "Pipeline \(formatter.cell(pipeline.id))\n" + format(pipeline.workflows)
+  }
+
+  fileprivate func format(_ control: PipelineLogControl) -> String {
+    var metadata = [
+      formatter.cell(control.workflow),
+      "step \(control.step)",
+    ]
+    if let kind = control.kind {
+      metadata.append(formatter.cell(kind.rawValue))
+    }
+    if let status = control.status {
+      metadata.append(formatter.cell(status.rawValue))
+    }
+    var result = "[\(metadata.joined(separator: " "))] \(formatter.cell(control.content))"
+    if let command = control.command {
+      result += " — \(formatter.cell(command))"
+    }
+    return result + "\n"
   }
 
   fileprivate func triggerSummary(_ trigger: PipelineTrigger) -> String {

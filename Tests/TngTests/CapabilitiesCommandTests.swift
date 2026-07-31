@@ -20,7 +20,7 @@ import Testing
 
     #expect(document.schemaVersion == 1)
     #expect(document.cliVersion == SwiftTangled.version)
-    #expect(paths.count == 48)
+    #expect(paths.count == 49)
     #expect(paths.contains("capabilities"))
     #expect(paths.contains("pr create"))
     #expect(paths.contains("pr edit"))
@@ -33,6 +33,7 @@ import Testing
     #expect(paths.contains("issue close"))
     #expect(paths.contains("issue reopen"))
     #expect(paths.contains("pipeline watch"))
+    #expect(paths.contains("pipeline logs"))
     #expect(paths.contains("pipeline retry"))
     #expect(paths.contains("pipeline run"))
     #expect(paths.contains("pipeline cancel"))
@@ -87,6 +88,9 @@ import Testing
         ["pipeline", "status"],
       ].contains($0.path)
     }
+    let pipelineLogs = try #require(
+      document.commands.first { $0.path == ["pipeline", "logs"] }
+    )
     let pipelineRetry = try #require(
       document.commands.first { $0.path == ["pipeline", "retry"] }
     )
@@ -146,6 +150,18 @@ import Testing
     #expect(
       pipelineReads.allSatisfy { command in
         command.options.contains { $0.names == ["--spindle"] }
+      }
+    )
+    #expect(pipelineLogs.access == .read)
+    #expect(!pipelineLogs.authenticationRequired)
+    #expect(
+      pipelineLogs.arguments == [
+        CapabilityArgument(name: "pipeline-id", required: true, repeating: false)
+      ]
+    )
+    #expect(
+      pipelineLogs.options.contains {
+        $0.names == ["--workflow"] && $0.repeating
       }
     )
     #expect(pipelineRetry.access == .write)

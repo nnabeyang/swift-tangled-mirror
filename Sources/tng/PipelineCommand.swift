@@ -9,6 +9,7 @@ struct PipelineCommand: AsyncParsableCommand {
       PipelineViewCommand.self,
       PipelineStatusCommand.self,
       PipelineWatchCommand.self,
+      PipelineLogsCommand.self,
       PipelineRetryCommand.self,
       PipelineRunCommand.self,
       PipelineCancelCommand.self,

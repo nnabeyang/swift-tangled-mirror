@@ -45,6 +45,16 @@ import Testing
     #expect(watch.interval == 0.5)
     #expect(watch.json)
 
+    let logs = try PipelineLogsCommand.parse([
+      samplePipelineID, "--repo", "alice.example/core", "--spindle", "spindle.example",
+      "--workflow", "verify.yml", "--workflow", "deploy.yml", "--json",
+    ])
+    #expect(logs.pipelineID == samplePipelineID)
+    #expect(logs.repository == "alice.example/core")
+    #expect(logs.spindle == "spindle.example")
+    #expect(logs.workflow == ["verify.yml", "deploy.yml"])
+    #expect(logs.json)
+
     let retry = try PipelineRetryCommand.parse([
       samplePipelineID, "--repo", "alice.example/core", "--spindle", "spindle.example",
       "--workflow", "verify.yml", "--json",
@@ -116,6 +126,12 @@ import Testing
     }
     #expect(throws: (any Error).self) {
       _ = try PipelineWatchCommand.parse([samplePipelineID, "--spindle", ""])
+    }
+    #expect(throws: (any Error).self) {
+      _ = try PipelineLogsCommand.parse([samplePipelineID, "--spindle", ""])
+    }
+    #expect(throws: (any Error).self) {
+      _ = try PipelineLogsCommand.parse([samplePipelineID, "--workflow", ""])
     }
     #expect(throws: (any Error).self) {
       _ = try PipelineRetryCommand.parse([samplePipelineID, "--workflow", ""])
@@ -638,6 +654,78 @@ import Testing
     #expect(output.stderr.isEmpty)
   }
 
+  @Test func logsPreservesDataStreamsAndPrintsControlMetadata() async throws {
+    let output = PipelineStreamRecorder()
+    let repository = sampleRepositoryRecord()
+    let service = PipelineCommandService(
+      dependencies: PipelineCommandDependencies(
+        resolveRepository: { _ in repository },
+        pipelines: { _, _, _, _ in PipelinePage(pipelines: [], total: 0) },
+        pipeline: { _, _ in throw TangledError.invalidRequest("unused") },
+        pipelineLogs: { spindle, pipelineID, workflows in
+          #expect(spindle == "spindle.tangled.sh")
+          #expect(pipelineID == samplePipelineID)
+          #expect(workflows == ["verify.yml"])
+          return pipelineLogStream()
+        },
+        originURL: { "git@tangled.org:alice.example/core.git" },
+        sleep: { _ in }
+      ),
+      streamWriter: output.writer
+    )
+
+    try await service.logs(
+      pipelineID: samplePipelineID,
+      repository: "alice.example/core",
+      spindle: nil,
+      workflows: ["verify.yml"],
+      json: false
+    )
+
+    #expect(output.stdout == "hello\n")
+    #expect(
+      output.stderr
+        == "[verify.yml step 2 user start] Run tests — swift test\nwarning\n"
+    )
+  }
+
+  @Test func logsStreamsEveryEventAsNDJSONOnStandardOutput() async throws {
+    let output = PipelineStreamRecorder()
+    let service = PipelineCommandService(
+      dependencies: PipelineCommandDependencies(
+        resolveRepository: { _ in
+          throw TangledError.invalidRequest("repository discovery must be skipped")
+        },
+        pipelines: { _, _, _, _ in PipelinePage(pipelines: [], total: 0) },
+        pipeline: { _, _ in throw TangledError.invalidRequest("unused") },
+        pipelineLogs: { spindle, _, workflows in
+          #expect(spindle == "https://spindle.example")
+          #expect(workflows.isEmpty)
+          return pipelineLogStream()
+        },
+        originURL: {
+          throw TangledError.invalidRequest("origin must be skipped")
+        },
+        sleep: { _ in }
+      ),
+      streamWriter: output.writer
+    )
+
+    try await service.logs(
+      pipelineID: samplePipelineID,
+      repository: nil,
+      spindle: "spindle.example",
+      workflows: [],
+      json: true
+    )
+
+    let events = try output.stdout.split(separator: "\n").map {
+      try JSONDecoder().decode(PipelineLogEvent.self, from: Data($0.utf8))
+    }
+    #expect(events == pipelineLogEvents())
+    #expect(output.stderr.isEmpty)
+  }
+
   @Test func explicitSpindleSkipsRepositoryDiscovery() async throws {
     let sequence = PipelineSequence([watchPipeline(.success)])
     let output = PipelineStreamRecorder()
@@ -764,6 +852,51 @@ extension PipelineCommandTests {
         )
       ]
     )
+  }
+
+  fileprivate func pipelineLogStream() -> PipelineLogEventStream {
+    let events = pipelineLogEvents()
+    return AsyncThrowingStream { continuation in
+      for event in events {
+        continuation.yield(event)
+      }
+      continuation.finish()
+    }
+  }
+
+  fileprivate func pipelineLogEvents() -> [PipelineLogEvent] {
+    let time = FormatString<Date>(rawValue: "2026-07-30T12:00:00Z")
+    return [
+      .control(
+        PipelineLogControl(
+          time: time,
+          workflow: "verify.yml",
+          step: 2,
+          content: "Run tests",
+          command: "swift test",
+          status: .start,
+          kind: .user
+        )
+      ),
+      .data(
+        PipelineLogData(
+          time: time,
+          workflow: "verify.yml",
+          step: 2,
+          content: "hello\n",
+          stream: .stdout
+        )
+      ),
+      .data(
+        PipelineLogData(
+          time: time,
+          workflow: "verify.yml",
+          step: 2,
+          content: "warning\n",
+          stream: .stderr
+        )
+      ),
+    ]
   }
 
   fileprivate func sampleRepositoryRecord(
