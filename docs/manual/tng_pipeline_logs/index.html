@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="List repositories owned by a DID or handle">
-  <title>tng repo list manual · tng CLI</title>
+  <meta name="description" content="Stream logs from a Tangled CI pipeline">
+  <title>tng pipeline logs manual · tng CLI</title>
   <link rel="stylesheet" href="../../assets/manual.css">
   <script src="../../assets/manual.js" defer></script>
 </head>
@@ -49,7 +49,7 @@
   </li>  <li data-command-item data-search="tng repo languages show language statistics for a repository">
     <a href="../../manual/tng_repo_languages/">tng repo languages</a>
   </li>  <li data-command-item data-search="tng repo list list repositories owned by a did or handle">
-    <a href="../../manual/tng_repo_list/" aria-current="page">tng repo list</a>
+    <a href="../../manual/tng_repo_list/">tng repo list</a>
   </li>  <li data-command-item data-search="tng repo log list commits in a repository">
     <a href="../../manual/tng_repo_log/">tng repo log</a>
   </li>  <li data-command-item data-search="tng repo star add a repository to your favorites">
@@ -135,7 +135,7 @@
   </li>  <li data-command-item data-search="tng pipeline list list ci pipelines for a tangled repository">
     <a href="../../manual/tng_pipeline_list/">tng pipeline list</a>
   </li>  <li data-command-item data-search="tng pipeline logs stream logs from a tangled ci pipeline">
-    <a href="../../manual/tng_pipeline_logs/">tng pipeline logs</a>
+    <a href="../../manual/tng_pipeline_logs/" aria-current="page">tng pipeline logs</a>
   </li>  <li data-command-item data-search="tng pipeline retry retry a tangled ci pipeline">
     <a href="../../manual/tng_pipeline_retry/">tng pipeline retry</a>
   </li>  <li data-command-item data-search="tng pipeline run run a tangled ci pipeline at an explicit commit">
@@ -184,11 +184,11 @@
   </nav>
     <main id="content" tabindex="-1">
         <nav class="breadcrumbs" aria-label="Breadcrumb">
-    <a href="../tng/">tng</a><span aria-hidden="true">/</span><a href="../tng_repo/">repo</a><span aria-hidden="true">/</span><span aria-current="page">list</span>
-  </nav><h1><code>tng repo list</code></h1><p class="lead">List repositories owned by a DID or handle</p>  <section>
+    <a href="../tng/">tng</a><span aria-hidden="true">/</span><a href="../tng_pipeline/">pipeline</a><span aria-hidden="true">/</span><span aria-current="page">logs</span>
+  </nav><h1><code>tng pipeline logs</code></h1><p class="lead">Stream logs from a Tangled CI pipeline</p>  <section>
     <h2>Usage</h2>
-    <pre class="usage"><code>tng repo list [&lt;owner&gt;] [--limit &lt;limit&gt;] [--cursor &lt;cursor&gt;] [--sort &lt;sort&gt;] [--json] [--version] [--help]</code></pre>
-  </section><section><h2>Arguments</h2><dl class="arguments"><div><dt><code>&lt;owner&gt;</code></dt><dd><p>Owner DID or ATProto handle (defaults to the signed-in account)</p></dd></div></dl></section><section><h2>Options</h2><dl class="arguments"><div><dt><code>-L, --limit &lt;limit&gt;</code></dt><dd><p>Maximum number of repositories to return</p><p class="argument-metadata">Default: <code>30</code></p></dd></div><div><dt><code>--cursor &lt;cursor&gt;</code></dt><dd><p>PDS cursor from a previous response</p></dd></div><div><dt><code>--sort &lt;sort&gt;</code></dt><dd><p>Sort by creation time: asc or desc</p><p class="argument-metadata">Default: <code>desc</code></p></dd></div><div><dt><code>--json</code></dt><dd><p>Output the complete page as JSON</p></dd></div><div><dt><code>--version</code></dt><dd><p>Show the version.</p></dd></div><div><dt><code>-h, --help</code></dt><dd><p>Show help information.</p></dd></div></dl></section>  <p class="root-reference">
+    <pre class="usage"><code>tng pipeline logs &lt;pipeline-id&gt; [--repo &lt;repo&gt;] [--spindle &lt;spindle&gt;] [--workflow &lt;workflow&gt;...] [--json] [--version] [--help]</code></pre>
+  </section><section><h2>Arguments</h2><dl class="arguments"><div><dt><code>&lt;pipeline-id&gt;</code></dt><dd><p>Spindle-local pipeline TID</p></dd></div></dl></section><section><h2>Options</h2><dl class="arguments"><div><dt><code>--repo &lt;repo&gt;</code></dt><dd><p>Repository reference used to locate its Spindle (defaults to Git origin)</p></dd></div><div><dt><code>--spindle &lt;spindle&gt;</code></dt><dd><p>Spindle hostname or URL; skips repository discovery</p></dd></div><div><dt><code>--workflow &lt;workflow&gt;</code></dt><dd><p>Stream only the named workflow; repeat for multiple workflows</p><p class="argument-metadata">Repeatable</p></dd></div><div><dt><code>--json</code></dt><dd><p>Output one compact pipeline log JSON object per event</p></dd></div><div><dt><code>--version</code></dt><dd><p>Show the version.</p></dd></div><div><dt><code>-h, --help</code></dt><dd><p>Show help information.</p></dd></div></dl></section>  <p class="root-reference">
     See also <a href="../tng/"><code>tng</code></a>.
   </p>
       <footer>
