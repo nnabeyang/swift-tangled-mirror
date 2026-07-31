@@ -412,7 +412,7 @@ extension Com.Atproto {
 
     public init(from decoder: any Decoder) throws {
       let container = try decoder.container(keyedBy: CodingKeys.self)
-      let type = try container.decode(Swift.String.self, forKey: .type)
+      let type = try container.decodeIfPresent(Swift.String.self, forKey: .type) ?? decoder.userInfo[.atprotoSubscriptionMessageType] as? Swift.String ?? ""
       switch type {
       case "com.atproto.repo.applyWrites#create":
         self = try .repoApplyWritesCreate(.init(from: decoder))
@@ -494,7 +494,7 @@ extension Com.Atproto {
 
     public init(from decoder: any Decoder) throws {
       let container = try decoder.container(keyedBy: CodingKeys.self)
-      let type = try container.decode(Swift.String.self, forKey: .type)
+      let type = try container.decodeIfPresent(Swift.String.self, forKey: .type) ?? decoder.userInfo[.atprotoSubscriptionMessageType] as? Swift.String ?? ""
       switch type {
       case "com.atproto.repo.applyWrites#createResult":
         self = try .repoApplyWritesCreateResult(.init(from: decoder))
@@ -2290,7 +2290,7 @@ extension Sh.Tangled {
 
     public init(from decoder: any Decoder) throws {
       let container = try decoder.container(keyedBy: CodingKeys.self)
-      let type = try container.decode(Swift.String.self, forKey: .type)
+      let type = try container.decodeIfPresent(Swift.String.self, forKey: .type) ?? decoder.userInfo[.atprotoSubscriptionMessageType] as? Swift.String ?? ""
       switch type {
       case "sh.tangled.ci.trigger#push":
         self = try .ciTriggerPush(.init(from: decoder))
@@ -2551,6 +2551,279 @@ extension Sh.Tangled {
       try container.encode(self.pipelines, forKey: .pipelines)
       try container.encode(self.total, forKey: .total)
       try _unknownValues.encode(to: encoder)
+    }
+  }
+  /// Pipeline logs stream
+  public enum CiSubscribePipelineLogs: XRPCSubscription {
+    public static let id = "sh.tangled.ci.subscribePipelineLogs"
+    public static let messageTypes: Set<Swift.String> = ["sh.tangled.ci.subscribePipelineLogs#control", "sh.tangled.ci.subscribePipelineLogs#data"]
+    public typealias Message = Sh.Tangled.CiSubscribePipelineLogs_Message
+    public struct Input: XRPCQueryInput {
+      public struct Query: XRPCInputQuery {
+        public var pipeline: FormatString<TID>
+        public var workflows: [Swift.String]?
+        public init(pipeline: FormatString<TID>, workflows: [Swift.String]? = nil) {
+          self.pipeline = pipeline
+          self.workflows = workflows
+        }
+        public var asParameters: Parameters? {
+          Parameters(dictionary: ["pipeline": .string(pipeline.rawValue), "workflows": .array(workflows)])
+        }
+      }
+      public let query: Query
+      public init(query: Query) {
+        self.query = query
+      }
+    }
+    public enum Error: XRPCError {
+    case invalidrequest(Swift.String?)
+    case workflownotfound(Swift.String?)
+    case unexpected(error: Swift.String?, message: Swift.String?)
+
+    public init(error: UnExpectedError) {
+      switch error.error {
+      case "InvalidRequest":
+        self = .invalidrequest(error.message)
+      case "WorkflowNotFound":
+        self = .workflownotfound(error.message)
+      default:
+        self = .unexpected(error: error.error, message: error.message)
+      }
+    }
+
+    public var error: Swift.String? {
+      switch self {
+      case .invalidrequest:
+        return "InvalidRequest"
+      case .workflownotfound:
+        return "WorkflowNotFound"
+      case .unexpected(let error, _):
+        return error
+      }
+    }
+
+    public var message: Swift.String? {
+      switch self {
+      case .invalidrequest(let message):
+        return message
+      case .workflownotfound(let message):
+        return message
+      case .unexpected(_, let message):
+        return message
+      }
+    }
+    }
+  }
+
+  public struct CiSubscribePipelineLogs_Control: Codable, Hashable, Sendable {
+    /// Step command
+    public var command: Swift.String?
+    public var content: Swift.String
+    /// Step kind
+    public var kind: CiSubscribePipelineLogs_Control_Kind?
+    /// Step status
+    public var status: CiSubscribePipelineLogs_Control_Status?
+    /// Step ID
+    public var step: Swift.Int
+    public var time: FormatString<Date>
+    /// workflow name
+    public var workflow: Swift.String
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(command: Swift.String? = nil, content: Swift.String, kind: CiSubscribePipelineLogs_Control_Kind? = nil, status: CiSubscribePipelineLogs_Control_Status? = nil, step: Swift.Int, time: FormatString<Date>, workflow: Swift.String) {
+      self.command = command
+      self.content = content
+      self.kind = kind
+      self.status = status
+      self.step = step
+      self.time = time
+      self.workflow = workflow
+      self._unknownValues = [:]
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case command
+      case content
+      case kind
+      case status
+      case step
+      case time
+      case workflow
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      self.command = try keyedContainer.decodeIfPresent(Swift.String.self, forKey: .command)
+      self.content = try keyedContainer.decode(Swift.String.self, forKey: .content)
+      self.kind = try keyedContainer.decodeIfPresent(Sh.Tangled.CiSubscribePipelineLogs_Control_Kind.self, forKey: .kind)
+      self.status = try keyedContainer.decodeIfPresent(Sh.Tangled.CiSubscribePipelineLogs_Control_Status.self, forKey: .status)
+      self.step = try keyedContainer.decode(Swift.Int.self, forKey: .step)
+      self.time = try keyedContainer.decode(FormatString<Date>.self, forKey: .time)
+      self.workflow = try keyedContainer.decode(Swift.String.self, forKey: .workflow)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      self._unknownValues = _unknownValues
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encodeIfPresent(self.command, forKey: .command)
+      try container.encode(self.content, forKey: .content)
+      try container.encodeIfPresent(self.kind, forKey: .kind)
+      try container.encodeIfPresent(self.status, forKey: .status)
+      try container.encode(self.step, forKey: .step)
+      try container.encode(self.time, forKey: .time)
+      try container.encode(self.workflow, forKey: .workflow)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
+  /// Step kind
+  public indirect enum CiSubscribePipelineLogs_Control_Kind: Swift.String, Codable, Hashable, Sendable {
+    case system = "system"
+    case user = "user"
+
+    public init(from decoder: any Decoder) throws {
+      let container = try decoder.singleValueContainer()
+      let rawValue = try container.decode(Swift.String.self)
+      guard let value = Self(rawValue: rawValue) else {
+        throw DecodingError.dataCorrupted(.init(codingPath: container.codingPath, debugDescription: "invalid rawValue: \(rawValue)"))
+      }
+      self = value
+    }
+    public func encode(to encoder: any Encoder) throws {
+      try rawValue.encode(to: encoder)
+    }
+  }
+  /// Step status
+  public indirect enum CiSubscribePipelineLogs_Control_Status: Swift.String, Codable, Hashable, Sendable {
+    case start = "start"
+    case end = "end"
+
+    public init(from decoder: any Decoder) throws {
+      let container = try decoder.singleValueContainer()
+      let rawValue = try container.decode(Swift.String.self)
+      guard let value = Self(rawValue: rawValue) else {
+        throw DecodingError.dataCorrupted(.init(codingPath: container.codingPath, debugDescription: "invalid rawValue: \(rawValue)"))
+      }
+      self = value
+    }
+    public func encode(to encoder: any Encoder) throws {
+      try rawValue.encode(to: encoder)
+    }
+  }
+
+  public struct CiSubscribePipelineLogs_Data: Codable, Hashable, Sendable {
+    public var content: Swift.String
+    /// Step ID
+    public var step: Swift.Int
+    public var stream: CiSubscribePipelineLogs_Data_Stream
+    public var time: FormatString<Date>
+    /// workflow name
+    public var workflow: Swift.String
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(content: Swift.String, step: Swift.Int, stream: CiSubscribePipelineLogs_Data_Stream, time: FormatString<Date>, workflow: Swift.String) {
+      self.content = content
+      self.step = step
+      self.stream = stream
+      self.time = time
+      self.workflow = workflow
+      self._unknownValues = [:]
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case content
+      case step
+      case stream
+      case time
+      case workflow
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      self.content = try keyedContainer.decode(Swift.String.self, forKey: .content)
+      self.step = try keyedContainer.decode(Swift.Int.self, forKey: .step)
+      self.stream = try keyedContainer.decode(Sh.Tangled.CiSubscribePipelineLogs_Data_Stream.self, forKey: .stream)
+      self.time = try keyedContainer.decode(FormatString<Date>.self, forKey: .time)
+      self.workflow = try keyedContainer.decode(Swift.String.self, forKey: .workflow)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      self._unknownValues = _unknownValues
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encode(self.content, forKey: .content)
+      try container.encode(self.step, forKey: .step)
+      try container.encode(self.stream, forKey: .stream)
+      try container.encode(self.time, forKey: .time)
+      try container.encode(self.workflow, forKey: .workflow)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
+  public indirect enum CiSubscribePipelineLogs_Data_Stream: Swift.String, Codable, Hashable, Sendable {
+    case stdout = "stdout"
+    case stderr = "stderr"
+
+    public init(from decoder: any Decoder) throws {
+      let container = try decoder.singleValueContainer()
+      let rawValue = try container.decode(Swift.String.self)
+      guard let value = Self(rawValue: rawValue) else {
+        throw DecodingError.dataCorrupted(.init(codingPath: container.codingPath, debugDescription: "invalid rawValue: \(rawValue)"))
+      }
+      self = value
+    }
+    public func encode(to encoder: any Encoder) throws {
+      try rawValue.encode(to: encoder)
+    }
+  }
+
+  public indirect enum CiSubscribePipelineLogs_Message: Codable, Hashable, Sendable {
+    case ciSubscribePipelineLogsControl(CiSubscribePipelineLogs_Control)
+    case ciSubscribePipelineLogsData(CiSubscribePipelineLogs_Data)
+    case _other(UnknownRecord)
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case type = "$type"
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let container = try decoder.container(keyedBy: CodingKeys.self)
+      let type = try container.decodeIfPresent(Swift.String.self, forKey: .type) ?? decoder.userInfo[.atprotoSubscriptionMessageType] as? Swift.String ?? ""
+      switch type {
+      case "sh.tangled.ci.subscribePipelineLogs#control":
+        self = try .ciSubscribePipelineLogsControl(.init(from: decoder))
+      case "sh.tangled.ci.subscribePipelineLogs#data":
+        self = try .ciSubscribePipelineLogsData(.init(from: decoder))
+      default:
+        self = try ._other(.init(from: decoder))
+      }
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      switch self {
+      case .ciSubscribePipelineLogsControl(let value):
+        try container.encode("sh.tangled.ci.subscribePipelineLogs#control", forKey: .type)
+        try value.encode(to: encoder)
+      case .ciSubscribePipelineLogsData(let value):
+        try container.encode("sh.tangled.ci.subscribePipelineLogs#data", forKey: .type)
+        try value.encode(to: encoder)
+      case ._other(let value):
+        try value.encode(to: encoder)
+      }
     }
   }
   public struct CiTrigger_Manual: Codable, Hashable, Sendable {
@@ -2903,7 +3176,7 @@ extension Sh.Tangled {
 
     public init(from decoder: any Decoder) throws {
       let container = try decoder.container(keyedBy: CodingKeys.self)
-      let type = try container.decode(Swift.String.self, forKey: .type)
+      let type = try container.decodeIfPresent(Swift.String.self, forKey: .type) ?? decoder.userInfo[.atprotoSubscriptionMessageType] as? Swift.String ?? ""
       switch type {
       case "sh.tangled.ci.trigger#manual":
         self = try .ciTriggerManual(.init(from: decoder))
@@ -3050,7 +3323,7 @@ extension Sh.Tangled {
 
     public init(from decoder: any Decoder) throws {
       let container = try decoder.container(keyedBy: CodingKeys.self)
-      let type = try container.decode(Swift.String.self, forKey: .type)
+      let type = try container.decodeIfPresent(Swift.String.self, forKey: .type) ?? decoder.userInfo[.atprotoSubscriptionMessageType] as? Swift.String ?? ""
       switch type {
       case "sh.tangled.markup.markdown":
         self = try .markupMarkdown(.init(from: decoder))
@@ -4811,7 +5084,7 @@ extension Sh.Tangled {
 
     public init(from decoder: any Decoder) throws {
       let container = try decoder.container(keyedBy: CodingKeys.self)
-      let type = try container.decode(Swift.String.self, forKey: .type)
+      let type = try container.decodeIfPresent(Swift.String.self, forKey: .type) ?? decoder.userInfo[.atprotoSubscriptionMessageType] as? Swift.String ?? ""
       switch type {
       case "sh.tangled.feed.star#repo":
         self = try .feedStarRepo(.init(from: decoder))

@@ -66,6 +66,7 @@
             "sh.tangled.ci.getPipeline",
             "sh.tangled.ci.pipeline",
             "sh.tangled.ci.queryPipelines",
+            "sh.tangled.ci.subscribePipelineLogs",
             "sh.tangled.ci.trigger",
             "sh.tangled.ci.triggerPipeline",
             "sh.tangled.repo.archive",
@@ -128,7 +129,7 @@
       }
     }
   ],
-  "generator" : "0.42.2",
+  "generator" : "0.43.0",
   "module" : "Sources/TangledLexicons",
-  "originHash" : "1ccd354a7bf68e618db0aa5c71f5b01a2ff6ee9e015c46b01f094efbabf427c1"
+  "originHash" : "a119f3ed085d86ef8a6672410e87a54be054e5868cd15357839856eb26a0327d"
 }

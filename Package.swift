@@ -11,8 +11,7 @@ let package = Package(
   dependencies: [
     .package(
       url: "https://github.com/nnabeyang/swift-atproto.git",
-      exact: "0.42.2"
-    ),
+      exact: "0.43.0"),
     .package(url: "https://github.com/nnabeyang/oauth4swift.git", exact: "0.6.0-soyokaze.1"),
     .package(url: "https://github.com/apple/swift-argument-parser.git", "1.8.2" ..< "2.0.0"),
     .package(url: "https://github.com/apple/swift-crypto.git", from: "4.0.0"),

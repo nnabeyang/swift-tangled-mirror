@@ -68,6 +68,7 @@
             "sh.tangled.ci.getPipeline",
             "sh.tangled.ci.pipeline",
             "sh.tangled.ci.queryPipelines",
+            "sh.tangled.ci.subscribePipelineLogs",
             "sh.tangled.ci.trigger",
             "sh.tangled.ci.triggerPipeline",
             "sh.tangled.repo.archive",

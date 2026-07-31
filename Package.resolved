@@ -1,5 +1,5 @@
 {
-  "originHash" : "35dcae9bf7dd3cc8dd53f50c33121a2103718cde46f25c8085d18c1e1282365a",
+  "originHash" : "a08d7c3aedd854badb35db5d19bf87fd660985cfd08262ac4f69b30e08027405",
   "pins" : [
     {
       "identity" : "compress-nio",
@@ -87,8 +87,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/nnabeyang/swift-atproto.git",
       "state" : {
-        "revision" : "59e32887eeacef35822bff9954480edbfef3352c",
-        "version" : "0.42.2"
+        "revision" : "f3afe9e1eb4be8edb1b77464180215327d98a3f7",
+        "version" : "0.43.0"
       }
     },
     {
@@ -98,6 +98,15 @@
       "state" : {
         "revision" : "162f6ef3ed3ebd5954c445443d93e41d30a473da",
         "version" : "0.2.1"
+      }
+    },
+    {
+      "identity" : "swift-cbor",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nnabeyang/swift-cbor.git",
+      "state" : {
+        "revision" : "068a3f900e0078aef0be8542ef017e5347217b32",
+        "version" : "0.1.0"
       }
     },
     {
