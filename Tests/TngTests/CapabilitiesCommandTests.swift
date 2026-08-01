@@ -20,7 +20,7 @@ import Testing
 
     #expect(document.schemaVersion == 1)
     #expect(document.cliVersion == SwiftTangled.version)
-    #expect(paths.count == 54)
+    #expect(paths.count == 57)
     #expect(paths.contains("capabilities"))
     #expect(paths.contains("pr create"))
     #expect(paths.contains("pr edit"))
@@ -48,6 +48,9 @@ import Testing
     #expect(paths.contains("repo collaborator list"))
     #expect(paths.contains("repo collaborator add"))
     #expect(paths.contains("repo collaborator remove"))
+    #expect(paths.contains("repo secret list"))
+    #expect(paths.contains("repo secret add"))
+    #expect(paths.contains("repo secret remove"))
     #expect(!paths.contains("help"))
   }
 
@@ -241,5 +244,29 @@ import Testing
     let decoded = try JSONDecoder().decode(CapabilityDocument.self, from: Data(output.utf8))
 
     #expect(decoded == document)
+  }
+
+  @Test func repositorySecretCapabilitiesRequireAuthenticationAndNeverAcceptAValueOption() throws {
+    let document = try CapabilityCatalog.document()
+    let list = try #require(
+      document.commands.first { $0.path == ["repo", "secret", "list"] }
+    )
+    let add = try #require(
+      document.commands.first { $0.path == ["repo", "secret", "add"] }
+    )
+    let remove = try #require(
+      document.commands.first { $0.path == ["repo", "secret", "remove"] }
+    )
+
+    #expect(list.access == .read)
+    #expect(list.authenticationRequired)
+    #expect(list.arguments == [CapabilityArgument(name: "repository", required: false, repeating: false)])
+    #expect(add.access == .write)
+    #expect(add.authenticationRequired)
+    #expect(add.arguments.map(\.name) == ["repository", "key"])
+    #expect(!add.options.flatMap(\.names).contains("--value"))
+    #expect(remove.access == .write)
+    #expect(remove.authenticationRequired)
+    #expect(remove.options.contains { $0.names == ["--yes"] })
   }
 }
