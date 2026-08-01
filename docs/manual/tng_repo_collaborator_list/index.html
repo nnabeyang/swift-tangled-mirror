@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Watch live Tangled events">
-  <title>tng events manual · tng CLI</title>
+  <meta name="description" content="List repository collaborators from its Knot">
+  <title>tng repo collaborator list manual · tng CLI</title>
   <link rel="stylesheet" href="../../assets/manual.css">
   <script src="../../assets/manual.js" defer></script>
 </head>
@@ -73,7 +73,7 @@
   </li>  <li data-command-item data-search="tng repo collaborator add add a collaborator to a repository">
     <a href="../../manual/tng_repo_collaborator_add/">tng repo collaborator add</a>
   </li>  <li data-command-item data-search="tng repo collaborator list list repository collaborators from its knot">
-    <a href="../../manual/tng_repo_collaborator_list/">tng repo collaborator list</a>
+    <a href="../../manual/tng_repo_collaborator_list/" aria-current="page">tng repo collaborator list</a>
   </li>  <li data-command-item data-search="tng repo collaborator remove remove a collaborator from a repository">
     <a href="../../manual/tng_repo_collaborator_remove/">tng repo collaborator remove</a>
   </li>  <li data-command-item data-search="tng repo tag list list tags in a repository">
@@ -162,7 +162,7 @@
     </li>    <li class="command-group" data-command-group>
       <span>tng events</span>
       <ul>  <li data-command-item data-search="tng events watch live tangled events">
-    <a href="../../manual/tng_events/" aria-current="page">tng events</a>
+    <a href="../../manual/tng_events/">tng events</a>
   </li>  <li data-command-item data-search="tng events watch watch live tangled events from jetstream">
     <a href="../../manual/tng_events_watch/">tng events watch</a>
   </li>      </ul>
@@ -196,14 +196,11 @@
   </nav>
     <main id="content" tabindex="-1">
         <nav class="breadcrumbs" aria-label="Breadcrumb">
-    <a href="../tng/">tng</a><span aria-hidden="true">/</span><span aria-current="page">events</span>
-  </nav><h1><code>tng events</code></h1><p class="lead">Watch live Tangled events</p>  <section>
+    <a href="../tng/">tng</a><span aria-hidden="true">/</span><a href="../tng_repo/">repo</a><span aria-hidden="true">/</span><a href="../tng_repo_collaborator/">collaborator</a><span aria-hidden="true">/</span><span aria-current="page">list</span>
+  </nav><h1><code>tng repo collaborator list</code></h1><p class="lead">List repository collaborators from its Knot</p>  <section>
     <h2>Usage</h2>
-    <pre class="usage"><code>tng events [--version] [--help]</code></pre>
-  </section><section><h2>Available commands</h2><dl class="command-list">  <div>
-    <dt><a href="../tng_events_watch/"><code>tng events watch</code></a></dt>
-    <dd>Watch live Tangled events from Jetstream</dd>
-  </div></dl></section><section><h2>Options</h2><dl class="arguments"><div><dt><code>--version</code></dt><dd><p>Show the version.</p></dd></div><div><dt><code>-h, --help</code></dt><dd><p>Show help information.</p></dd></div></dl></section>  <p class="root-reference">
+    <pre class="usage"><code>tng repo collaborator list [&lt;repository&gt;] [--limit &lt;limit&gt;] [--cursor &lt;cursor&gt;] [--sort &lt;sort&gt;] [--json] [--version] [--help]</code></pre>
+  </section><section><h2>Arguments</h2><dl class="arguments"><div><dt><code>&lt;repository&gt;</code></dt><dd><p>Repository AT URI, repo DID, handle/name, or clone URL (defaults to Git origin)</p></dd></div></dl></section><section><h2>Options</h2><dl class="arguments"><div><dt><code>-L, --limit &lt;limit&gt;</code></dt><dd><p>Maximum number of collaborators to return</p><p class="argument-metadata">Default: <code>30</code></p></dd></div><div><dt><code>--cursor &lt;cursor&gt;</code></dt><dd><p>Knot cursor from a previous response</p></dd></div><div><dt><code>--sort &lt;sort&gt;</code></dt><dd><p>Sort by creation time: asc or desc</p><p class="argument-metadata">Default: <code>desc</code></p></dd></div><div><dt><code>--json</code></dt><dd><p>Output the complete page as JSON</p></dd></div><div><dt><code>--version</code></dt><dd><p>Show the version.</p></dd></div><div><dt><code>-h, --help</code></dt><dd><p>Show help information.</p></dd></div></dl></section>  <p class="root-reference">
     See also <a href="../tng/"><code>tng</code></a>.
   </p>
       <footer>

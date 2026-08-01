@@ -58,6 +58,31 @@ PDS record is deleted with its current CID before the Knot repository is
 deleted. Outcome `deleted` is complete, while `record_deleted_knot_failed` or
 `outcome_unknown` exits with status 3 and must not be retried automatically.
 
+## Manage repository collaborators
+
+List collaborators directly from the repository's modern Knot. The repository
+may be an owner/name, Tangled or clone URL, repository AT URI, or repository
+DID. When omitted from `list`, the current Git origin is used.
+
+```sh
+tng repo collaborator list OWNER/REPOSITORY --json
+tng repo collaborator add OWNER/REPOSITORY COLLABORATOR --json
+tng repo collaborator remove OWNER/REPOSITORY COLLABORATOR --yes --json
+```
+
+The collaborator may be a DID or handle. Before adding or removing, verify the
+resolved repository, Knot, and collaborator DID. Removal prompts only when the
+collaborator is currently present; use `--yes` for an authorized noninteractive
+removal. The authenticated repository owner performs mutations through the
+Knot's `knot-acl` API. If that capability is absent, report it instead of
+falling back to legacy PDS collaborator records.
+
+Outcomes `added`, `already_present`, `removed`, `not_present`, and `cancelled`
+describe established state. An `outcome_unknown` result exits with status 3;
+inspect the Knot state and do not automatically repeat the mutation. Bobbin's
+`sh.tangled.repo.listCollaborators` and `countCollaborators` queries are indexed
+views and may lag the authoritative Knot response.
+
 ## Create an issue
 
 Verify the target repository, title, and complete body before writing. Prefer a

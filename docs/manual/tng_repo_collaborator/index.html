@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Watch live Tangled events">
-  <title>tng events manual · tng CLI</title>
+  <meta name="description" content="Manage repository collaborators">
+  <title>tng repo collaborator manual · tng CLI</title>
   <link rel="stylesheet" href="../../assets/manual.css">
   <script src="../../assets/manual.js" defer></script>
 </head>
@@ -47,7 +47,7 @@
   </li>  <li data-command-item data-search="tng repo branch work with repository branches">
     <a href="../../manual/tng_repo_branch/">tng repo branch</a>
   </li>  <li data-command-item data-search="tng repo collaborator manage repository collaborators">
-    <a href="../../manual/tng_repo_collaborator/">tng repo collaborator</a>
+    <a href="../../manual/tng_repo_collaborator/" aria-current="page">tng repo collaborator</a>
   </li>  <li data-command-item data-search="tng repo create create a tangled repository">
     <a href="../../manual/tng_repo_create/">tng repo create</a>
   </li>  <li data-command-item data-search="tng repo delete delete a repository record and its knot git repository">
@@ -162,7 +162,7 @@
     </li>    <li class="command-group" data-command-group>
       <span>tng events</span>
       <ul>  <li data-command-item data-search="tng events watch live tangled events">
-    <a href="../../manual/tng_events/" aria-current="page">tng events</a>
+    <a href="../../manual/tng_events/">tng events</a>
   </li>  <li data-command-item data-search="tng events watch watch live tangled events from jetstream">
     <a href="../../manual/tng_events_watch/">tng events watch</a>
   </li>      </ul>
@@ -196,13 +196,19 @@
   </nav>
     <main id="content" tabindex="-1">
         <nav class="breadcrumbs" aria-label="Breadcrumb">
-    <a href="../tng/">tng</a><span aria-hidden="true">/</span><span aria-current="page">events</span>
-  </nav><h1><code>tng events</code></h1><p class="lead">Watch live Tangled events</p>  <section>
+    <a href="../tng/">tng</a><span aria-hidden="true">/</span><a href="../tng_repo/">repo</a><span aria-hidden="true">/</span><span aria-current="page">collaborator</span>
+  </nav><h1><code>tng repo collaborator</code></h1><p class="lead">Manage repository collaborators</p>  <section>
     <h2>Usage</h2>
-    <pre class="usage"><code>tng events [--version] [--help]</code></pre>
+    <pre class="usage"><code>tng repo collaborator [--version] [--help]</code></pre>
   </section><section><h2>Available commands</h2><dl class="command-list">  <div>
-    <dt><a href="../tng_events_watch/"><code>tng events watch</code></a></dt>
-    <dd>Watch live Tangled events from Jetstream</dd>
+    <dt><a href="../tng_repo_collaborator_list/"><code>tng repo collaborator list</code></a></dt>
+    <dd>List repository collaborators from its Knot</dd>
+  </div>  <div>
+    <dt><a href="../tng_repo_collaborator_add/"><code>tng repo collaborator add</code></a></dt>
+    <dd>Add a collaborator to a repository</dd>
+  </div>  <div>
+    <dt><a href="../tng_repo_collaborator_remove/"><code>tng repo collaborator remove</code></a></dt>
+    <dd>Remove a collaborator from a repository</dd>
   </div></dl></section><section><h2>Options</h2><dl class="arguments"><div><dt><code>--version</code></dt><dd><p>Show the version.</p></dd></div><div><dt><code>-h, --help</code></dt><dd><p>Show help information.</p></dd></div></dl></section>  <p class="root-reference">
     See also <a href="../tng/"><code>tng</code></a>.
   </p>

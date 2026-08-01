@@ -49,6 +49,12 @@ handling pagination and failures.
   optional source URL, and optional custom repository DID. Before deletion,
   verify the resolved owner, name, repository DID, record URI, and Knot. Use
   `--yes` only after reviewing that deletion target.
+- Treat the repository's modern Knot as the source of truth for collaborators.
+  Before `repo collaborator add` or `repo collaborator remove`, verify the exact
+  repository and collaborator DID. Confirm a present collaborator before
+  removal, or use `--yes` only after reviewing that target. Do not fall back to
+  legacy PDS collaborator records when the Knot lacks `knot-acl`, and do not
+  automatically retry an `outcome_unknown` mutation.
 - Perform `pipeline retry`, `pipeline run`, or `pipeline cancel` only when the
   user authorizes the write. For retry or cancel, inspect the original pipeline
   and verify the repository and selected workflows first. For run, verify the
