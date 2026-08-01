@@ -20,7 +20,7 @@ import Testing
 
     #expect(document.schemaVersion == 1)
     #expect(document.cliVersion == SwiftTangled.version)
-    #expect(paths.count == 49)
+    #expect(paths.count == 51)
     #expect(paths.contains("capabilities"))
     #expect(paths.contains("pr create"))
     #expect(paths.contains("pr edit"))
@@ -43,6 +43,8 @@ import Testing
     #expect(paths.contains("artifact upload"))
     #expect(paths.contains("artifact download"))
     #expect(paths.contains("artifact delete"))
+    #expect(paths.contains("repo create"))
+    #expect(paths.contains("repo delete"))
     #expect(!paths.contains("help"))
   }
 
@@ -65,6 +67,12 @@ import Testing
     )
     let repoList = try #require(
       document.commands.first { $0.path == ["repo", "list"] }
+    )
+    let repoCreate = try #require(
+      document.commands.first { $0.path == ["repo", "create"] }
+    )
+    let repoDelete = try #require(
+      document.commands.first { $0.path == ["repo", "delete"] }
     )
     let issueCreate = try #require(
       document.commands.first { $0.path == ["issue", "create"] }
@@ -131,6 +139,14 @@ import Testing
       ]
     )
     #expect(repoList.options.contains { $0.names == ["-L", "--limit"] })
+    #expect(repoCreate.access == .write)
+    #expect(repoCreate.authenticationRequired)
+    #expect(repoCreate.options.contains { $0.names == ["--default-branch"] })
+    #expect(repoCreate.options.contains { $0.names == ["--source"] })
+    #expect(repoCreate.options.contains { $0.names == ["--repo-did"] })
+    #expect(repoDelete.access == .write)
+    #expect(repoDelete.authenticationRequired)
+    #expect(repoDelete.options.contains { $0.names == ["--yes"] })
     #expect(issueCreate.access == .write)
     #expect(issueCreate.authenticationRequired)
     #expect(issueCreate.options.contains { $0.names.contains("--body-file") })

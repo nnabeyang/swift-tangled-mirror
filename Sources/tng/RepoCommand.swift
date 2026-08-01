@@ -5,6 +5,8 @@ struct RepoCommand: AsyncParsableCommand {
     commandName: "repo",
     abstract: "Work with Tangled repositories",
     subcommands: [
+      RepoCreateCommand.self,
+      RepoDeleteCommand.self,
       RepoViewCommand.self,
       RepoListCommand.self,
       RepoTreeCommand.self,

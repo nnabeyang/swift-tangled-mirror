@@ -8,6 +8,25 @@ import Testing
 
 @Suite struct RepoCommandTests {
   @Test func parsesRepositoryArguments() throws {
+    let create = try RepoCreateCommand.parse([
+      "example", "--knot", "knot.example", "--source",
+      "https://example.com/source.git", "--repo-did", "did:web:repo.example", "--json",
+    ])
+    #expect(create.name == "example")
+    #expect(create.knot == "knot.example")
+    #expect(create.defaultBranch == "main")
+    #expect(create.source == "https://example.com/source.git")
+    #expect(create.repoDID == "did:web:repo.example")
+    #expect(create.json)
+
+    let delete = try RepoDeleteCommand.parse(["alice.example/core", "--yes", "--json"])
+    #expect(delete.repository == "alice.example/core")
+    #expect(delete.yes)
+    #expect(delete.json)
+    #expect(throws: (any Error).self) {
+      _ = try RepoDeleteCommand.parse([])
+    }
+
     let view = try RepoViewCommand.parse(["alice.example/core", "--json"])
     #expect(view.repository == "alice.example/core")
     #expect(view.json)
@@ -125,6 +144,110 @@ import Testing
     #expect(throws: (any Error).self) {
       _ = try RepoTagListCommand.parse(["--limit", "0"])
     }
+  }
+
+  @Test func lifecycleCommandsFormatVersionedResultsAndPartialExitCodes() async throws {
+    let recorder = RepoLifecycleCommandRecorder()
+    let target = lifecycleTarget()
+    let record = sampleRecord()
+    let service = RepoCommandService(
+      dependencies: dependencies(recorder: RepoCommandRecorder()),
+      lifecycleDependencies: RepositoryLifecycleCommandDependencies(
+        create: { request in
+          await recorder.record(request)
+          return RepositoryCreationResult(
+            outcome: .created,
+            target: target,
+            record: record
+          )
+        },
+        prepareDeletion: { repository in
+          await recorder.record(repository: repository)
+          return RepositoryDeletionPlan(target: target, record: record)
+        },
+        delete: { _ in
+          RepositoryDeletionResult(
+            outcome: .recordDeletedKnotFailed,
+            target: target,
+            error: "Knot denied deletion"
+          )
+        },
+        inputIsTerminal: { true },
+        confirmDeletion: { _ in true }
+      ),
+      formatter: .plain
+    )
+
+    let created = try await service.create(
+      name: "Example",
+      knot: "knot.example",
+      defaultBranch: "main",
+      source: nil,
+      repositoryDID: nil,
+      json: true
+    )
+    let createEnvelope = try JSONDecoder().decode(
+      RepositoryJSONEnvelope<RepositoryCreationResult>.self,
+      from: Data(created.stdout.utf8)
+    )
+    #expect(createEnvelope.schemaVersion == 1)
+    #expect(createEnvelope.result.outcome == .created)
+    #expect(created.exitCode == nil)
+    #expect(await recorder.creationRequests().first?.defaultBranch == "main")
+
+    let deleted = try await service.delete(
+      repository: "alice.example/core",
+      confirmed: false,
+      json: true
+    )
+    let deleteEnvelope = try JSONDecoder().decode(
+      RepositoryJSONEnvelope<RepositoryDeletionResult>.self,
+      from: Data(deleted.stdout.utf8)
+    )
+    #expect(deleteEnvelope.result.outcome == .recordDeletedKnotFailed)
+    #expect(deleted.exitCode == .api)
+    #expect(await recorder.repositories() == ["alice.example/core"])
+  }
+
+  @Test func deletionRequiresYesOutsideTTYAndCancellationDoesNotDelete() async throws {
+    let target = lifecycleTarget()
+    let record = sampleRecord()
+    let recorder = RepoLifecycleCommandRecorder()
+    let nonInteractive = RepoCommandService(
+      dependencies: dependencies(recorder: RepoCommandRecorder()),
+      lifecycleDependencies: lifecycleDependencies(
+        recorder: recorder,
+        target: target,
+        record: record,
+        inputIsTerminal: false,
+        confirmation: false
+      )
+    )
+    await #expect(throws: ValidationError.self) {
+      _ = try await nonInteractive.delete(
+        repository: "alice.example/core",
+        confirmed: false,
+        json: false
+      )
+    }
+
+    let cancelled = RepoCommandService(
+      dependencies: dependencies(recorder: RepoCommandRecorder()),
+      lifecycleDependencies: lifecycleDependencies(
+        recorder: recorder,
+        target: target,
+        record: record,
+        inputIsTerminal: true,
+        confirmation: false
+      )
+    )
+    let output = try await cancelled.delete(
+      repository: "alice.example/core",
+      confirmed: false,
+      json: true
+    )
+    #expect(output.stdout.contains("\"outcome\" : \"cancelled\""))
+    #expect(await recorder.deleteCount() == 0)
   }
 
   @Test func viewUsesExplicitReferenceAndOriginFallback() async throws {
@@ -757,6 +880,40 @@ import Testing
 }
 
 extension RepoCommandTests {
+  fileprivate func lifecycleTarget() -> RepositoryLifecycleTarget {
+    RepositoryLifecycleTarget(
+      ownerDID: "did:plc:owner",
+      name: "core",
+      rkey: "core",
+      recordURI: "at://did:plc:owner/sh.tangled.repo/core",
+      repositoryDID: "did:plc:repository",
+      knot: "knot.example",
+      webURL: "https://tangled.org/did:plc:owner/core",
+      cloneURL: "https://knot.example/did:plc:repository"
+    )
+  }
+
+  fileprivate func lifecycleDependencies(
+    recorder: RepoLifecycleCommandRecorder,
+    target: RepositoryLifecycleTarget,
+    record: TangledRecord<Repository>,
+    inputIsTerminal: Bool,
+    confirmation: Bool
+  ) -> RepositoryLifecycleCommandDependencies {
+    RepositoryLifecycleCommandDependencies(
+      create: { _ in
+        RepositoryCreationResult(outcome: .created, target: target, record: record)
+      },
+      prepareDeletion: { _ in RepositoryDeletionPlan(target: target, record: record) },
+      delete: { _ in
+        await recorder.recordDelete()
+        return RepositoryDeletionResult(outcome: .deleted, target: target)
+      },
+      inputIsTerminal: { inputIsTerminal },
+      confirmDeletion: { _ in confirmation }
+    )
+  }
+
   fileprivate func dependencies(
     recorder: RepoCommandRecorder,
     record: TangledRecord<Repository>? = nil,
@@ -1052,6 +1209,19 @@ extension RepoCommandTests {
       cursor: "6"
     )
   }
+}
+
+private actor RepoLifecycleCommandRecorder {
+  private var requests: [RepositoryCreationRequest] = []
+  private var repositoryReferences: [String] = []
+  private var deletions = 0
+
+  func record(_ request: RepositoryCreationRequest) { requests.append(request) }
+  func record(repository: String) { repositoryReferences.append(repository) }
+  func recordDelete() { deletions += 1 }
+  func creationRequests() -> [RepositoryCreationRequest] { requests }
+  func repositories() -> [String] { repositoryReferences }
+  func deleteCount() -> Int { deletions }
 }
 
 private struct RepoGitCall: Equatable, Sendable {

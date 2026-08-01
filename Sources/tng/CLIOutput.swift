@@ -12,6 +12,7 @@ struct CLICommandOutput: Equatable, Sendable {
   private let standardOutput: Data
   let stderr: String
   let isPageable: Bool
+  let exitCode: CLIExitCode?
 
   var stdout: String {
     String(decoding: standardOutput, as: UTF8.self)
@@ -21,16 +22,28 @@ struct CLICommandOutput: Equatable, Sendable {
     standardOutput
   }
 
-  init(stdout: String, stderr: String = "", isPageable: Bool = false) {
+  init(
+    stdout: String,
+    stderr: String = "",
+    isPageable: Bool = false,
+    exitCode: CLIExitCode? = nil
+  ) {
     self.standardOutput = Data(stdout.utf8)
     self.stderr = stderr
     self.isPageable = isPageable
+    self.exitCode = exitCode
   }
 
-  init(stdoutData: Data, stderr: String = "", isPageable: Bool = false) {
+  init(
+    stdoutData: Data,
+    stderr: String = "",
+    isPageable: Bool = false,
+    exitCode: CLIExitCode? = nil
+  ) {
     self.standardOutput = stdoutData
     self.stderr = stderr
     self.isPageable = isPageable
+    self.exitCode = exitCode
   }
 }
 
@@ -61,9 +74,9 @@ func runCLICommand(
   jsonErrors: Bool = false,
   _ operation: () async throws -> CLICommandOutput
 ) async throws {
+  let output: CLICommandOutput
   do {
-    let output = try await operation()
-    CLIOutputWriter.live.write(output)
+    output = try await operation()
   } catch {
     let report = errorReport(for: error)
     if jsonErrors {
@@ -72,6 +85,10 @@ func runCLICommand(
       writeHumanDiagnostic(report.diagnostic)
     }
     throw report.exitCode.argumentParserValue
+  }
+  CLIOutputWriter.live.write(output)
+  if let exitCode = output.exitCode {
+    throw exitCode.argumentParserValue
   }
 }
 

@@ -2,6 +2,50 @@ import ArgumentParser
 import Foundation
 import SwiftTangled
 
+#if canImport(Darwin)
+  import Darwin
+#elseif canImport(Glibc)
+  import Glibc
+#endif
+
+struct RepositoryLifecycleCommandDependencies: Sendable {
+  let create: @Sendable (RepositoryCreationRequest) async throws -> RepositoryCreationResult
+  let prepareDeletion: @Sendable (String) async throws -> RepositoryDeletionPlan
+  let delete: @Sendable (RepositoryDeletionPlan) async throws -> RepositoryDeletionResult
+  let inputIsTerminal: @Sendable () -> Bool
+  let confirmDeletion: @Sendable (RepositoryLifecycleTarget) -> Bool
+
+  static let live: RepositoryLifecycleCommandDependencies = {
+    let service = RepositoryLifecycleService()
+    return RepositoryLifecycleCommandDependencies(
+      create: { request in
+        let pdsClient = try PDSClient.restore(from: CLISessionStore.make().store)
+        return try await service.create(request, pdsClient: pdsClient)
+      },
+      prepareDeletion: { repository in
+        let pdsClient = try PDSClient.restore(from: CLISessionStore.make().store)
+        return try await service.prepareDeletion(repository: repository, pdsClient: pdsClient)
+      },
+      delete: { plan in
+        let pdsClient = try PDSClient.restore(from: CLISessionStore.make().store)
+        return try await service.delete(plan, pdsClient: pdsClient)
+      },
+      inputIsTerminal: { repositoryStandardInputIsTerminal() },
+      confirmDeletion: { promptForRepositoryDeletion($0) }
+    )
+  }()
+}
+
+struct RepositoryJSONEnvelope<Result: Codable & Sendable>: Codable, Sendable {
+  let schemaVersion: Int
+  let result: Result
+
+  init(result: Result) {
+    schemaVersion = 1
+    self.result = result
+  }
+}
+
 struct RepoCommandDependencies: Sendable {
   let resolveRepository: @Sendable (String) async throws -> TangledRecord<Repository>
   let resolveOwnerDID: @Sendable (String) async throws -> String
@@ -127,14 +171,70 @@ private func authoritativeRepositories(
 
 struct RepoCommandService: Sendable {
   private let dependencies: RepoCommandDependencies
+  private let lifecycleDependencies: RepositoryLifecycleCommandDependencies
   private let formatter: CLIFormatter
 
   init(
     dependencies: RepoCommandDependencies = .live,
+    lifecycleDependencies: RepositoryLifecycleCommandDependencies = .live,
     formatter: CLIFormatter = .plain
   ) {
     self.dependencies = dependencies
+    self.lifecycleDependencies = lifecycleDependencies
     self.formatter = formatter
+  }
+
+  func create(
+    name: String,
+    knot: String,
+    defaultBranch: String,
+    source: String?,
+    repositoryDID: String?,
+    json: Bool
+  ) async throws -> CLICommandOutput {
+    let result = try await lifecycleDependencies.create(
+      RepositoryCreationRequest(
+        name: name,
+        knot: knot,
+        defaultBranch: defaultBranch,
+        source: source,
+        repositoryDID: repositoryDID
+      )
+    )
+    return CLICommandOutput(
+      stdout: try json
+        ? formatter.json(RepositoryJSONEnvelope(result: result))
+        : format(result),
+      exitCode: result.outcome == .created ? nil : .api
+    )
+  }
+
+  func delete(
+    repository: String,
+    confirmed: Bool,
+    json: Bool
+  ) async throws -> CLICommandOutput {
+    let plan = try await lifecycleDependencies.prepareDeletion(repository)
+    if !confirmed {
+      guard lifecycleDependencies.inputIsTerminal() else {
+        throw ValidationError("--yes is required when standard input is not a terminal")
+      }
+      guard lifecycleDependencies.confirmDeletion(plan.target) else {
+        let result = RepositoryDeletionResult(outcome: .cancelled, target: plan.target)
+        return CLICommandOutput(
+          stdout: try json
+            ? formatter.json(RepositoryJSONEnvelope(result: result))
+            : "Deletion cancelled.\n"
+        )
+      }
+    }
+    let result = try await lifecycleDependencies.delete(plan)
+    return CLICommandOutput(
+      stdout: try json
+        ? formatter.json(RepositoryJSONEnvelope(result: result))
+        : format(result),
+      exitCode: result.outcome == .deleted ? nil : .api
+    )
   }
 
   func view(repository: String?, json: Bool) async throws -> CLICommandOutput {
@@ -314,6 +414,46 @@ struct RepoCommandService: Sendable {
 }
 
 extension RepoCommandService {
+  fileprivate func format(_ result: RepositoryCreationResult) -> String {
+    let target = result.target
+    var output = formatter.details([
+      ("Outcome", result.outcome.rawValue),
+      ("Name", target.name),
+      ("Owner", target.ownerDID),
+      ("Repository DID", target.repositoryDID),
+      ("Record URI", target.recordURI),
+      ("Record CID", result.record?.cid),
+      ("Knot", target.knot),
+      ("Web URL", target.webURL),
+      ("Clone URL", target.cloneURL),
+      ("Error", result.error),
+      ("Cleanup error", result.cleanupError),
+    ])
+    if result.outcome != .created {
+      output += "Do not rerun `tng repo create` automatically; inspect the reported PDS and Knot state first.\n"
+    }
+    return output
+  }
+
+  fileprivate func format(_ result: RepositoryDeletionResult) -> String {
+    let target = result.target
+    var output = formatter.details([
+      ("Outcome", result.outcome.rawValue),
+      ("Name", target.name),
+      ("Owner", target.ownerDID),
+      ("Repository DID", target.repositoryDID),
+      ("Record URI", target.recordURI),
+      ("Knot", target.knot),
+      ("Web URL", target.webURL),
+      ("Clone URL", target.cloneURL),
+      ("Error", result.error),
+    ])
+    if result.outcome == .recordDeletedKnotFailed || result.outcome == .outcomeUnknown {
+      output += "Do not rerun `tng repo delete` automatically; inspect the reported PDS and Knot state first.\n"
+    }
+    return output
+  }
+
   private struct GitTarget {
     let repositoryURI: String
     let ref: String
@@ -505,4 +645,30 @@ extension RepoCommandService {
   fileprivate func displayName(_ record: TangledRecord<Repository>) -> String? {
     record.value.name ?? record.uri.split(separator: "/").last.map(String.init)
   }
+}
+
+private func repositoryStandardInputIsTerminal() -> Bool {
+  #if canImport(Darwin)
+    Darwin.isatty(FileHandle.standardInput.fileDescriptor) == 1
+  #elseif canImport(Glibc)
+    Glibc.isatty(FileHandle.standardInput.fileDescriptor) == 1
+  #else
+    false
+  #endif
+}
+
+private func promptForRepositoryDeletion(_ target: RepositoryLifecycleTarget) -> Bool {
+  let prompt = """
+    Delete this repository?
+      Owner: \(target.ownerDID)
+      Name: \(target.name)
+      Repository DID: \(target.repositoryDID ?? "unknown")
+      Knot: \(target.knot)
+    Continue? [y/N]
+    """
+  FileHandle.standardError.write(Data(prompt.utf8))
+  guard let response = readLine()?.trimmingCharacters(in: .whitespacesAndNewlines) else {
+    return false
+  }
+  return response.lowercased() == "y" || response.lowercased() == "yes"
 }
