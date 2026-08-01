@@ -114,7 +114,10 @@
             "sh.tangled.repo.log",
             "sh.tangled.repo",
             "sh.tangled.repo.addCollaborator",
+            "sh.tangled.repo.addSecret",
+            "sh.tangled.repo.listSecrets",
             "sh.tangled.repo.removeCollaborator",
+            "sh.tangled.repo.removeSecret",
             "sh.tangled.repo.pull",
             "sh.tangled.repo.pull.status",
             "sh.tangled.repo.pull.countStatuses",
@@ -139,5 +142,5 @@
   ],
   "generator" : "0.43.0",
   "module" : "Sources/TangledLexicons",
-  "originHash" : "ce8d532e37c88adbb2ece32e1a5fca740eea71f435ab7fedecf3a0116ba9524b"
+  "originHash" : "8ef104fe606db80d98587e586e2fb6a2ddf40224d51db6cc138d8a8145719f6f"
 }

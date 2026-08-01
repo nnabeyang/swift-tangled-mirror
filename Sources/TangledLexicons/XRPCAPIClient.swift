@@ -7254,6 +7254,105 @@ extension Sh.Tangled {
       try _unknownValues.encode(to: encoder)
     }
   }
+  /// Add a CI secret
+  public enum RepoAddSecret: XRPCProcedure {
+    public static let id = "sh.tangled.repo.addSecret"
+    public static let contentType = "application/json"
+    public typealias RequestBody = RepoAddSecret_Input
+    public typealias ResponseBody = EmptyResponse
+    public indirect enum Error: XRPCError {
+      case unexpected(error: Swift.String?, message: Swift.String?)
+
+      public init(error: UnExpectedError) {
+        switch error.error {
+        default:
+          self = .unexpected(error: error.error, message: error.message)
+        }
+      }
+
+      public var error: Swift.String? {
+        switch self {
+        case .unexpected(let error, _):
+          return error
+        }
+      }
+
+      public var message: Swift.String? {
+        switch self {
+        case .unexpected(_, let message):
+          return message
+        }
+      }
+    }
+  }
+
+  public struct RepoAddSecret_Input: Codable, Hashable, Sendable {
+    public var key: Swift.String
+    public var repo: FormatString<ATURI>
+    public var value: Swift.String
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(key: Swift.String, repo: FormatString<ATURI>, value: Swift.String) {
+      self.key = key
+      self.repo = repo
+      self.value = value
+      self._unknownValues = [:]
+    }
+
+    public static func make(key: Swift.String, repo: FormatString<ATURI>, value: Swift.String) throws -> Self {
+      guard key.utf8.count <= 50 else {
+        throw LexiconConstraintError.stringTooLong("key", limit: 50)
+      }
+      guard key.utf8.count >= 1 else {
+        throw LexiconConstraintError.stringTooShort("key", minimum: 1)
+      }
+      guard value.utf8.count <= 200 else {
+        throw LexiconConstraintError.stringTooLong("value", limit: 200)
+      }
+      guard value.utf8.count >= 1 else {
+        throw LexiconConstraintError.stringTooShort("value", minimum: 1)
+      }
+      return Self.init(key: key, repo: repo, value: value)
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case key
+      case repo
+      case value
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      let key = try keyedContainer.decode(Swift.String.self, forKey: .key)
+      let repo = try keyedContainer.decode(FormatString<ATURI>.self, forKey: .repo)
+      let value = try keyedContainer.decode(Swift.String.self, forKey: .value)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      if !LexiconDecodingMode.shouldValidateConstraints(in: decoder) {
+        self = Self.init(key: key, repo: repo, value: value)
+        return
+      }
+      do {
+        self = try Self.make(key: key, repo: repo, value: value)
+      } catch let error as LexiconConstraintError {
+        throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "\(error)", underlyingError: error))
+      }
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encode(self.key, forKey: .key)
+      try container.encode(self.repo, forKey: .repo)
+      try container.encode(self.value, forKey: .value)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
   public enum RepoArchive: XRPCQuery {
     public static let id = "sh.tangled.repo.archive"
     public typealias ResponseBody = Foundation.Data
@@ -11959,6 +12058,148 @@ extension Sh.Tangled {
       try _unknownValues.encode(to: encoder)
     }
   }
+  public enum RepoListSecrets: XRPCQuery {
+    public static let id = "sh.tangled.repo.listSecrets"
+    public typealias ResponseBody = Sh.Tangled.RepoListSecrets_Output
+    public struct Input: XRPCQueryInput {
+      public struct Query: XRPCInputQuery {
+        public var repo: FormatString<ATURI>
+
+        public init(repo: FormatString<ATURI>) {
+          self.repo = repo
+        }
+        public var asParameters: Parameters? {
+          ["repo": .string(repo.rawValue)]
+        }
+      }
+      public var query: Input.Query
+    }
+    public indirect enum Error: XRPCError {
+      case unexpected(error: Swift.String?, message: Swift.String?)
+
+      public init(error: UnExpectedError) {
+        switch error.error {
+        default:
+          self = .unexpected(error: error.error, message: error.message)
+        }
+      }
+
+      public var error: Swift.String? {
+        switch self {
+        case .unexpected(let error, _):
+          return error
+        }
+      }
+
+      public var message: Swift.String? {
+        switch self {
+        case .unexpected(_, let message):
+          return message
+        }
+      }
+    }
+  }
+
+  public struct RepoListSecrets_Output: Codable, Hashable, Sendable {
+    public var secrets: [RepoListSecrets_Secret]?
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(secrets: [RepoListSecrets_Secret]? = nil) {
+      self.secrets = secrets
+      self._unknownValues = [:]
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case secrets
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      self.secrets = try keyedContainer.decodeIfPresent([RepoListSecrets_Secret].self, forKey: .secrets)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      self._unknownValues = _unknownValues
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encodeIfPresent(self.secrets, forKey: .secrets)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
+
+  public struct RepoListSecrets_Secret: Codable, Hashable, Sendable {
+    public var createdAt: FormatString<Date>
+    public var createdBy: FormatString<DID>
+    public var key: Swift.String
+    public var repo: FormatString<ATURI>
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(createdAt: FormatString<Date>, createdBy: FormatString<DID>, key: Swift.String, repo: FormatString<ATURI>) {
+      self.createdAt = createdAt
+      self.createdBy = createdBy
+      self.key = key
+      self.repo = repo
+      self._unknownValues = [:]
+    }
+
+    public static func make(createdAt: FormatString<Date>, createdBy: FormatString<DID>, key: Swift.String, repo: FormatString<ATURI>) throws -> Self {
+      guard key.utf8.count <= 50 else {
+        throw LexiconConstraintError.stringTooLong("key", limit: 50)
+      }
+      guard key.utf8.count >= 1 else {
+        throw LexiconConstraintError.stringTooShort("key", minimum: 1)
+      }
+      return Self.init(createdAt: createdAt, createdBy: createdBy, key: key, repo: repo)
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case createdAt
+      case createdBy
+      case key
+      case repo
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      let createdAt = try keyedContainer.decode(FormatString<Date>.self, forKey: .createdAt)
+      let createdBy = try keyedContainer.decode(FormatString<DID>.self, forKey: .createdBy)
+      let key = try keyedContainer.decode(Swift.String.self, forKey: .key)
+      let repo = try keyedContainer.decode(FormatString<ATURI>.self, forKey: .repo)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      if !LexiconDecodingMode.shouldValidateConstraints(in: decoder) {
+        self = Self.init(createdAt: createdAt, createdBy: createdBy, key: key, repo: repo)
+        return
+      }
+      do {
+        self = try Self.make(createdAt: createdAt, createdBy: createdBy, key: key, repo: repo)
+      } catch let error as LexiconConstraintError {
+        throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "\(error)", underlyingError: error))
+      }
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encode(self.createdAt, forKey: .createdAt)
+      try container.encode(self.createdBy, forKey: .createdBy)
+      try container.encode(self.key, forKey: .key)
+      try container.encode(self.repo, forKey: .repo)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
   public enum RepoLog: XRPCQuery {
     public static let id = "sh.tangled.repo.log"
     public typealias ResponseBody = Sh.Tangled.RepoLog_Output
@@ -12822,6 +13063,94 @@ extension Sh.Tangled {
       var container = encoder.container(keyedBy: CodingKeys.self)
       try container.encode(self.repo, forKey: .repo)
       try container.encode(self.subject, forKey: .subject)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
+  /// Remove a CI secret
+  public enum RepoRemoveSecret: XRPCProcedure {
+    public static let id = "sh.tangled.repo.removeSecret"
+    public static let contentType = "application/json"
+    public typealias RequestBody = RepoRemoveSecret_Input
+    public typealias ResponseBody = EmptyResponse
+    public indirect enum Error: XRPCError {
+      case unexpected(error: Swift.String?, message: Swift.String?)
+
+      public init(error: UnExpectedError) {
+        switch error.error {
+        default:
+          self = .unexpected(error: error.error, message: error.message)
+        }
+      }
+
+      public var error: Swift.String? {
+        switch self {
+        case .unexpected(let error, _):
+          return error
+        }
+      }
+
+      public var message: Swift.String? {
+        switch self {
+        case .unexpected(_, let message):
+          return message
+        }
+      }
+    }
+  }
+
+  public struct RepoRemoveSecret_Input: Codable, Hashable, Sendable {
+    public var key: Swift.String
+    public var repo: FormatString<ATURI>
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(key: Swift.String, repo: FormatString<ATURI>) {
+      self.key = key
+      self.repo = repo
+      self._unknownValues = [:]
+    }
+
+    public static func make(key: Swift.String, repo: FormatString<ATURI>) throws -> Self {
+      guard key.utf8.count <= 50 else {
+        throw LexiconConstraintError.stringTooLong("key", limit: 50)
+      }
+      guard key.utf8.count >= 1 else {
+        throw LexiconConstraintError.stringTooShort("key", minimum: 1)
+      }
+      return Self.init(key: key, repo: repo)
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case key
+      case repo
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      let key = try keyedContainer.decode(Swift.String.self, forKey: .key)
+      let repo = try keyedContainer.decode(FormatString<ATURI>.self, forKey: .repo)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      if !LexiconDecodingMode.shouldValidateConstraints(in: decoder) {
+        self = Self.init(key: key, repo: repo)
+        return
+      }
+      do {
+        self = try Self.make(key: key, repo: repo)
+      } catch let error as LexiconConstraintError {
+        throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "\(error)", underlyingError: error))
+      }
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encode(self.key, forKey: .key)
+      try container.encode(self.repo, forKey: .repo)
       try _unknownValues.encode(to: encoder)
     }
   }
@@ -14735,6 +15064,8 @@ public protocol XRPCCallable: _XRPCCallable {
   func LabelListOpsBy(cursor: Swift.String?, limit: Swift.Int?, order: Sh.Tangled.LabelListOpsBy_Order?, subject: FormatString<DID>) async throws -> Sh.Tangled.LabelListOpsBy.ResponseBody
   /// Add a collaborator to a repository on this knot
   func RepoAddCollaborator(input: Sh.Tangled.RepoAddCollaborator_Input) async throws -> Sh.Tangled.RepoAddCollaborator.ResponseBody
+  /// Add a CI secret
+  func RepoAddSecret(input: Sh.Tangled.RepoAddSecret_Input) async throws -> Sh.Tangled.RepoAddSecret.ResponseBody
   func RepoArchive(format: Sh.Tangled.RepoArchive_Format?, prefix: Swift.String?, ref: Swift.String, repo: Swift.String) async throws -> Sh.Tangled.RepoArchive.ResponseBody
   func RepoBlob(path: Swift.String, raw: Swift.Bool?, ref: Swift.String, repo: FormatString<DID>) async throws -> Sh.Tangled.RepoBlob.ResponseBody
   func RepoBranch(name: Swift.String, repo: Swift.String) async throws -> Sh.Tangled.RepoBranch.ResponseBody
@@ -14772,6 +15103,7 @@ public protocol XRPCCallable: _XRPCCallable {
   func RepoListPulls(author: FormatString<DID>?, cursor: Swift.String?, limit: Swift.Int?, order: Sh.Tangled.RepoListPulls_Order?, status: Sh.Tangled.RepoListPulls_Status?, subject: FormatString<DID>) async throws -> Sh.Tangled.RepoListPulls.ResponseBody
   func RepoListPullsBy(cursor: Swift.String?, limit: Swift.Int?, order: Sh.Tangled.RepoListPullsBy_Order?, status: Sh.Tangled.RepoListPullsBy_Status?, subject: FormatString<DID>) async throws -> Sh.Tangled.RepoListPullsBy.ResponseBody
   func RepoListRepos(cursor: Swift.String?, limit: Swift.Int?, order: Sh.Tangled.RepoListRepos_Order?, subject: FormatString<DID>) async throws -> Sh.Tangled.RepoListRepos.ResponseBody
+  func RepoListSecrets(repo: FormatString<ATURI>) async throws -> Sh.Tangled.RepoListSecrets.ResponseBody
   func RepoLog(cursor: Swift.String?, limit: Swift.Int?, path: Swift.String?, ref: Swift.String, repo: Swift.String) async throws -> Sh.Tangled.RepoLog.ResponseBody
   /// Merge a patch into a repository branch
   func RepoMerge(input: Sh.Tangled.RepoMerge_Input) async throws -> Sh.Tangled.RepoMerge.ResponseBody
@@ -14779,6 +15111,8 @@ public protocol XRPCCallable: _XRPCCallable {
   func RepoMergeCheck(input: Sh.Tangled.RepoMergeCheck_Input) async throws -> Sh.Tangled.RepoMergeCheck.ResponseBody
   /// Remove a collaborator from a repository on this knot
   func RepoRemoveCollaborator(input: Sh.Tangled.RepoRemoveCollaborator_Input) async throws -> Sh.Tangled.RepoRemoveCollaborator.ResponseBody
+  /// Remove a CI secret
+  func RepoRemoveSecret(input: Sh.Tangled.RepoRemoveSecret_Input) async throws -> Sh.Tangled.RepoRemoveSecret.ResponseBody
   func RepoTag(repo: Swift.String, tag: Swift.String) async throws -> Sh.Tangled.RepoTag.ResponseBody
   func RepoTags(cursor: Swift.String?, limit: Swift.Int?, repo: Swift.String) async throws -> Sh.Tangled.RepoTags.ResponseBody
   func RepoTree(path: Swift.String?, ref: Swift.String, repo: Swift.String) async throws -> Sh.Tangled.RepoTree.ResponseBody
@@ -14933,6 +15267,10 @@ extension XRPCCallable {
   public func RepoAddCollaborator(input: Sh.Tangled.RepoAddCollaborator_Input) async throws -> Sh.Tangled.RepoAddCollaborator.ResponseBody {
     try await call(Sh.Tangled.RepoAddCollaborator.self, input: input)
   }
+  /// Add a CI secret
+  public func RepoAddSecret(input: Sh.Tangled.RepoAddSecret_Input) async throws -> Sh.Tangled.RepoAddSecret.ResponseBody {
+    try await call(Sh.Tangled.RepoAddSecret.self, input: input)
+  }
   public func RepoArchive(format: Sh.Tangled.RepoArchive_Format? = nil, prefix: Swift.String? = nil, ref: Swift.String, repo: Swift.String) async throws -> Sh.Tangled.RepoArchive.ResponseBody {
     try await call(Sh.Tangled.RepoArchive.self, input: .init(format: format, prefix: prefix, ref: ref, repo: repo))
   }
@@ -15036,6 +15374,9 @@ extension XRPCCallable {
   public func RepoListRepos(cursor: Swift.String? = nil, limit: Swift.Int? = nil, order: Sh.Tangled.RepoListRepos_Order? = nil, subject: FormatString<DID>) async throws -> Sh.Tangled.RepoListRepos.ResponseBody {
     try await call(Sh.Tangled.RepoListRepos.self, input: .init(cursor: cursor, limit: limit, order: order, subject: subject))
   }
+  public func RepoListSecrets(repo: FormatString<ATURI>) async throws -> Sh.Tangled.RepoListSecrets.ResponseBody {
+    try await call(Sh.Tangled.RepoListSecrets.self, input: .init(repo: repo))
+  }
   public func RepoLog(cursor: Swift.String? = nil, limit: Swift.Int? = nil, path: Swift.String? = nil, ref: Swift.String, repo: Swift.String) async throws -> Sh.Tangled.RepoLog.ResponseBody {
     try await call(Sh.Tangled.RepoLog.self, input: .init(cursor: cursor, limit: limit, path: path, ref: ref, repo: repo))
   }
@@ -15050,6 +15391,10 @@ extension XRPCCallable {
   /// Remove a collaborator from a repository on this knot
   public func RepoRemoveCollaborator(input: Sh.Tangled.RepoRemoveCollaborator_Input) async throws -> Sh.Tangled.RepoRemoveCollaborator.ResponseBody {
     try await call(Sh.Tangled.RepoRemoveCollaborator.self, input: input)
+  }
+  /// Remove a CI secret
+  public func RepoRemoveSecret(input: Sh.Tangled.RepoRemoveSecret_Input) async throws -> Sh.Tangled.RepoRemoveSecret.ResponseBody {
+    try await call(Sh.Tangled.RepoRemoveSecret.self, input: input)
   }
   public func RepoTag(repo: Swift.String, tag: Swift.String) async throws -> Sh.Tangled.RepoTag.ResponseBody {
     try await call(Sh.Tangled.RepoTag.self, input: .init(repo: repo, tag: tag))
