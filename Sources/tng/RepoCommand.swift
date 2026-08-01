@@ -14,6 +14,7 @@ struct RepoCommand: AsyncParsableCommand {
       RepoBlobCommand.self,
       RepoLanguagesCommand.self,
       RepoArchiveCommand.self,
+      RepoCollaboratorCommand.self,
       RepoBranchCommand.self,
       RepoTagCommand.self,
       RepoStarCommand.self,
