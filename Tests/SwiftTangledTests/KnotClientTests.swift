@@ -8,6 +8,65 @@ import Testing
 #endif
 
 @Suite struct KnotClientTests {
+  @Test func repositoryLifecycleUsesAuthenticatedKnotProcedures() async throws {
+    let createTransport = KnotTransport(
+      statusCode: 200,
+      body: Data(#"{"repoDid":"did:plc:repository"}"#.utf8)
+    )
+    let repositoryDID = try await KnotClient(transport: createTransport).createRepository(
+      knot: "knot.example",
+      token: "create-token",
+      rkey: "example",
+      name: "example",
+      defaultBranch: "main",
+      source: "https://example.com/source.git",
+      repositoryDID: nil
+    )
+    #expect(repositoryDID == "did:plc:repository")
+    let createRequest = try #require(await createTransport.request())
+    #expect(createRequest.url?.absoluteString == "https://knot.example/xrpc/sh.tangled.repo.create")
+    #expect(createRequest.value(forHTTPHeaderField: "Authorization") == "Bearer create-token")
+    let createInput = try JSONDecoder().decode(
+      Sh.Tangled.RepoCreate_Input.self,
+      from: try #require(createRequest.httpBody)
+    )
+    #expect(createInput.rkey == "example")
+    #expect(createInput.defaultBranch == "main")
+    #expect(createInput.source == "https://example.com/source.git")
+
+    let deleteTransport = KnotTransport(statusCode: 200, body: Data("{}".utf8))
+    try await KnotClient(transport: deleteTransport).deleteRepository(
+      knot: "knot.example",
+      token: "delete-token",
+      ownerDID: "did:plc:owner",
+      name: "example",
+      rkey: "example"
+    )
+    let deleteRequest = try #require(await deleteTransport.request())
+    #expect(deleteRequest.url?.absoluteString == "https://knot.example/xrpc/sh.tangled.repo.delete")
+    #expect(deleteRequest.value(forHTTPHeaderField: "Authorization") == "Bearer delete-token")
+    let deleteInput = try JSONDecoder().decode(
+      Sh.Tangled.RepoDelete_Input.self,
+      from: try #require(deleteRequest.httpBody)
+    )
+    #expect(deleteInput.did.rawValue == "did:plc:owner")
+    #expect(deleteInput.name == "example")
+  }
+
+  @Test func repositoryCreationRejectsMissingRepositoryDID() async {
+    await #expect(throws: TangledError.self) {
+      _ = try await KnotClient(
+        transport: KnotTransport(statusCode: 200, body: Data("{}".utf8))
+      ).createRepository(
+        knot: "knot.example",
+        token: "token",
+        rkey: "example",
+        name: "example",
+        defaultBranch: "main"
+      )
+    }
+  }
+
   @Test func mergeCheckUsesKnotProcedureAndMapsConflicts() async throws {
     let transport = KnotTransport(
       statusCode: 200,

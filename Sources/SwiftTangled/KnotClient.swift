@@ -13,6 +13,46 @@ public struct KnotClient: Sendable {
     self.transport = transport
   }
 
+  public func createRepository(
+    knot: String,
+    token: String,
+    rkey: String,
+    name: String,
+    defaultBranch: String,
+    source: String? = nil,
+    repositoryDID: String? = nil
+  ) async throws -> String {
+    let output = try await client(knot: knot, token: token).RepoCreate(
+      input: Sh.Tangled.RepoCreate_Input(
+        defaultBranch: defaultBranch,
+        name: name,
+        repoDid: repositoryDID.map(FormatString.init(rawValue:)),
+        rkey: rkey,
+        source: source
+      )
+    )
+    guard let repositoryDID = output.repoDid?.rawValue, !repositoryDID.isEmpty else {
+      throw TangledError.decoding(RepositoryLifecycleError.missingRepositoryDID)
+    }
+    return repositoryDID
+  }
+
+  public func deleteRepository(
+    knot: String,
+    token: String,
+    ownerDID: String,
+    name: String,
+    rkey: String
+  ) async throws {
+    _ = try await client(knot: knot, token: token).RepoDelete(
+      input: Sh.Tangled.RepoDelete_Input(
+        did: FormatString(rawValue: ownerDID),
+        name: name,
+        rkey: rkey
+      )
+    )
+  }
+
   public func mergeCheck(
     knot: String,
     ownerDID: String,

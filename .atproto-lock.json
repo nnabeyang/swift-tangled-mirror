@@ -6,6 +6,7 @@
           "nsIds" : [
             "com.atproto.identity.resolveHandle",
             "com.atproto.repo.defs",
+            "com.atproto.repo.createRecord",
             "com.atproto.repo.applyWrites",
             "com.atproto.repo.getRecord",
             "com.atproto.repo.listRecords",
@@ -81,6 +82,8 @@
             "sh.tangled.repo.countPulls",
             "sh.tangled.repo.countPullsBy",
             "sh.tangled.repo.countRepos",
+            "sh.tangled.repo.create",
+            "sh.tangled.repo.delete",
             "sh.tangled.repo.describeRepo",
             "sh.tangled.repo.diff",
             "sh.tangled.repo.getDefaultBranch",
@@ -131,5 +134,5 @@
   ],
   "generator" : "0.43.0",
   "module" : "Sources/TangledLexicons",
-  "originHash" : "a119f3ed085d86ef8a6672410e87a54be054e5868cd15357839856eb26a0327d"
+  "originHash" : "27444d390adae35af6c55c2a4a8c11f8b81ba579ba3286042d551f07e909fe4a"
 }

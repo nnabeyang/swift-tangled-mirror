@@ -650,6 +650,216 @@ extension Com.Atproto {
       try rawValue.encode(to: encoder)
     }
   }
+  /// Create a single new repository record. Requires auth, implemented by PDS.
+  public enum RepoCreateRecord: XRPCProcedure {
+    public static let id = "com.atproto.repo.createRecord"
+    public static let contentType = "application/json"
+    public typealias RequestBody = RepoCreateRecord_Input
+    public typealias ResponseBody = RepoCreateRecord_Output
+    public indirect enum Error: XRPCError {
+      /// Indicates that 'swapCommit' didn't match current repo commit.
+      case invalidswap(Swift.String?)
+      case unexpected(error: Swift.String?, message: Swift.String?)
+
+      public init(error: UnExpectedError) {
+        switch error.error {
+        case "InvalidSwap":
+          self = .invalidswap(error.message)
+        default:
+          self = .unexpected(error: error.error, message: error.message)
+        }
+      }
+
+      public var error: Swift.String? {
+        switch self {
+        case .invalidswap:
+          return "InvalidSwap"
+        case .unexpected(let error, _):
+          return error
+        }
+      }
+
+      public var message: Swift.String? {
+        switch self {
+        case .invalidswap(let message):
+          return message
+        case .unexpected(_, let message):
+          return message
+        }
+      }
+    }
+  }
+
+  public struct RepoCreateRecord_Input: Codable, Hashable, Sendable, RepoWriteOperationDescribing {
+    /// The NSID of the record collection.
+    public var collection: FormatString<NSID>
+    public var record: UnknownATPValue
+    /// The handle or DID of the repo (aka, current account).
+    public var repo: FormatString<AtIdentifier>
+    /// The Record Key.
+    public var rkey: FormatString<RecordKey>?
+    /// Compare and swap with the previous commit by CID.
+    public var swapCommit: FormatString<LexLink>?
+    /// Can be set to 'false' to skip Lexicon schema validation of record data, 'true' to require it, or leave unset to validate only for known Lexicons.
+    public var validate: Swift.Bool?
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(collection: FormatString<NSID>, record: UnknownATPValue, repo: FormatString<AtIdentifier>, rkey: FormatString<RecordKey>? = nil, swapCommit: FormatString<LexLink>? = nil, validate: Swift.Bool? = nil) {
+      self.collection = collection
+      self.record = record
+      self.repo = repo
+      self.rkey = rkey
+      self.swapCommit = swapCommit
+      self.validate = validate
+      self._unknownValues = [:]
+    }
+
+    public static func make(collection: FormatString<NSID>, record: UnknownATPValue, repo: FormatString<AtIdentifier>, rkey: FormatString<RecordKey>? = nil, swapCommit: FormatString<LexLink>? = nil, validate: Swift.Bool? = nil) throws -> Self {
+      if let rkey {
+        guard rkey.rawValue.utf8.count <= 512 else {
+          throw LexiconConstraintError.stringTooLong("rkey", limit: 512)
+        }
+      }
+      return Self.init(collection: collection, record: record, repo: repo, rkey: rkey, swapCommit: swapCommit, validate: validate)
+    }
+
+    public var repoWriteRequirements: [RepoWriteRequirement] {
+      [RepoWriteRequirement(collection: collection.rawValue, action: .create)]
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case collection
+      case record
+      case repo
+      case rkey
+      case swapCommit
+      case validate
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      let collection = try keyedContainer.decode(FormatString<NSID>.self, forKey: .collection)
+      let record = try keyedContainer.decode(UnknownATPValue.self, forKey: .record)
+      let repo = try keyedContainer.decode(FormatString<AtIdentifier>.self, forKey: .repo)
+      let rkey = try keyedContainer.decodeIfPresent(FormatString<RecordKey>.self, forKey: .rkey)
+      let swapCommit = try keyedContainer.decodeIfPresent(FormatString<LexLink>.self, forKey: .swapCommit)
+      let validate = try keyedContainer.decodeIfPresent(Swift.Bool.self, forKey: .validate)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      if !LexiconDecodingMode.shouldValidateConstraints(in: decoder) {
+        self = Self.init(collection: collection, record: record, repo: repo, rkey: rkey, swapCommit: swapCommit, validate: validate)
+        return
+      }
+      do {
+        self = try Self.make(collection: collection, record: record, repo: repo, rkey: rkey, swapCommit: swapCommit, validate: validate)
+      } catch let error as LexiconConstraintError {
+        throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "\(error)", underlyingError: error))
+      }
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encode(self.collection, forKey: .collection)
+      try container.encode(self.record, forKey: .record)
+      try container.encode(self.repo, forKey: .repo)
+      try container.encodeIfPresent(self.rkey, forKey: .rkey)
+      try container.encodeIfPresent(self.swapCommit, forKey: .swapCommit)
+      try container.encodeIfPresent(self.validate, forKey: .validate)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
+
+  public struct RepoCreateRecord_Output: Codable, Hashable, Sendable {
+    public var cid: FormatString<LexLink>
+    public var commit: RepoDefs_CommitMeta?
+    public var uri: FormatString<ATURI>
+    public var validationStatus: RepoCreateRecord_Output_ValidationStatus?
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(cid: FormatString<LexLink>, commit: RepoDefs_CommitMeta? = nil, uri: FormatString<ATURI>, validationStatus: RepoCreateRecord_Output_ValidationStatus? = nil) {
+      self.cid = cid
+      self.commit = commit
+      self.uri = uri
+      self.validationStatus = validationStatus
+      self._unknownValues = [:]
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case cid
+      case commit
+      case uri
+      case validationStatus
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      self.cid = try keyedContainer.decode(FormatString<LexLink>.self, forKey: .cid)
+      self.commit = try keyedContainer.decodeIfPresent(RepoDefs_CommitMeta.self, forKey: .commit)
+      self.uri = try keyedContainer.decode(FormatString<ATURI>.self, forKey: .uri)
+      self.validationStatus = try keyedContainer.decodeIfPresent(Com.Atproto.RepoCreateRecord_Output_ValidationStatus.self, forKey: .validationStatus)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      self._unknownValues = _unknownValues
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encode(self.cid, forKey: .cid)
+      try container.encodeIfPresent(self.commit, forKey: .commit)
+      try container.encode(self.uri, forKey: .uri)
+      try container.encodeIfPresent(self.validationStatus, forKey: .validationStatus)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
+
+  public indirect enum RepoCreateRecord_Output_ValidationStatus: RawRepresentable, Codable, Hashable, Sendable {
+    case valid
+    case unknown
+    case _other(Swift.String)
+
+    public init(rawValue: Swift.String) {
+      switch rawValue {
+      case "valid":
+        self = .valid
+      case "unknown":
+        self = .unknown
+      default:
+        self = ._other(rawValue)
+      }
+    }
+
+    public var rawValue: Swift.String {
+      switch self {
+      case .valid:
+        "valid"
+      case .unknown:
+        "unknown"
+      case ._other(let value):
+        value
+      }
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let rawValue = try Swift.String(from: decoder)
+      self = Self(rawValue: rawValue)
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      try rawValue.encode(to: encoder)
+    }
+  }
   public struct RepoDefs_CommitMeta: Codable, Hashable, Sendable {
     public var cid: FormatString<LexLink>
     public var rev: FormatString<TID>
@@ -8341,6 +8551,208 @@ extension Sh.Tangled {
       try _unknownValues.encode(to: encoder)
     }
   }
+  /// Create a new repository
+  public enum RepoCreate: XRPCProcedure {
+    public static let id = "sh.tangled.repo.create"
+    public static let contentType = "application/json"
+    public typealias RequestBody = RepoCreate_Input
+    public typealias ResponseBody = RepoCreate_Output
+    public indirect enum Error: XRPCError {
+      case unexpected(error: Swift.String?, message: Swift.String?)
+
+      public init(error: UnExpectedError) {
+        switch error.error {
+        default:
+          self = .unexpected(error: error.error, message: error.message)
+        }
+      }
+
+      public var error: Swift.String? {
+        switch self {
+        case .unexpected(let error, _):
+          return error
+        }
+      }
+
+      public var message: Swift.String? {
+        switch self {
+        case .unexpected(_, let message):
+          return message
+        }
+      }
+    }
+  }
+
+  public struct RepoCreate_Input: Codable, Hashable, Sendable {
+    /// Default branch to push to
+    public var defaultBranch: Swift.String?
+    /// Name of the repository
+    public var name: Swift.String
+    /// Optional user-provided did:web to use as the repo identity instead of minting a did:plc.
+    public var repoDid: FormatString<DID>?
+    /// Rkey of the repository record
+    public var rkey: Swift.String
+    /// A source URL to clone from, populate this when forking or importing a repository.
+    public var source: Swift.String?
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(defaultBranch: Swift.String? = nil, name: Swift.String, repoDid: FormatString<DID>? = nil, rkey: Swift.String, source: Swift.String? = nil) {
+      self.defaultBranch = defaultBranch
+      self.name = name
+      self.repoDid = repoDid
+      self.rkey = rkey
+      self.source = source
+      self._unknownValues = [:]
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case defaultBranch
+      case name
+      case repoDid
+      case rkey
+      case source
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      self.defaultBranch = try keyedContainer.decodeIfPresent(Swift.String.self, forKey: .defaultBranch)
+      self.name = try keyedContainer.decode(Swift.String.self, forKey: .name)
+      self.repoDid = try keyedContainer.decodeIfPresent(FormatString<DID>.self, forKey: .repoDid)
+      self.rkey = try keyedContainer.decode(Swift.String.self, forKey: .rkey)
+      self.source = try keyedContainer.decodeIfPresent(Swift.String.self, forKey: .source)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      self._unknownValues = _unknownValues
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encodeIfPresent(self.defaultBranch, forKey: .defaultBranch)
+      try container.encode(self.name, forKey: .name)
+      try container.encodeIfPresent(self.repoDid, forKey: .repoDid)
+      try container.encode(self.rkey, forKey: .rkey)
+      try container.encodeIfPresent(self.source, forKey: .source)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
+
+  public struct RepoCreate_Output: Codable, Hashable, Sendable {
+    public var repoDid: FormatString<DID>?
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(repoDid: FormatString<DID>? = nil) {
+      self.repoDid = repoDid
+      self._unknownValues = [:]
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case repoDid
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      self.repoDid = try keyedContainer.decodeIfPresent(FormatString<DID>.self, forKey: .repoDid)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      self._unknownValues = _unknownValues
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encodeIfPresent(self.repoDid, forKey: .repoDid)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
+  /// Delete a repository
+  public enum RepoDelete: XRPCProcedure {
+    public static let id = "sh.tangled.repo.delete"
+    public static let contentType = "application/json"
+    public typealias RequestBody = RepoDelete_Input
+    public typealias ResponseBody = EmptyResponse
+    public indirect enum Error: XRPCError {
+      case unexpected(error: Swift.String?, message: Swift.String?)
+
+      public init(error: UnExpectedError) {
+        switch error.error {
+        default:
+          self = .unexpected(error: error.error, message: error.message)
+        }
+      }
+
+      public var error: Swift.String? {
+        switch self {
+        case .unexpected(let error, _):
+          return error
+        }
+      }
+
+      public var message: Swift.String? {
+        switch self {
+        case .unexpected(_, let message):
+          return message
+        }
+      }
+    }
+  }
+
+  public struct RepoDelete_Input: Codable, Hashable, Sendable {
+    /// DID of the repository owner
+    public var did: FormatString<DID>
+    /// Name of the repository to delete
+    public var name: Swift.String
+    /// Rkey of the repository record
+    public var rkey: Swift.String
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(did: FormatString<DID>, name: Swift.String, rkey: Swift.String) {
+      self.did = did
+      self.name = name
+      self.rkey = rkey
+      self._unknownValues = [:]
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case did
+      case name
+      case rkey
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      self.did = try keyedContainer.decode(FormatString<DID>.self, forKey: .did)
+      self.name = try keyedContainer.decode(Swift.String.self, forKey: .name)
+      self.rkey = try keyedContainer.decode(Swift.String.self, forKey: .rkey)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      self._unknownValues = _unknownValues
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encode(self.did, forKey: .did)
+      try container.encode(self.name, forKey: .name)
+      try container.encode(self.rkey, forKey: .rkey)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
   /// Fetch the knot's authoritative metadata for a git repo DID.
   public enum RepoDescribeRepo: XRPCQuery {
     public static let id = "sh.tangled.repo.describeRepo"
@@ -13729,6 +14141,8 @@ public protocol XRPCCallable: _XRPCCallable {
   func IdentityResolveHandle(handle: FormatString<Handle>) async throws -> Com.Atproto.IdentityResolveHandle.ResponseBody
   /// Apply a batch transaction of repository creates, updates, and deletes. Requires auth, implemented by PDS.
   func RepoApplyWrites(input: Com.Atproto.RepoApplyWrites_Input) async throws -> Com.Atproto.RepoApplyWrites.ResponseBody
+  /// Create a single new repository record. Requires auth, implemented by PDS.
+  func RepoCreateRecord(input: Com.Atproto.RepoCreateRecord_Input) async throws -> Com.Atproto.RepoCreateRecord.ResponseBody
   /// Delete a repository record, or ensure it doesn't exist. Requires auth, implemented by PDS.
   func RepoDeleteRecord(input: Com.Atproto.RepoDeleteRecord_Input) async throws -> Com.Atproto.RepoDeleteRecord.ResponseBody
   /// Get a single record from a repository. Does not require auth.
@@ -13787,6 +14201,10 @@ public protocol XRPCCallable: _XRPCCallable {
   func RepoCountPulls(subject: FormatString<DID>) async throws -> Sh.Tangled.RepoCountPulls.ResponseBody
   func RepoCountPullsBy(subject: FormatString<DID>) async throws -> Sh.Tangled.RepoCountPullsBy.ResponseBody
   func RepoCountRepos(subject: FormatString<DID>) async throws -> Sh.Tangled.RepoCountRepos.ResponseBody
+  /// Create a new repository
+  func RepoCreate(input: Sh.Tangled.RepoCreate_Input) async throws -> Sh.Tangled.RepoCreate.ResponseBody
+  /// Delete a repository
+  func RepoDelete(input: Sh.Tangled.RepoDelete_Input) async throws -> Sh.Tangled.RepoDelete.ResponseBody
   /// Fetch the knot's authoritative metadata for a git repo DID.
   func RepoDescribeRepo(repoDid: FormatString<DID>) async throws -> Sh.Tangled.RepoDescribeRepo.ResponseBody
   func RepoDiff(ref: Swift.String, repo: Swift.String) async throws -> Sh.Tangled.RepoDiff.ResponseBody
@@ -13834,6 +14252,10 @@ extension XRPCCallable {
   /// Apply a batch transaction of repository creates, updates, and deletes. Requires auth, implemented by PDS.
   public func RepoApplyWrites(input: Com.Atproto.RepoApplyWrites_Input) async throws -> Com.Atproto.RepoApplyWrites.ResponseBody {
     try await call(Com.Atproto.RepoApplyWrites.self, input: input)
+  }
+  /// Create a single new repository record. Requires auth, implemented by PDS.
+  public func RepoCreateRecord(input: Com.Atproto.RepoCreateRecord_Input) async throws -> Com.Atproto.RepoCreateRecord.ResponseBody {
+    try await call(Com.Atproto.RepoCreateRecord.self, input: input)
   }
   /// Delete a repository record, or ensure it doesn't exist. Requires auth, implemented by PDS.
   public func RepoDeleteRecord(input: Com.Atproto.RepoDeleteRecord_Input) async throws -> Com.Atproto.RepoDeleteRecord.ResponseBody {
@@ -13986,6 +14408,14 @@ extension XRPCCallable {
   }
   public func RepoCountRepos(subject: FormatString<DID>) async throws -> Sh.Tangled.RepoCountRepos.ResponseBody {
     try await call(Sh.Tangled.RepoCountRepos.self, input: .init(subject: subject))
+  }
+  /// Create a new repository
+  public func RepoCreate(input: Sh.Tangled.RepoCreate_Input) async throws -> Sh.Tangled.RepoCreate.ResponseBody {
+    try await call(Sh.Tangled.RepoCreate.self, input: input)
+  }
+  /// Delete a repository
+  public func RepoDelete(input: Sh.Tangled.RepoDelete_Input) async throws -> Sh.Tangled.RepoDelete.ResponseBody {
+    try await call(Sh.Tangled.RepoDelete.self, input: input)
   }
   /// Fetch the knot's authoritative metadata for a git repo DID.
   public func RepoDescribeRepo(repoDid: FormatString<DID>) async throws -> Sh.Tangled.RepoDescribeRepo.ResponseBody {
