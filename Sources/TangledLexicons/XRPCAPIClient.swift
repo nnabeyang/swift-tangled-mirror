@@ -8843,12 +8843,12 @@ extension Sh.Tangled {
     /// Optional user-provided did:web to use as the repo identity instead of minting a did:plc.
     public var repoDid: FormatString<DID>?
     /// Rkey of the repository record
-    public var rkey: Swift.String
+    public var rkey: FormatString<RecordKey>
     /// A source URL to clone from, populate this when forking or importing a repository.
     public var source: Swift.String?
     public let _unknownValues: [Swift.String: AnyCodable]
 
-    public init(defaultBranch: Swift.String? = nil, name: Swift.String, repoDid: FormatString<DID>? = nil, rkey: Swift.String, source: Swift.String? = nil) {
+    public init(defaultBranch: Swift.String? = nil, name: Swift.String, repoDid: FormatString<DID>? = nil, rkey: FormatString<RecordKey>, source: Swift.String? = nil) {
       self.defaultBranch = defaultBranch
       self.name = name
       self.repoDid = repoDid
@@ -8870,7 +8870,7 @@ extension Sh.Tangled {
       self.defaultBranch = try keyedContainer.decodeIfPresent(Swift.String.self, forKey: .defaultBranch)
       self.name = try keyedContainer.decode(Swift.String.self, forKey: .name)
       self.repoDid = try keyedContainer.decodeIfPresent(FormatString<DID>.self, forKey: .repoDid)
-      self.rkey = try keyedContainer.decode(Swift.String.self, forKey: .rkey)
+      self.rkey = try keyedContainer.decode(FormatString<RecordKey>.self, forKey: .rkey)
       self.source = try keyedContainer.decodeIfPresent(Swift.String.self, forKey: .source)
       let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
       var _unknownValues = [Swift.String: AnyCodable]()
@@ -8895,20 +8895,25 @@ extension Sh.Tangled {
   }
 
   public struct RepoCreate_Output: Codable, Hashable, Sendable {
+    /// Multibase-encoded public signing key the knot holds for this repository
+    public var key: Swift.String?
     public var repoDid: FormatString<DID>?
     public let _unknownValues: [Swift.String: AnyCodable]
 
-    public init(repoDid: FormatString<DID>? = nil) {
+    public init(key: Swift.String? = nil, repoDid: FormatString<DID>? = nil) {
+      self.key = key
       self.repoDid = repoDid
       self._unknownValues = [:]
     }
 
     enum CodingKeys: Swift.String, CodingKey {
+      case key
       case repoDid
     }
 
     public init(from decoder: any Decoder) throws {
       let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      self.key = try keyedContainer.decodeIfPresent(Swift.String.self, forKey: .key)
       self.repoDid = try keyedContainer.decodeIfPresent(FormatString<DID>.self, forKey: .repoDid)
       let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
       var _unknownValues = [Swift.String: AnyCodable]()
@@ -8923,6 +8928,7 @@ extension Sh.Tangled {
 
     public func encode(to encoder: any Encoder) throws {
       var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encodeIfPresent(self.key, forKey: .key)
       try container.encodeIfPresent(self.repoDid, forKey: .repoDid)
       try _unknownValues.encode(to: encoder)
     }
@@ -8962,14 +8968,17 @@ extension Sh.Tangled {
   public struct RepoDelete_Input: Codable, Hashable, Sendable {
     /// DID of the repository owner
     public var did: FormatString<DID>
+    /// Admin-only. Delete even though the repository record still exists on the owner's PDS.
+    public var force: Swift.Bool?
     /// Name of the repository to delete
     public var name: Swift.String
     /// Rkey of the repository record
-    public var rkey: Swift.String
+    public var rkey: FormatString<RecordKey>
     public let _unknownValues: [Swift.String: AnyCodable]
 
-    public init(did: FormatString<DID>, name: Swift.String, rkey: Swift.String) {
+    public init(did: FormatString<DID>, force: Swift.Bool? = nil, name: Swift.String, rkey: FormatString<RecordKey>) {
       self.did = did
+      self.force = force
       self.name = name
       self.rkey = rkey
       self._unknownValues = [:]
@@ -8977,6 +8986,7 @@ extension Sh.Tangled {
 
     enum CodingKeys: Swift.String, CodingKey {
       case did
+      case force
       case name
       case rkey
     }
@@ -8984,8 +8994,9 @@ extension Sh.Tangled {
     public init(from decoder: any Decoder) throws {
       let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
       self.did = try keyedContainer.decode(FormatString<DID>.self, forKey: .did)
+      self.force = try keyedContainer.decodeIfPresent(Swift.Bool.self, forKey: .force)
       self.name = try keyedContainer.decode(Swift.String.self, forKey: .name)
-      self.rkey = try keyedContainer.decode(Swift.String.self, forKey: .rkey)
+      self.rkey = try keyedContainer.decode(FormatString<RecordKey>.self, forKey: .rkey)
       let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
       var _unknownValues = [Swift.String: AnyCodable]()
       for key in unknownContainer.allKeys {
@@ -9000,6 +9011,7 @@ extension Sh.Tangled {
     public func encode(to encoder: any Encoder) throws {
       var container = encoder.container(keyedBy: CodingKeys.self)
       try container.encode(self.did, forKey: .did)
+      try container.encodeIfPresent(self.force, forKey: .force)
       try container.encode(self.name, forKey: .name)
       try container.encode(self.rkey, forKey: .rkey)
       try _unknownValues.encode(to: encoder)
@@ -10192,6 +10204,7 @@ extension Sh.Tangled {
     public var type: Swift.String {
       Self.nsId
     }
+    public let blobs: [LexBlob]?
     public let body: Swift.String?
     public let createdAt: FormatString<Date>
     public let mentions: [FormatString<DID>]?
@@ -10200,7 +10213,8 @@ extension Sh.Tangled {
     public let title: Swift.String
     public let _unknownValues: [Swift.String: AnyCodable]
 
-    public init(body: Swift.String? = nil, createdAt: FormatString<Date>, mentions: [FormatString<DID>]? = nil, references: [FormatString<ATURI>]? = nil, repo: FormatString<DID>, title: Swift.String) {
+    public init(blobs: [LexBlob]? = nil, body: Swift.String? = nil, createdAt: FormatString<Date>, mentions: [FormatString<DID>]? = nil, references: [FormatString<ATURI>]? = nil, repo: FormatString<DID>, title: Swift.String) {
+      self.blobs = blobs
       self.body = body
       self.createdAt = createdAt
       self.mentions = mentions
@@ -10212,6 +10226,7 @@ extension Sh.Tangled {
 
     enum CodingKeys: Swift.String, CodingKey {
       case type = "$type"
+      case blobs
       case body
       case createdAt
       case mentions
@@ -10222,6 +10237,7 @@ extension Sh.Tangled {
 
     public init(from decoder: any Decoder) throws {
       let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      self.blobs = try keyedContainer.decodeIfPresent([LexBlob].self, forKey: .blobs)
       self.body = try keyedContainer.decodeIfPresent(Swift.String.self, forKey: .body)
       self.createdAt = try keyedContainer.decode(FormatString<Date>.self, forKey: .createdAt)
       self.mentions = try keyedContainer.decodeIfPresent([FormatString<DID>].self, forKey: .mentions)
@@ -10241,6 +10257,7 @@ extension Sh.Tangled {
 
     public func encode(to encoder: any Encoder) throws {
       var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encodeIfPresent(self.blobs, forKey: .blobs)
       try container.encodeIfPresent(self.body, forKey: .body)
       try container.encode(self.createdAt, forKey: .createdAt)
       try container.encodeIfPresent(self.mentions, forKey: .mentions)
@@ -12540,6 +12557,7 @@ extension Sh.Tangled {
     public var type: Swift.String {
       Self.nsId
     }
+    public let blobs: [LexBlob]?
     public let body: Swift.String?
     public let createdAt: FormatString<Date>
     public let dependentOn: FormatString<ATURI>?
@@ -12551,7 +12569,8 @@ extension Sh.Tangled {
     public let title: Swift.String
     public let _unknownValues: [Swift.String: AnyCodable]
 
-    public init(body: Swift.String? = nil, createdAt: FormatString<Date>, dependentOn: FormatString<ATURI>? = nil, mentions: [FormatString<DID>]? = nil, references: [FormatString<ATURI>]? = nil, rounds: [RepoPull_Round], source: RepoPull_Source? = nil, target: RepoPull_Target, title: Swift.String) {
+    public init(blobs: [LexBlob]? = nil, body: Swift.String? = nil, createdAt: FormatString<Date>, dependentOn: FormatString<ATURI>? = nil, mentions: [FormatString<DID>]? = nil, references: [FormatString<ATURI>]? = nil, rounds: [RepoPull_Round], source: RepoPull_Source? = nil, target: RepoPull_Target, title: Swift.String) {
+      self.blobs = blobs
       self.body = body
       self.createdAt = createdAt
       self.dependentOn = dependentOn
@@ -12566,6 +12585,7 @@ extension Sh.Tangled {
 
     enum CodingKeys: Swift.String, CodingKey {
       case type = "$type"
+      case blobs
       case body
       case createdAt
       case dependentOn
@@ -12579,6 +12599,7 @@ extension Sh.Tangled {
 
     public init(from decoder: any Decoder) throws {
       let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      self.blobs = try keyedContainer.decodeIfPresent([LexBlob].self, forKey: .blobs)
       self.body = try keyedContainer.decodeIfPresent(Swift.String.self, forKey: .body)
       self.createdAt = try keyedContainer.decode(FormatString<Date>.self, forKey: .createdAt)
       self.dependentOn = try keyedContainer.decodeIfPresent(FormatString<ATURI>.self, forKey: .dependentOn)
@@ -12601,6 +12622,7 @@ extension Sh.Tangled {
 
     public func encode(to encoder: any Encoder) throws {
       var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encodeIfPresent(self.blobs, forKey: .blobs)
       try container.encodeIfPresent(self.body, forKey: .body)
       try container.encode(self.createdAt, forKey: .createdAt)
       try container.encodeIfPresent(self.dependentOn, forKey: .dependentOn)

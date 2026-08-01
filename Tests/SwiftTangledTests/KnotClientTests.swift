@@ -102,7 +102,7 @@ import Testing
   @Test func repositoryLifecycleUsesAuthenticatedKnotProcedures() async throws {
     let createTransport = KnotTransport(
       statusCode: 200,
-      body: Data(#"{"repoDid":"did:plc:repository"}"#.utf8)
+      body: Data(#"{"key":"zSigningKey","repoDid":"did:plc:repository"}"#.utf8)
     )
     let repositoryDID = try await KnotClient(transport: createTransport).createRepository(
       knot: "knot.example",
@@ -121,7 +121,7 @@ import Testing
       Sh.Tangled.RepoCreate_Input.self,
       from: try #require(createRequest.httpBody)
     )
-    #expect(createInput.rkey == "example")
+    #expect(createInput.rkey.rawValue == "example")
     #expect(createInput.defaultBranch == "main")
     #expect(createInput.source == "https://example.com/source.git")
 
@@ -142,6 +142,39 @@ import Testing
     )
     #expect(deleteInput.did.rawValue == "did:plc:owner")
     #expect(deleteInput.name == "example")
+    #expect(deleteInput.rkey.rawValue == "example")
+    #expect(deleteInput.force == nil)
+    let deleteBody = try #require(deleteRequest.httpBody)
+    let deleteObject = try #require(
+      JSONSerialization.jsonObject(with: deleteBody) as? [String: Any]
+    )
+    #expect(deleteObject["force"] == nil)
+  }
+
+  @Test func repositoryLifecycleRejectsInvalidRecordKeysBeforeRequest() async {
+    let createTransport = KnotTransport(statusCode: 200, body: Data("{}".utf8))
+    await #expect(throws: TangledError.self) {
+      _ = try await KnotClient(transport: createTransport).createRepository(
+        knot: "knot.example",
+        token: "token",
+        rkey: "invalid/key",
+        name: "example",
+        defaultBranch: "main"
+      )
+    }
+    #expect(await createTransport.request() == nil)
+
+    let deleteTransport = KnotTransport(statusCode: 200, body: Data("{}".utf8))
+    await #expect(throws: TangledError.self) {
+      try await KnotClient(transport: deleteTransport).deleteRepository(
+        knot: "knot.example",
+        token: "token",
+        ownerDID: "did:plc:owner",
+        name: "example",
+        rkey: "invalid/key"
+      )
+    }
+    #expect(await deleteTransport.request() == nil)
   }
 
   @Test func repositoryCreationRejectsMissingRepositoryDID() async {

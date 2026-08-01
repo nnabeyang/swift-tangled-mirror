@@ -22,12 +22,13 @@ public struct KnotClient: Sendable {
     source: String? = nil,
     repositoryDID: String? = nil
   ) async throws -> String {
+    let recordKey = try validRecordKey(rkey)
     let output = try await client(knot: knot, token: token).RepoCreate(
       input: Sh.Tangled.RepoCreate_Input(
         defaultBranch: defaultBranch,
         name: name,
         repoDid: repositoryDID.map(FormatString.init(rawValue:)),
-        rkey: rkey,
+        rkey: FormatString(recordKey),
         source: source
       )
     )
@@ -44,11 +45,12 @@ public struct KnotClient: Sendable {
     name: String,
     rkey: String
   ) async throws {
+    let recordKey = try validRecordKey(rkey)
     _ = try await client(knot: knot, token: token).RepoDelete(
       input: Sh.Tangled.RepoDelete_Input(
         did: FormatString(rawValue: ownerDID),
         name: name,
-        rkey: rkey
+        rkey: FormatString(recordKey)
       )
     )
   }
@@ -291,6 +293,14 @@ extension KnotClient {
       return try DID(string: value)
     } catch {
       throw TangledError.invalidRequest("\(name) must be a valid DID")
+    }
+  }
+
+  private func validRecordKey(_ value: String) throws -> RecordKey {
+    do {
+      return try RecordKey(string: value)
+    } catch {
+      throw TangledError.invalidRequest("invalid repository record key: \(value)")
     }
   }
 }
