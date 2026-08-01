@@ -8,6 +8,97 @@ import Testing
 #endif
 
 @Suite struct KnotClientTests {
+  @Test func collaboratorAPIsUseKnotCapabilityAndAuthenticatedProcedures() async throws {
+    let versionTransport = KnotTransport(
+      statusCode: 200,
+      body: Data(#"{"version":"1.16.0","capabilities":["knot-acl"]}"#.utf8)
+    )
+    let capabilities = try await KnotClient(transport: versionTransport).capabilities(
+      knot: "knot.example"
+    )
+    #expect(capabilities == ["knot-acl"])
+    #expect(
+      await versionTransport.request()?.url?.absoluteString
+        == "https://knot.example/xrpc/sh.tangled.knot.version"
+    )
+
+    let listTransport = KnotTransport(
+      statusCode: 200,
+      body: Data(
+        #"{"items":[{"subject":"did:plc:collaborator","addedBy":"did:plc:owner","createdAt":"2026-08-01T00:00:00Z"}],"cursor":"next"}"#.utf8
+      )
+    )
+    let page = try await KnotClient(transport: listTransport).collaborators(
+      knot: "knot.example",
+      repositoryDID: "did:plc:repository",
+      cursor: "previous",
+      limit: 25,
+      order: .ascending
+    )
+    #expect(page.items.first?.subjectDID == "did:plc:collaborator")
+    #expect(page.cursor == "next")
+    let listURL = try #require(await listTransport.request()?.url?.absoluteString)
+    #expect(listURL.contains("subject=did%3Aplc%3Arepository"))
+    #expect(listURL.contains("cursor=previous"))
+    #expect(listURL.contains("limit=25"))
+    #expect(listURL.contains("order=asc"))
+
+    let addTransport = KnotTransport(statusCode: 200, body: Data("{}".utf8))
+    try await KnotClient(transport: addTransport).addCollaborator(
+      knot: "knot.example",
+      token: "add-token",
+      repositoryDID: "did:plc:repository",
+      collaboratorDID: "did:plc:collaborator"
+    )
+    let addRequest = try #require(await addTransport.request())
+    #expect(addRequest.url?.absoluteString == "https://knot.example/xrpc/sh.tangled.repo.addCollaborator")
+    #expect(addRequest.value(forHTTPHeaderField: "Authorization") == "Bearer add-token")
+    let addInput = try JSONDecoder().decode(
+      Sh.Tangled.RepoAddCollaborator_Input.self,
+      from: try #require(addRequest.httpBody)
+    )
+    #expect(addInput.repo.rawValue == "did:plc:repository")
+    #expect(addInput.subject.rawValue == "did:plc:collaborator")
+
+    let removeTransport = KnotTransport(statusCode: 200, body: Data("{}".utf8))
+    try await KnotClient(transport: removeTransport).removeCollaborator(
+      knot: "knot.example",
+      token: "remove-token",
+      repositoryDID: "did:plc:repository",
+      collaboratorDID: "did:plc:collaborator"
+    )
+    let removeRequest = try #require(await removeTransport.request())
+    #expect(removeRequest.url?.absoluteString == "https://knot.example/xrpc/sh.tangled.repo.removeCollaborator")
+    #expect(removeRequest.value(forHTTPHeaderField: "Authorization") == "Bearer remove-token")
+  }
+
+  @Test func bobbinCollaboratorAPIsMapPagesAndCounts() async throws {
+    let listTransport = KnotTransport(
+      statusCode: 200,
+      body: Data(
+        #"{"items":[{"subject":"did:plc:collaborator","addedBy":"did:plc:owner","createdAt":"2026-08-01T00:00:00Z","uri":"at://did:plc:owner/sh.tangled.repo.collaborator/3abc"}],"cursor":"next"}"#.utf8
+      )
+    )
+    let page = try await BobbinClient(
+      baseURL: URL(string: "https://api.example")!,
+      transport: listTransport,
+      retryPolicy: .init(maxAttempts: 1)
+    ).collaborators(repositoryDID: "did:plc:repository", limit: 10)
+    #expect(page.items.first?.recordURI?.contains("collaborator") == true)
+    #expect(page.cursor == "next")
+
+    let countTransport = KnotTransport(
+      statusCode: 200,
+      body: Data(#"{"count":2,"distinctAuthors":1}"#.utf8)
+    )
+    let count = try await BobbinClient(
+      baseURL: URL(string: "https://api.example")!,
+      transport: countTransport,
+      retryPolicy: .init(maxAttempts: 1)
+    ).collaboratorCount(repositoryDID: "did:plc:repository")
+    #expect(count == CountSummary(count: 2, distinctAuthors: 1))
+  }
+
   @Test func repositoryLifecycleUsesAuthenticatedKnotProcedures() async throws {
     let createTransport = KnotTransport(
       statusCode: 200,

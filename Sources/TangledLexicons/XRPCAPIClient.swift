@@ -5878,6 +5878,86 @@ extension Sh.Tangled {
       try _unknownValues.encode(to: encoder)
     }
   }
+  /// Get the version of a knot
+  public enum KnotVersion: XRPCQuery {
+    public static let id = "sh.tangled.knot.version"
+    public typealias ResponseBody = Sh.Tangled.KnotVersion_Output
+    public struct Input: XRPCQueryInput {
+      public struct Query: XRPCInputQuery {
+
+        public init() {
+        }
+        public var asParameters: Parameters? {
+          nil
+        }
+      }
+      public var query: Input.Query
+    }
+    public indirect enum Error: XRPCError {
+      case unexpected(error: Swift.String?, message: Swift.String?)
+
+      public init(error: UnExpectedError) {
+        switch error.error {
+        default:
+          self = .unexpected(error: error.error, message: error.message)
+        }
+      }
+
+      public var error: Swift.String? {
+        switch self {
+        case .unexpected(let error, _):
+          return error
+        }
+      }
+
+      public var message: Swift.String? {
+        switch self {
+        case .unexpected(_, let message):
+          return message
+        }
+      }
+    }
+  }
+
+  public struct KnotVersion_Output: Codable, Hashable, Sendable {
+    /// Protocol capability tokens this knot implements, such as knot-acl. Knots that omit this field are treated as legacy.
+    public var capabilities: [Swift.String]?
+    public var version: Swift.String
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(capabilities: [Swift.String]? = nil, version: Swift.String) {
+      self.capabilities = capabilities
+      self.version = version
+      self._unknownValues = [:]
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case capabilities
+      case version
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      self.capabilities = try keyedContainer.decodeIfPresent([Swift.String].self, forKey: .capabilities)
+      self.version = try keyedContainer.decode(Swift.String.self, forKey: .version)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      self._unknownValues = _unknownValues
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encodeIfPresent(self.capabilities, forKey: .capabilities)
+      try container.encode(self.version, forKey: .version)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
   public enum LabelCountDefinitions: XRPCQuery {
     public static let id = "sh.tangled.label.countDefinitions"
     public typealias ResponseBody = Sh.Tangled.LabelCountDefinitions_Output
@@ -7102,6 +7182,78 @@ extension Sh.Tangled {
       try _unknownValues.encode(to: encoder)
     }
   }
+  /// Add a collaborator to a repository on this knot
+  public enum RepoAddCollaborator: XRPCProcedure {
+    public static let id = "sh.tangled.repo.addCollaborator"
+    public static let contentType = "application/json"
+    public typealias RequestBody = RepoAddCollaborator_Input
+    public typealias ResponseBody = EmptyResponse
+    public indirect enum Error: XRPCError {
+      case unexpected(error: Swift.String?, message: Swift.String?)
+
+      public init(error: UnExpectedError) {
+        switch error.error {
+        default:
+          self = .unexpected(error: error.error, message: error.message)
+        }
+      }
+
+      public var error: Swift.String? {
+        switch self {
+        case .unexpected(let error, _):
+          return error
+        }
+      }
+
+      public var message: Swift.String? {
+        switch self {
+        case .unexpected(_, let message):
+          return message
+        }
+      }
+    }
+  }
+
+  public struct RepoAddCollaborator_Input: Codable, Hashable, Sendable {
+    /// DID of the repository to add the collaborator to
+    public var repo: FormatString<DID>
+    /// DID of the collaborator to add
+    public var subject: FormatString<DID>
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(repo: FormatString<DID>, subject: FormatString<DID>) {
+      self.repo = repo
+      self.subject = subject
+      self._unknownValues = [:]
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case repo
+      case subject
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      self.repo = try keyedContainer.decode(FormatString<DID>.self, forKey: .repo)
+      self.subject = try keyedContainer.decode(FormatString<DID>.self, forKey: .subject)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      self._unknownValues = _unknownValues
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encode(self.repo, forKey: .repo)
+      try container.encode(self.subject, forKey: .subject)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
   public enum RepoArchive: XRPCQuery {
     public static let id = "sh.tangled.repo.archive"
     public typealias ResponseBody = Foundation.Data
@@ -7994,6 +8146,106 @@ extension Sh.Tangled {
   }
 
   public struct RepoCountArtifacts_Output: Codable, Hashable, Sendable {
+    /// Total number of matching records.
+    public var count: Swift.Int
+    /// Number of distinct authors among the matching records.
+    public var distinctAuthors: Swift.Int
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(count: Swift.Int, distinctAuthors: Swift.Int) {
+      self.count = count
+      self.distinctAuthors = distinctAuthors
+      self._unknownValues = [:]
+    }
+
+    public static func make(count: Swift.Int, distinctAuthors: Swift.Int) throws -> Self {
+      guard count >= 0 else {
+        throw LexiconConstraintError.integerBelowMinimum("count", minimum: 0)
+      }
+      guard distinctAuthors >= 0 else {
+        throw LexiconConstraintError.integerBelowMinimum("distinctAuthors", minimum: 0)
+      }
+      return Self.init(count: count, distinctAuthors: distinctAuthors)
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case count
+      case distinctAuthors
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      let count = try keyedContainer.decode(Swift.Int.self, forKey: .count)
+      let distinctAuthors = try keyedContainer.decode(Swift.Int.self, forKey: .distinctAuthors)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      if !LexiconDecodingMode.shouldValidateConstraints(in: decoder) {
+        self = Self.init(count: count, distinctAuthors: distinctAuthors)
+        return
+      }
+      do {
+        self = try Self.make(count: count, distinctAuthors: distinctAuthors)
+      } catch let error as LexiconConstraintError {
+        throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "\(error)", underlyingError: error))
+      }
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encode(self.count, forKey: .count)
+      try container.encode(self.distinctAuthors, forKey: .distinctAuthors)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
+  public enum RepoCountCollaborators: XRPCQuery {
+    public static let id = "sh.tangled.repo.countCollaborators"
+    public typealias ResponseBody = Sh.Tangled.RepoCountCollaborators_Output
+    public struct Input: XRPCQueryInput {
+      public struct Query: XRPCInputQuery {
+        public var subject: FormatString<DID>
+
+        public init(subject: FormatString<DID>) {
+          self.subject = subject
+        }
+        public var asParameters: Parameters? {
+          ["subject": .string(subject.rawValue)]
+        }
+      }
+      public var query: Input.Query
+    }
+    public indirect enum Error: XRPCError {
+      case unexpected(error: Swift.String?, message: Swift.String?)
+
+      public init(error: UnExpectedError) {
+        switch error.error {
+        default:
+          self = .unexpected(error: error.error, message: error.message)
+        }
+      }
+
+      public var error: Swift.String? {
+        switch self {
+        case .unexpected(let error, _):
+          return error
+        }
+      }
+
+      public var message: Swift.String? {
+        switch self {
+        case .unexpected(_, let message):
+          return message
+        }
+      }
+    }
+  }
+
+  public struct RepoCountCollaborators_Output: Codable, Hashable, Sendable {
     /// Total number of matching records.
     public var count: Swift.Int
     /// Number of distinct authors among the matching records.
@@ -10362,6 +10614,201 @@ extension Sh.Tangled {
       try _unknownValues.encode(to: encoder)
     }
   }
+  public enum RepoListCollaborators: XRPCQuery {
+    public static let id = "sh.tangled.repo.listCollaborators"
+    public typealias ResponseBody = Sh.Tangled.RepoListCollaborators_Output
+    public struct Input: XRPCQueryInput {
+      public struct Query: XRPCInputQuery {
+        public var cursor: Swift.String?
+        public var limit: Swift.Int?
+        public var order: Sh.Tangled.RepoListCollaborators_Order?
+        public var subject: FormatString<DID>
+
+        public init(cursor: Swift.String? = nil, limit: Swift.Int? = nil, order: Sh.Tangled.RepoListCollaborators_Order? = nil, subject: FormatString<DID>) {
+          self.cursor = cursor
+          self.limit = limit
+          self.order = order
+          self.subject = subject
+        }
+
+        public static func make(cursor: Swift.String? = nil, limit: Swift.Int? = nil, order: Sh.Tangled.RepoListCollaborators_Order? = nil, subject: FormatString<DID>) throws -> Self {
+          if let limit {
+            guard limit >= 1 else {
+              throw LexiconConstraintError.integerBelowMinimum("limit", minimum: 1)
+            }
+            guard limit <= 1000 else {
+              throw LexiconConstraintError.integerAboveMaximum("limit", maximum: 1000)
+            }
+          }
+          return Self.init(cursor: cursor, limit: limit, order: order, subject: subject)
+        }
+        public var asParameters: Parameters? {
+          ["cursor": .string(cursor), "limit": .integer(limit), "order": .string(order?.rawValue), "subject": .string(subject.rawValue)]
+        }
+      }
+      public var query: Input.Query
+    }
+    public indirect enum Error: XRPCError {
+      case unexpected(error: Swift.String?, message: Swift.String?)
+
+      public init(error: UnExpectedError) {
+        switch error.error {
+        default:
+          self = .unexpected(error: error.error, message: error.message)
+        }
+      }
+
+      public var error: Swift.String? {
+        switch self {
+        case .unexpected(let error, _):
+          return error
+        }
+      }
+
+      public var message: Swift.String? {
+        switch self {
+        case .unexpected(_, let message):
+          return message
+        }
+      }
+    }
+  }
+
+  public struct RepoListCollaborators_ListItem: Codable, Hashable, Sendable {
+    /// DID that added this collaborator
+    public var addedBy: FormatString<DID>
+    /// Optional record CID for record-backed indexers
+    public var cid: FormatString<LexLink>?
+    /// When the collaborator was added
+    public var createdAt: FormatString<Date>
+    /// DID of the collaborator
+    public var subject: FormatString<DID>
+    /// Optional record AT-URI for record-backed indexers
+    public var uri: FormatString<ATURI>?
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(addedBy: FormatString<DID>, cid: FormatString<LexLink>? = nil, createdAt: FormatString<Date>, subject: FormatString<DID>, uri: FormatString<ATURI>? = nil) {
+      self.addedBy = addedBy
+      self.cid = cid
+      self.createdAt = createdAt
+      self.subject = subject
+      self.uri = uri
+      self._unknownValues = [:]
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case addedBy
+      case cid
+      case createdAt
+      case subject
+      case uri
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      self.addedBy = try keyedContainer.decode(FormatString<DID>.self, forKey: .addedBy)
+      self.cid = try keyedContainer.decodeIfPresent(FormatString<LexLink>.self, forKey: .cid)
+      self.createdAt = try keyedContainer.decode(FormatString<Date>.self, forKey: .createdAt)
+      self.subject = try keyedContainer.decode(FormatString<DID>.self, forKey: .subject)
+      self.uri = try keyedContainer.decodeIfPresent(FormatString<ATURI>.self, forKey: .uri)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      self._unknownValues = _unknownValues
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encode(self.addedBy, forKey: .addedBy)
+      try container.encodeIfPresent(self.cid, forKey: .cid)
+      try container.encode(self.createdAt, forKey: .createdAt)
+      try container.encode(self.subject, forKey: .subject)
+      try container.encodeIfPresent(self.uri, forKey: .uri)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
+
+  /// Sort direction by createdAt.
+  public indirect enum RepoListCollaborators_Order: RawRepresentable, Codable, Hashable, Sendable {
+    case asc
+    case desc
+    case _other(Swift.String)
+
+    public init(rawValue: Swift.String) {
+      switch rawValue {
+      case "asc":
+        self = .asc
+      case "desc":
+        self = .desc
+      default:
+        self = ._other(rawValue)
+      }
+    }
+
+    public var rawValue: Swift.String {
+      switch self {
+      case .asc:
+        "asc"
+      case .desc:
+        "desc"
+      case ._other(let value):
+        value
+      }
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let rawValue = try Swift.String(from: decoder)
+      self = Self(rawValue: rawValue)
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      try rawValue.encode(to: encoder)
+    }
+  }
+
+  public struct RepoListCollaborators_Output: Codable, Hashable, Sendable {
+    public var cursor: Swift.String?
+    public var items: [RepoListCollaborators_ListItem]
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(cursor: Swift.String? = nil, items: [RepoListCollaborators_ListItem]) {
+      self.cursor = cursor
+      self.items = items
+      self._unknownValues = [:]
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case cursor
+      case items
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      self.cursor = try keyedContainer.decodeIfPresent(Swift.String.self, forKey: .cursor)
+      self.items = try keyedContainer.decode([RepoListCollaborators_ListItem].self, forKey: .items)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      self._unknownValues = _unknownValues
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encodeIfPresent(self.cursor, forKey: .cursor)
+      try container.encode(self.items, forKey: .items)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
   public enum RepoListIssues: XRPCQuery {
     public static let id = "sh.tangled.repo.listIssues"
     public typealias ResponseBody = Sh.Tangled.RepoListIssues_Output
@@ -12284,6 +12731,78 @@ extension Sh.Tangled {
       try _unknownValues.encode(to: encoder)
     }
   }
+  /// Remove a collaborator from a repository on this knot
+  public enum RepoRemoveCollaborator: XRPCProcedure {
+    public static let id = "sh.tangled.repo.removeCollaborator"
+    public static let contentType = "application/json"
+    public typealias RequestBody = RepoRemoveCollaborator_Input
+    public typealias ResponseBody = EmptyResponse
+    public indirect enum Error: XRPCError {
+      case unexpected(error: Swift.String?, message: Swift.String?)
+
+      public init(error: UnExpectedError) {
+        switch error.error {
+        default:
+          self = .unexpected(error: error.error, message: error.message)
+        }
+      }
+
+      public var error: Swift.String? {
+        switch self {
+        case .unexpected(let error, _):
+          return error
+        }
+      }
+
+      public var message: Swift.String? {
+        switch self {
+        case .unexpected(_, let message):
+          return message
+        }
+      }
+    }
+  }
+
+  public struct RepoRemoveCollaborator_Input: Codable, Hashable, Sendable {
+    /// DID of the repository to remove the collaborator from
+    public var repo: FormatString<DID>
+    /// DID of the collaborator to remove
+    public var subject: FormatString<DID>
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(repo: FormatString<DID>, subject: FormatString<DID>) {
+      self.repo = repo
+      self.subject = subject
+      self._unknownValues = [:]
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case repo
+      case subject
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      self.repo = try keyedContainer.decode(FormatString<DID>.self, forKey: .repo)
+      self.subject = try keyedContainer.decode(FormatString<DID>.self, forKey: .subject)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      self._unknownValues = _unknownValues
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encode(self.repo, forKey: .repo)
+      try container.encode(self.subject, forKey: .subject)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
   public enum RepoTag: XRPCQuery {
     public static let id = "sh.tangled.repo.tag"
     public typealias ResponseBody = Foundation.Data
@@ -14184,18 +14703,23 @@ public protocol XRPCCallable: _XRPCCallable {
   func GraphCountFollowsBy(subject: FormatString<DID>) async throws -> Sh.Tangled.GraphCountFollowsBy.ResponseBody
   func GraphListFollows(cursor: Swift.String?, limit: Swift.Int?, order: Sh.Tangled.GraphListFollows_Order?, subject: FormatString<DID>) async throws -> Sh.Tangled.GraphListFollows.ResponseBody
   func GraphListFollowsBy(cursor: Swift.String?, limit: Swift.Int?, order: Sh.Tangled.GraphListFollowsBy_Order?, subject: FormatString<DID>) async throws -> Sh.Tangled.GraphListFollowsBy.ResponseBody
+  /// Get the version of a knot
+  func KnotVersion() async throws -> Sh.Tangled.KnotVersion.ResponseBody
   func LabelCountDefinitions(subject: Swift.String) async throws -> Sh.Tangled.LabelCountDefinitions.ResponseBody
   func LabelCountOps(subject: Swift.String) async throws -> Sh.Tangled.LabelCountOps.ResponseBody
   func LabelCountOpsBy(subject: FormatString<DID>) async throws -> Sh.Tangled.LabelCountOpsBy.ResponseBody
   func LabelListDefinitions(cursor: Swift.String?, limit: Swift.Int?, order: Sh.Tangled.LabelListDefinitions_Order?, subject: Swift.String) async throws -> Sh.Tangled.LabelListDefinitions.ResponseBody
   func LabelListOps(cursor: Swift.String?, limit: Swift.Int?, order: Sh.Tangled.LabelListOps_Order?, subject: Swift.String) async throws -> Sh.Tangled.LabelListOps.ResponseBody
   func LabelListOpsBy(cursor: Swift.String?, limit: Swift.Int?, order: Sh.Tangled.LabelListOpsBy_Order?, subject: FormatString<DID>) async throws -> Sh.Tangled.LabelListOpsBy.ResponseBody
+  /// Add a collaborator to a repository on this knot
+  func RepoAddCollaborator(input: Sh.Tangled.RepoAddCollaborator_Input) async throws -> Sh.Tangled.RepoAddCollaborator.ResponseBody
   func RepoArchive(format: Sh.Tangled.RepoArchive_Format?, prefix: Swift.String?, ref: Swift.String, repo: Swift.String) async throws -> Sh.Tangled.RepoArchive.ResponseBody
   func RepoBlob(path: Swift.String, raw: Swift.Bool?, ref: Swift.String, repo: FormatString<DID>) async throws -> Sh.Tangled.RepoBlob.ResponseBody
   func RepoBranch(name: Swift.String, repo: Swift.String) async throws -> Sh.Tangled.RepoBranch.ResponseBody
   func RepoBranches(cursor: Swift.String?, limit: Swift.Int?, repo: Swift.String) async throws -> Sh.Tangled.RepoBranches.ResponseBody
   func RepoCompare(repo: Swift.String, rev1: Swift.String, rev2: Swift.String) async throws -> Sh.Tangled.RepoCompare.ResponseBody
   func RepoCountArtifacts(subject: Swift.String) async throws -> Sh.Tangled.RepoCountArtifacts.ResponseBody
+  func RepoCountCollaborators(subject: FormatString<DID>) async throws -> Sh.Tangled.RepoCountCollaborators.ResponseBody
   func RepoCountIssues(subject: FormatString<DID>) async throws -> Sh.Tangled.RepoCountIssues.ResponseBody
   func RepoCountIssuesBy(subject: FormatString<DID>) async throws -> Sh.Tangled.RepoCountIssuesBy.ResponseBody
   func RepoCountPulls(subject: FormatString<DID>) async throws -> Sh.Tangled.RepoCountPulls.ResponseBody
@@ -14220,6 +14744,7 @@ public protocol XRPCCallable: _XRPCCallable {
   func RepoHiddenRef(input: Sh.Tangled.RepoHiddenRef_Input) async throws -> Sh.Tangled.RepoHiddenRef.ResponseBody
   func RepoLanguages(ref: Swift.String?, repo: Swift.String) async throws -> Sh.Tangled.RepoLanguages.ResponseBody
   func RepoListArtifacts(cursor: Swift.String?, limit: Swift.Int?, order: Sh.Tangled.RepoListArtifacts_Order?, subject: Swift.String) async throws -> Sh.Tangled.RepoListArtifacts.ResponseBody
+  func RepoListCollaborators(cursor: Swift.String?, limit: Swift.Int?, order: Sh.Tangled.RepoListCollaborators_Order?, subject: FormatString<DID>) async throws -> Sh.Tangled.RepoListCollaborators.ResponseBody
   func RepoListIssues(author: FormatString<DID>?, cursor: Swift.String?, limit: Swift.Int?, order: Sh.Tangled.RepoListIssues_Order?, state: Sh.Tangled.RepoListIssues_State?, subject: FormatString<DID>) async throws -> Sh.Tangled.RepoListIssues.ResponseBody
   func RepoListIssuesBy(cursor: Swift.String?, limit: Swift.Int?, order: Sh.Tangled.RepoListIssuesBy_Order?, state: Sh.Tangled.RepoListIssuesBy_State?, subject: FormatString<DID>) async throws -> Sh.Tangled.RepoListIssuesBy.ResponseBody
   func RepoListPulls(author: FormatString<DID>?, cursor: Swift.String?, limit: Swift.Int?, order: Sh.Tangled.RepoListPulls_Order?, status: Sh.Tangled.RepoListPulls_Status?, subject: FormatString<DID>) async throws -> Sh.Tangled.RepoListPulls.ResponseBody
@@ -14230,6 +14755,8 @@ public protocol XRPCCallable: _XRPCCallable {
   func RepoMerge(input: Sh.Tangled.RepoMerge_Input) async throws -> Sh.Tangled.RepoMerge.ResponseBody
   /// Check if a merge is possible between two branches
   func RepoMergeCheck(input: Sh.Tangled.RepoMergeCheck_Input) async throws -> Sh.Tangled.RepoMergeCheck.ResponseBody
+  /// Remove a collaborator from a repository on this knot
+  func RepoRemoveCollaborator(input: Sh.Tangled.RepoRemoveCollaborator_Input) async throws -> Sh.Tangled.RepoRemoveCollaborator.ResponseBody
   func RepoTag(repo: Swift.String, tag: Swift.String) async throws -> Sh.Tangled.RepoTag.ResponseBody
   func RepoTags(cursor: Swift.String?, limit: Swift.Int?, repo: Swift.String) async throws -> Sh.Tangled.RepoTags.ResponseBody
   func RepoTree(path: Swift.String?, ref: Swift.String, repo: Swift.String) async throws -> Sh.Tangled.RepoTree.ResponseBody
@@ -14358,6 +14885,10 @@ extension XRPCCallable {
   public func GraphListFollowsBy(cursor: Swift.String? = nil, limit: Swift.Int? = nil, order: Sh.Tangled.GraphListFollowsBy_Order? = nil, subject: FormatString<DID>) async throws -> Sh.Tangled.GraphListFollowsBy.ResponseBody {
     try await call(Sh.Tangled.GraphListFollowsBy.self, input: .init(cursor: cursor, limit: limit, order: order, subject: subject))
   }
+  /// Get the version of a knot
+  public func KnotVersion() async throws -> Sh.Tangled.KnotVersion.ResponseBody {
+    try await call(Sh.Tangled.KnotVersion.self, input: .init())
+  }
   public func LabelCountDefinitions(subject: Swift.String) async throws -> Sh.Tangled.LabelCountDefinitions.ResponseBody {
     try await call(Sh.Tangled.LabelCountDefinitions.self, input: .init(subject: subject))
   }
@@ -14376,6 +14907,10 @@ extension XRPCCallable {
   public func LabelListOpsBy(cursor: Swift.String? = nil, limit: Swift.Int? = nil, order: Sh.Tangled.LabelListOpsBy_Order? = nil, subject: FormatString<DID>) async throws -> Sh.Tangled.LabelListOpsBy.ResponseBody {
     try await call(Sh.Tangled.LabelListOpsBy.self, input: .init(cursor: cursor, limit: limit, order: order, subject: subject))
   }
+  /// Add a collaborator to a repository on this knot
+  public func RepoAddCollaborator(input: Sh.Tangled.RepoAddCollaborator_Input) async throws -> Sh.Tangled.RepoAddCollaborator.ResponseBody {
+    try await call(Sh.Tangled.RepoAddCollaborator.self, input: input)
+  }
   public func RepoArchive(format: Sh.Tangled.RepoArchive_Format? = nil, prefix: Swift.String? = nil, ref: Swift.String, repo: Swift.String) async throws -> Sh.Tangled.RepoArchive.ResponseBody {
     try await call(Sh.Tangled.RepoArchive.self, input: .init(format: format, prefix: prefix, ref: ref, repo: repo))
   }
@@ -14393,6 +14928,9 @@ extension XRPCCallable {
   }
   public func RepoCountArtifacts(subject: Swift.String) async throws -> Sh.Tangled.RepoCountArtifacts.ResponseBody {
     try await call(Sh.Tangled.RepoCountArtifacts.self, input: .init(subject: subject))
+  }
+  public func RepoCountCollaborators(subject: FormatString<DID>) async throws -> Sh.Tangled.RepoCountCollaborators.ResponseBody {
+    try await call(Sh.Tangled.RepoCountCollaborators.self, input: .init(subject: subject))
   }
   public func RepoCountIssues(subject: FormatString<DID>) async throws -> Sh.Tangled.RepoCountIssues.ResponseBody {
     try await call(Sh.Tangled.RepoCountIssues.self, input: .init(subject: subject))
@@ -14458,6 +14996,9 @@ extension XRPCCallable {
   public func RepoListArtifacts(cursor: Swift.String? = nil, limit: Swift.Int? = nil, order: Sh.Tangled.RepoListArtifacts_Order? = nil, subject: Swift.String) async throws -> Sh.Tangled.RepoListArtifacts.ResponseBody {
     try await call(Sh.Tangled.RepoListArtifacts.self, input: .init(cursor: cursor, limit: limit, order: order, subject: subject))
   }
+  public func RepoListCollaborators(cursor: Swift.String? = nil, limit: Swift.Int? = nil, order: Sh.Tangled.RepoListCollaborators_Order? = nil, subject: FormatString<DID>) async throws -> Sh.Tangled.RepoListCollaborators.ResponseBody {
+    try await call(Sh.Tangled.RepoListCollaborators.self, input: .init(cursor: cursor, limit: limit, order: order, subject: subject))
+  }
   public func RepoListIssues(author: FormatString<DID>? = nil, cursor: Swift.String? = nil, limit: Swift.Int? = nil, order: Sh.Tangled.RepoListIssues_Order? = nil, state: Sh.Tangled.RepoListIssues_State? = nil, subject: FormatString<DID>) async throws -> Sh.Tangled.RepoListIssues.ResponseBody {
     try await call(Sh.Tangled.RepoListIssues.self, input: .init(author: author, cursor: cursor, limit: limit, order: order, state: state, subject: subject))
   }
@@ -14483,6 +15024,10 @@ extension XRPCCallable {
   /// Check if a merge is possible between two branches
   public func RepoMergeCheck(input: Sh.Tangled.RepoMergeCheck_Input) async throws -> Sh.Tangled.RepoMergeCheck.ResponseBody {
     try await call(Sh.Tangled.RepoMergeCheck.self, input: input)
+  }
+  /// Remove a collaborator from a repository on this knot
+  public func RepoRemoveCollaborator(input: Sh.Tangled.RepoRemoveCollaborator_Input) async throws -> Sh.Tangled.RepoRemoveCollaborator.ResponseBody {
+    try await call(Sh.Tangled.RepoRemoveCollaborator.self, input: input)
   }
   public func RepoTag(repo: Swift.String, tag: Swift.String) async throws -> Sh.Tangled.RepoTag.ResponseBody {
     try await call(Sh.Tangled.RepoTag.self, input: .init(repo: repo, tag: tag))

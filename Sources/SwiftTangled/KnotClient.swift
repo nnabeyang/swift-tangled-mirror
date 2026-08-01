@@ -53,6 +53,74 @@ public struct KnotClient: Sendable {
     )
   }
 
+  public func capabilities(knot: String) async throws -> Set<String> {
+    let output = try await client(knot: knot).KnotVersion()
+    return Set(output.capabilities ?? [])
+  }
+
+  public func collaborators(
+    knot: String,
+    repositoryDID: String,
+    cursor: String? = nil,
+    limit: Int? = nil,
+    order: BobbinSortOrder = .descending
+  ) async throws -> Page<RepositoryCollaborator> {
+    let repositoryDID = try validDID(repositoryDID, name: "repository DID")
+    if let limit, !(1 ... 1_000).contains(limit) {
+      throw TangledError.invalidRequest("limit must be between 1 and 1000")
+    }
+    let output = try await client(knot: knot).RepoListCollaborators(
+      cursor: cursor,
+      limit: limit,
+      order: Sh.Tangled.RepoListCollaborators_Order(rawValue: order.rawValue),
+      subject: FormatString(repositoryDID)
+    )
+    return Page(
+      items: output.items.map {
+        RepositoryCollaborator(
+          subjectDID: $0.subject.rawValue,
+          addedByDID: $0.addedBy.rawValue,
+          createdAt: $0.createdAt,
+          recordURI: $0.uri?.rawValue,
+          recordCID: $0.cid?.rawValue
+        )
+      },
+      cursor: output.cursor
+    )
+  }
+
+  public func addCollaborator(
+    knot: String,
+    token: String,
+    repositoryDID: String,
+    collaboratorDID: String
+  ) async throws {
+    let repositoryDID = try validDID(repositoryDID, name: "repository DID")
+    let collaboratorDID = try validDID(collaboratorDID, name: "collaborator DID")
+    _ = try await client(knot: knot, token: token).RepoAddCollaborator(
+      input: Sh.Tangled.RepoAddCollaborator_Input(
+        repo: FormatString(repositoryDID),
+        subject: FormatString(collaboratorDID)
+      )
+    )
+  }
+
+  public func removeCollaborator(
+    knot: String,
+    token: String,
+    repositoryDID: String,
+    collaboratorDID: String
+  ) async throws {
+    let repositoryDID = try validDID(repositoryDID, name: "repository DID")
+    let collaboratorDID = try validDID(collaboratorDID, name: "collaborator DID")
+    _ = try await client(knot: knot, token: token).RepoRemoveCollaborator(
+      input: Sh.Tangled.RepoRemoveCollaborator_Input(
+        repo: FormatString(repositoryDID),
+        subject: FormatString(collaboratorDID)
+      )
+    )
+  }
+
   public func mergeCheck(
     knot: String,
     ownerDID: String,
@@ -216,5 +284,13 @@ extension KnotClient {
       throw TangledError.invalidRequest("\(name) must not be empty")
     }
     return value
+  }
+
+  private func validDID(_ value: String, name: String) throws -> DID {
+    do {
+      return try DID(string: value)
+    } catch {
+      throw TangledError.invalidRequest("\(name) must be a valid DID")
+    }
   }
 }
