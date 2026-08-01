@@ -77,13 +77,6 @@ let package = Package(
       path: "Tools/ManualSiteGenerator"
     ),
     .testTarget(
-      name: "TangledLexiconsTests",
-      dependencies: ["TangledLexicons"],
-      swiftSettings: [
-        .enableUpcomingFeature("ApproachableConcurrency")
-      ]
-    ),
-    .testTarget(
       name: "SwiftTangledTests",
       dependencies: [
         "CZlib",
