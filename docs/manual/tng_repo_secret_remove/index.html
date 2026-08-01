@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Delete a repository record and its Knot Git repository">
-  <title>tng repo delete manual · tng CLI</title>
+  <meta name="description" content="Remove a CI secret from a repository">
+  <title>tng repo secret remove manual · tng CLI</title>
   <link rel="stylesheet" href="../../assets/manual.css">
   <script src="../../assets/manual.js" defer></script>
 </head>
@@ -51,7 +51,7 @@
   </li>  <li data-command-item data-search="tng repo create create a tangled repository">
     <a href="../../manual/tng_repo_create/">tng repo create</a>
   </li>  <li data-command-item data-search="tng repo delete delete a repository record and its knot git repository">
-    <a href="../../manual/tng_repo_delete/" aria-current="page">tng repo delete</a>
+    <a href="../../manual/tng_repo_delete/">tng repo delete</a>
   </li>  <li data-command-item data-search="tng repo languages show language statistics for a repository">
     <a href="../../manual/tng_repo_languages/">tng repo languages</a>
   </li>  <li data-command-item data-search="tng repo list list repositories owned by a did or handle">
@@ -83,7 +83,7 @@
   </li>  <li data-command-item data-search="tng repo secret list list repository ci secret metadata from its spindle">
     <a href="../../manual/tng_repo_secret_list/">tng repo secret list</a>
   </li>  <li data-command-item data-search="tng repo secret remove remove a ci secret from a repository">
-    <a href="../../manual/tng_repo_secret_remove/">tng repo secret remove</a>
+    <a href="../../manual/tng_repo_secret_remove/" aria-current="page">tng repo secret remove</a>
   </li>  <li data-command-item data-search="tng repo tag list list tags in a repository">
     <a href="../../manual/tng_repo_tag_list/">tng repo tag list</a>
   </li>      </ul>
@@ -204,11 +204,11 @@
   </nav>
     <main id="content" tabindex="-1">
         <nav class="breadcrumbs" aria-label="Breadcrumb">
-    <a href="../tng/">tng</a><span aria-hidden="true">/</span><a href="../tng_repo/">repo</a><span aria-hidden="true">/</span><span aria-current="page">delete</span>
-  </nav><h1><code>tng repo delete</code></h1><p class="lead">Delete a repository record and its Knot Git repository</p>  <section>
+    <a href="../tng/">tng</a><span aria-hidden="true">/</span><a href="../tng_repo/">repo</a><span aria-hidden="true">/</span><a href="../tng_repo_secret/">secret</a><span aria-hidden="true">/</span><span aria-current="page">remove</span>
+  </nav><h1><code>tng repo secret remove</code></h1><p class="lead">Remove a CI secret from a repository</p>  <section>
     <h2>Usage</h2>
-    <pre class="usage"><code>tng repo delete &lt;repository&gt; [--yes] [--json] [--version] [--help]</code></pre>
-  </section><section><h2>Arguments</h2><dl class="arguments"><div><dt><code>&lt;repository&gt;</code></dt><dd><p>Repository AT URI, repo DID, handle/name, or clone URL</p></dd></div></dl></section><section><h2>Options</h2><dl class="arguments"><div><dt><code>--yes</code></dt><dd><p>Delete without an interactive confirmation</p></dd></div><div><dt><code>--json</code></dt><dd><p>Output a versioned repository deletion result as JSON</p></dd></div><div><dt><code>--version</code></dt><dd><p>Show the version.</p></dd></div><div><dt><code>-h, --help</code></dt><dd><p>Show help information.</p></dd></div></dl></section>  <p class="root-reference">
+    <pre class="usage"><code>tng repo secret remove &lt;repository&gt; &lt;key&gt; [--spindle &lt;spindle&gt;] [--yes] [--json] [--version] [--help]</code></pre>
+  </section><section><h2>Arguments</h2><dl class="arguments"><div><dt><code>&lt;repository&gt;</code></dt><dd><p>Repository AT URI, repo DID, handle/name, or clone URL</p></dd></div><div><dt><code>&lt;key&gt;</code></dt><dd><p>Secret key</p></dd></div></dl></section><section><h2>Options</h2><dl class="arguments"><div><dt><code>--spindle &lt;spindle&gt;</code></dt><dd><p>Spindle hostname or URL; overrides repository discovery</p></dd></div><div><dt><code>--yes</code></dt><dd><p>Remove without an interactive confirmation</p></dd></div><div><dt><code>--json</code></dt><dd><p>Output a versioned secret mutation result as JSON</p></dd></div><div><dt><code>--version</code></dt><dd><p>Show the version.</p></dd></div><div><dt><code>-h, --help</code></dt><dd><p>Show help information.</p></dd></div></dl></section>  <p class="root-reference">
     See also <a href="../tng/"><code>tng</code></a>.
   </p>
       <footer>

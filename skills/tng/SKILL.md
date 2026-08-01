@@ -1,6 +1,6 @@
 ---
 name: tng
-description: Use the tng CLI to inspect Tangled repositories, issues, pull requests, rounds, comments, artifacts, and Spindle pipelines, or to perform authenticated Tangled writes. Use for Tangled development workflows where an agent needs structured JSON, pagination, authentication-aware writes, or a clear boundary between Git operations and Tangled operations.
+description: Use the tng CLI to inspect Tangled repositories, issues, pull requests, rounds, comments, artifacts, Spindle pipelines, and repository CI secret metadata, or to perform authenticated Tangled writes. Use for Tangled development workflows where an agent needs structured JSON, pagination, authentication-aware writes, or a clear boundary between Git operations and Tangled operations.
 ---
 
 # Use Tangled through `tng`
@@ -55,6 +55,12 @@ handling pagination and failures.
   removal, or use `--yes` only after reviewing that target. Do not fall back to
   legacy PDS collaborator records when the Knot lacks `knot-acl`, and do not
   automatically retry an `outcome_unknown` mutation.
+- Manage repository CI secrets through the repository's current Spindle or an
+  explicitly selected Spindle. Never pass a secret value as an argument or
+  expose it in output, JSON, logs, errors, or test diagnostics. Supply values
+  through hidden terminal input or standard input. Before removal, verify the
+  repository, Spindle, and key; use `--yes` only after reviewing that target.
+  Do not automatically retry an `outcome_unknown` secret mutation.
 - Perform `pipeline retry`, `pipeline run`, or `pipeline cancel` only when the
   user authorizes the write. For retry or cancel, inspect the original pipeline
   and verify the repository and selected workflows first. For run, verify the

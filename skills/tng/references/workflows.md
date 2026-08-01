@@ -83,6 +83,30 @@ inspect the Knot state and do not automatically repeat the mutation. Bobbin's
 `sh.tangled.repo.listCollaborators` and `countCollaborators` queries are indexed
 views and may lag the authoritative Knot response.
 
+## Manage repository CI secrets
+
+List secret metadata from the repository's current Spindle. The repository may
+be an owner/name, Tangled or clone URL, repository AT URI, or repository DID.
+When omitted from `list`, the current Git origin is used. Use `--spindle` to
+override repository discovery.
+
+```sh
+tng repo secret list OWNER/REPOSITORY --json
+tng repo secret add OWNER/REPOSITORY SECRET_KEY --json
+tng repo secret remove OWNER/REPOSITORY SECRET_KEY --yes --json
+```
+
+The list response contains only keys and public creation metadata. Secret
+values are accepted only through hidden terminal input or standard input;
+never place one in a command argument, output, JSON, log, error, or test
+diagnostic. Verify the resolved repository, Spindle, and key before adding or
+removing. Removal prompts only when the key is currently present, and
+noninteractive removal requires `--yes`.
+
+Outcomes `added`, `already_present`, `removed`, `not_present`, and `cancelled`
+describe established state. An `outcome_unknown` result exits with status 3;
+inspect the Spindle state and do not automatically repeat the mutation.
+
 ## Create an issue
 
 Verify the target repository, title, and complete body before writing. Prefer a
