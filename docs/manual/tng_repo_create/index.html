@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Watch live Tangled events from Jetstream">
-  <title>tng events watch manual · tng CLI</title>
+  <meta name="description" content="Create a Tangled repository">
+  <title>tng repo create manual · tng CLI</title>
   <link rel="stylesheet" href="../../assets/manual.css">
   <script src="../../assets/manual.js" defer></script>
 </head>
@@ -47,7 +47,7 @@
   </li>  <li data-command-item data-search="tng repo branch work with repository branches">
     <a href="../../manual/tng_repo_branch/">tng repo branch</a>
   </li>  <li data-command-item data-search="tng repo create create a tangled repository">
-    <a href="../../manual/tng_repo_create/">tng repo create</a>
+    <a href="../../manual/tng_repo_create/" aria-current="page">tng repo create</a>
   </li>  <li data-command-item data-search="tng repo delete delete a repository record and its knot git repository">
     <a href="../../manual/tng_repo_delete/">tng repo delete</a>
   </li>  <li data-command-item data-search="tng repo languages show language statistics for a repository">
@@ -156,7 +156,7 @@
       <ul>  <li data-command-item data-search="tng events watch live tangled events">
     <a href="../../manual/tng_events/">tng events</a>
   </li>  <li data-command-item data-search="tng events watch watch live tangled events from jetstream">
-    <a href="../../manual/tng_events_watch/" aria-current="page">tng events watch</a>
+    <a href="../../manual/tng_events_watch/">tng events watch</a>
   </li>      </ul>
     </li>    <li class="command-group" data-command-group>
       <span>tng search</span>
@@ -188,11 +188,11 @@
   </nav>
     <main id="content" tabindex="-1">
         <nav class="breadcrumbs" aria-label="Breadcrumb">
-    <a href="../tng/">tng</a><span aria-hidden="true">/</span><a href="../tng_events/">events</a><span aria-hidden="true">/</span><span aria-current="page">watch</span>
-  </nav><h1><code>tng events watch</code></h1><p class="lead">Watch live Tangled events from Jetstream</p>  <section>
+    <a href="../tng/">tng</a><span aria-hidden="true">/</span><a href="../tng_repo/">repo</a><span aria-hidden="true">/</span><span aria-current="page">create</span>
+  </nav><h1><code>tng repo create</code></h1><p class="lead">Create a Tangled repository</p>  <section>
     <h2>Usage</h2>
-    <pre class="usage"><code>tng events watch [--collection &lt;collection&gt;...] [--did &lt;did&gt;...] [--cursor &lt;cursor&gt;] [--json] [--version] [--help]</code></pre>
-  </section><section><h2>Options</h2><dl class="arguments"><div><dt><code>--collection &lt;collection&gt;</code></dt><dd><p>Only include this collection; repeat for multiple collections</p><p class="argument-metadata">Repeatable</p></dd></div><div><dt><code>--did &lt;did&gt;</code></dt><dd><p>Only include records created by this DID; repeat for multiple DIDs</p><p class="argument-metadata">Repeatable</p></dd></div><div><dt><code>--cursor &lt;cursor&gt;</code></dt><dd><p>Resume from this Jetstream microsecond cursor</p></dd></div><div><dt><code>--json</code></dt><dd><p>Output one compact JSON object per event</p></dd></div><div><dt><code>--version</code></dt><dd><p>Show the version.</p></dd></div><div><dt><code>-h, --help</code></dt><dd><p>Show help information.</p></dd></div></dl></section>  <p class="root-reference">
+    <pre class="usage"><code>tng repo create &lt;name&gt; --knot &lt;knot&gt; [--default-branch &lt;default-branch&gt;] [--source &lt;source&gt;] [--repo-did &lt;repo-did&gt;] [--json] [--version] [--help]</code></pre>
+  </section><section><h2>Arguments</h2><dl class="arguments"><div><dt><code>&lt;name&gt;</code></dt><dd><p>Repository name</p></dd></div></dl></section><section><h2>Options</h2><dl class="arguments"><div><dt><code>--knot &lt;knot&gt;</code></dt><dd><p>Knot host or HTTPS endpoint</p></dd></div><div><dt><code>--default-branch &lt;default-branch&gt;</code></dt><dd><p>Default Git branch</p><p class="argument-metadata">Default: <code>main</code></p></dd></div><div><dt><code>--source &lt;source&gt;</code></dt><dd><p>Git clone URL to import or fork</p></dd></div><div><dt><code>--repo-did &lt;repo-did&gt;</code></dt><dd><p>Custom did:web repository DID</p></dd></div><div><dt><code>--json</code></dt><dd><p>Output a versioned repository creation result as JSON</p></dd></div><div><dt><code>--version</code></dt><dd><p>Show the version.</p></dd></div><div><dt><code>-h, --help</code></dt><dd><p>Show help information.</p></dd></div></dl></section>  <p class="root-reference">
     See also <a href="../tng/"><code>tng</code></a>.
   </p>
       <footer>

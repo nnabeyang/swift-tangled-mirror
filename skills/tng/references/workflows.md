@@ -20,6 +20,44 @@ commands. Repository listings come from the owner's PDS. Repository and Issue
 record reads prefer the record owner's PDS and use Bobbin only as a fallback
 for temporary PDS failures; Issue lists and comments are Bobbin aggregates.
 
+## Create a repository
+
+Verify the repository name, Knot, default branch, optional public clone source,
+and optional custom `did:web` repository DID before writing:
+
+```sh
+tng repo create NAME --knot KNOT --default-branch main --json
+tng repo create NAME --knot KNOT --source https://example.com/source.git --json
+```
+
+The command creates the Git repository on the Knot before creating its
+`sh.tangled.repo` record on the authenticated account's PDS. A successful JSON
+result has outcome `created` and includes the record URI and CID, repository
+DID, Tangled Web URL, and Knot clone URL.
+
+If the PDS record write fails, the command verifies the owner PDS and attempts
+Knot cleanup exactly once only when the record is confirmed absent. Outcomes
+`rolled_back`, `knot_created_record_failed`, and `outcome_unknown` exit with
+status 3. Preserve their result JSON, inspect both systems, and do not rerun the
+creation automatically.
+
+## Delete a repository
+
+Resolve and inspect an explicit repository locator before deletion. The command
+accepts an owner/name, Tangled or clone URL, repository AT URI, or repository
+DID; it deliberately does not default to the current Git origin.
+
+```sh
+tng repo view OWNER/REPOSITORY --json
+tng repo delete OWNER/REPOSITORY --yes --json
+```
+
+Without `--yes`, the command shows the owner, name, repository DID, and Knot and
+requires terminal confirmation. Noninteractive deletion requires `--yes`. The
+PDS record is deleted with its current CID before the Knot repository is
+deleted. Outcome `deleted` is complete, while `record_deleted_knot_failed` or
+`outcome_unknown` exits with status 3 and must not be retried automatically.
+
 ## Create an issue
 
 Verify the target repository, title, and complete body before writing. Prefer a

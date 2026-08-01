@@ -44,6 +44,11 @@ handling pagination and failures.
   the write. Verify the repository, annotated tag, artifact name, local file,
   and replacement scope first. Use `--yes` for an authorized noninteractive
   deletion; it deletes the artifact record, not the Git tag.
+- Perform `repo create` or `repo delete` only when the user authorizes the exact
+  repository mutation. Before creation, verify the name, Knot, default branch,
+  optional source URL, and optional custom repository DID. Before deletion,
+  verify the resolved owner, name, repository DID, record URI, and Knot. Use
+  `--yes` only after reviewing that deletion target.
 - Perform `pipeline retry`, `pipeline run`, or `pipeline cancel` only when the
   user authorizes the write. For retry or cancel, inspect the original pipeline
   and verify the repository and selected workflows first. For run, verify the
@@ -65,6 +70,10 @@ handling pagination and failures.
   intended source, `--repo` is the intended target, and Tangled's fork metadata
   connects them. Keep public test branches, commits, and pull requests free of
   private issue identifiers.
+- Treat repository lifecycle outcomes other than `created`, `deleted`, or
+  `cancelled` as API failures even when structured result JSON was returned.
+  Do not automatically retry `rolled_back`, `knot_created_record_failed`,
+  `record_deleted_knot_failed`, or `outcome_unknown` results.
 - When working on `tng` itself, use a released, globally installed `tng` for
   authenticated Tangled writes. Do not use that checkout's `.build` executable
   or `swift run tng` unless the user explicitly asks to test the development
