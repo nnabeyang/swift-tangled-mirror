@@ -45,7 +45,6 @@ extension BobbinClient {
       try requireNonempty(authorDID, name: "author DID")
     }
     try validatePullRequestStatus(status)
-    try validateLimit(limit)
 
     let response = try await generatedQuery {
       try await RepoListPulls(
@@ -83,7 +82,6 @@ extension BobbinClient {
   ) async throws -> Page<PullRequestListItem> {
     try requireNonempty(authorDID, name: "author DID")
     try validatePullRequestStatus(status)
-    try validateLimit(limit)
 
     let response = try await generatedQuery {
       try await RepoListPullsBy(
@@ -134,7 +132,6 @@ extension BobbinClient {
     order: BobbinSortOrder = .descending
   ) async throws -> Page<TangledRecord<PullRequestStatusChange>> {
     try requireNonempty(pullRequestURI, name: "pull request URI")
-    try validateLimit(limit)
     let response = try await generatedQuery {
       try await PullListStatuses(
         cursor: cursor,
@@ -162,7 +159,6 @@ extension BobbinClient {
     order: BobbinSortOrder = .descending
   ) async throws -> Page<TangledRecord<PullRequestStatusChange>> {
     try requireNonempty(authorDID, name: "author DID")
-    try validateLimit(limit)
     let response = try await generatedQuery {
       try await PullListStatusesBy(
         cursor: cursor,

@@ -1,4 +1,5 @@
 import Foundation
+import SwiftAtproto
 import Testing
 
 #if canImport(FoundationNetworking)
@@ -242,14 +243,18 @@ import SwiftTangled
 
     await expectInvalidRequest { _ = try await client.comments(subjectURI: "") }
     await expectInvalidRequest { _ = try await client.comments(authorDID: "", limit: 1) }
-    await expectInvalidRequest { _ = try await client.comments(subjectURI: issueURI, limit: 0) }
+    await #expect(throws: LexiconConstraintError.self) {
+      _ = try await client.comments(subjectURI: issueURI, limit: 0)
+    }
     await expectInvalidRequest { _ = try await client.commentCount(authorDID: "") }
     await expectInvalidRequest { _ = try await client.reactions(subjectURI: "") }
     await expectInvalidRequest { _ = try await client.reactions(authorDID: "", limit: 1) }
-    await expectInvalidRequest { _ = try await client.reactions(subjectURI: issueURI, limit: 1001) }
+    await #expect(throws: LexiconConstraintError.self) {
+      _ = try await client.reactions(subjectURI: issueURI, limit: 1001)
+    }
     await expectInvalidRequest { _ = try await client.reactionCount(subjectURI: "") }
     await expectInvalidRequest { _ = try await client.labelDefinitions(scope: "") }
-    await expectInvalidRequest {
+    await #expect(throws: LexiconConstraintError.self) {
       _ = try await client.labelDefinitions(scope: "at://did:plc:owner", limit: 0)
     }
     await expectInvalidRequest { _ = try await client.labelOperations(subjectURI: "") }

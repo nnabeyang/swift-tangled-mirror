@@ -10,7 +10,6 @@ extension BobbinClient {
     order: BobbinSortOrder = .descending
   ) async throws -> Page<TangledRecord<Star>> {
     try requireNonempty(repositoryDID, name: "repository DID")
-    try validateLimit(limit)
     let response = try await generatedQuery {
       try await FeedListStars(
         cursor: cursor,
@@ -32,7 +31,6 @@ extension BobbinClient {
     order: BobbinSortOrder = .descending
   ) async throws -> Page<TangledRecord<Star>> {
     try requireNonempty(authorDID, name: "star author DID")
-    try validateLimit(limit)
     let response = try await generatedQuery {
       try await FeedListStarsBy(
         cursor: cursor,
@@ -70,7 +68,6 @@ extension BobbinClient {
     order: BobbinSortOrder = .descending
   ) async throws -> Page<TangledRecord<Follow>> {
     try requireNonempty(actorDID, name: "follow subject DID")
-    try validateLimit(limit)
     let response = try await generatedQuery {
       try await GraphListFollows(
         cursor: cursor,
@@ -92,7 +89,6 @@ extension BobbinClient {
     order: BobbinSortOrder = .descending
   ) async throws -> Page<TangledRecord<Follow>> {
     try requireNonempty(actorDID, name: "follow author DID")
-    try validateLimit(limit)
     let response = try await generatedQuery {
       try await GraphListFollowsBy(
         cursor: cursor,

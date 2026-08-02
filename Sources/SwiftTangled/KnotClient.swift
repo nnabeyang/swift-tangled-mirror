@@ -68,9 +68,6 @@ public struct KnotClient: Sendable {
     order: BobbinSortOrder = .descending
   ) async throws -> Page<RepositoryCollaborator> {
     let repositoryDID = try validDID(repositoryDID, name: "repository DID")
-    if let limit, !(1 ... 1_000).contains(limit) {
-      throw TangledError.invalidRequest("limit must be between 1 and 1000")
-    }
     let output = try await client(knot: knot).RepoListCollaborators(
       cursor: cursor,
       limit: limit,

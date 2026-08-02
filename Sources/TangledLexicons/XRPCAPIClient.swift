@@ -15150,7 +15150,7 @@ extension XRPCCallable {
   }
   /// List a range of records in a repository, matching a specific collection. Does not require auth.
   public func RepoListRecords(collection: FormatString<NSID>, cursor: Swift.String? = nil, limit: Swift.Int? = nil, repo: FormatString<AtIdentifier>, reverse: Swift.Bool? = nil) async throws -> Com.Atproto.RepoListRecords.ResponseBody {
-    try await call(Com.Atproto.RepoListRecords.self, input: .init(collection: collection, cursor: cursor, limit: limit, repo: repo, reverse: reverse))
+    try await call(Com.Atproto.RepoListRecords.self, input: try Com.Atproto.RepoListRecords.Input.Query.make(collection: collection, cursor: cursor, limit: limit, repo: repo, reverse: reverse))
   }
   /// Write a repository record, creating or updating it as needed. Requires auth, implemented by PDS.
   public func RepoPutRecord(input: Com.Atproto.RepoPutRecord_Input) async throws -> Com.Atproto.RepoPutRecord.ResponseBody {
@@ -15162,7 +15162,7 @@ extension XRPCCallable {
   }
   /// Get a signed token on behalf of the requesting DID for the requested service.
   public func ServerGetServiceAuth(aud: Swift.String, exp: Swift.Int? = nil, lxm: FormatString<NSID>? = nil) async throws -> Com.Atproto.ServerGetServiceAuth.ResponseBody {
-    try await call(Com.Atproto.ServerGetServiceAuth.self, input: .init(aud: aud, exp: exp, lxm: lxm))
+    try await call(Com.Atproto.ServerGetServiceAuth.self, input: try Com.Atproto.ServerGetServiceAuth.Input.Query.make(aud: aud, exp: exp, lxm: lxm))
   }
   /// Get a blob associated with a given account. Returns the full blob as originally uploaded. Does not require auth; implemented by PDS.
   public func SyncGetBlob(cid: FormatString<LexLink>, did: FormatString<DID>) async throws -> Com.Atproto.SyncGetBlob.ResponseBody {
@@ -15176,7 +15176,7 @@ extension XRPCCallable {
     try await call(Sh.Tangled.ActorGetProfile.self, input: .init(actor: actor))
   }
   public func ActorGetProfiles(actors: [FormatString<ATURI>]) async throws -> Sh.Tangled.ActorGetProfiles.ResponseBody {
-    try await call(Sh.Tangled.ActorGetProfiles.self, input: .init(actors: actors))
+    try await call(Sh.Tangled.ActorGetProfiles.self, input: try Sh.Tangled.ActorGetProfiles.Input.Query.make(actors: actors))
   }
   /// Cancel running pipeline or specific workflows
   public func CiCancelPipeline(input: Sh.Tangled.CiCancelPipeline_Input) async throws -> Sh.Tangled.CiCancelPipeline.ResponseBody {
@@ -15187,7 +15187,7 @@ extension XRPCCallable {
   }
   /// Query pipelines in git repository
   public func CiQueryPipelines(commits: [Swift.String]? = nil, cursor: Swift.String? = nil, kinds: [Sh.Tangled.kinds__Elem]? = nil, limit: Swift.Int? = nil, repo: FormatString<DID>) async throws -> Sh.Tangled.CiQueryPipelines.ResponseBody {
-    try await call(Sh.Tangled.CiQueryPipelines.self, input: .init(commits: commits, cursor: cursor, kinds: kinds, limit: limit, repo: repo))
+    try await call(Sh.Tangled.CiQueryPipelines.self, input: try Sh.Tangled.CiQueryPipelines.Input.Query.make(commits: commits, cursor: cursor, kinds: kinds, limit: limit, repo: repo))
   }
   /// Trigger a pipeline at an explicit commit. Runs the named workflows, or every workflow defined in the repo when none are named.
   public func CiTriggerPipeline(input: Sh.Tangled.CiTriggerPipeline_Input) async throws -> Sh.Tangled.CiTriggerPipeline.ResponseBody {
@@ -15212,22 +15212,22 @@ extension XRPCCallable {
     try await call(Sh.Tangled.FeedCountStarsBy.self, input: .init(subject: subject))
   }
   public func FeedListComments(cursor: Swift.String? = nil, limit: Swift.Int? = nil, order: Sh.Tangled.FeedListComments_Order? = nil, subject: FormatString<ATURI>) async throws -> Sh.Tangled.FeedListComments.ResponseBody {
-    try await call(Sh.Tangled.FeedListComments.self, input: .init(cursor: cursor, limit: limit, order: order, subject: subject))
+    try await call(Sh.Tangled.FeedListComments.self, input: try Sh.Tangled.FeedListComments.Input.Query.make(cursor: cursor, limit: limit, order: order, subject: subject))
   }
   public func FeedListCommentsBy(cursor: Swift.String? = nil, limit: Swift.Int? = nil, order: Sh.Tangled.FeedListCommentsBy_Order? = nil, subject: FormatString<DID>) async throws -> Sh.Tangled.FeedListCommentsBy.ResponseBody {
-    try await call(Sh.Tangled.FeedListCommentsBy.self, input: .init(cursor: cursor, limit: limit, order: order, subject: subject))
+    try await call(Sh.Tangled.FeedListCommentsBy.self, input: try Sh.Tangled.FeedListCommentsBy.Input.Query.make(cursor: cursor, limit: limit, order: order, subject: subject))
   }
   public func FeedListReactions(cursor: Swift.String? = nil, limit: Swift.Int? = nil, order: Sh.Tangled.FeedListReactions_Order? = nil, subject: FormatString<ATURI>) async throws -> Sh.Tangled.FeedListReactions.ResponseBody {
-    try await call(Sh.Tangled.FeedListReactions.self, input: .init(cursor: cursor, limit: limit, order: order, subject: subject))
+    try await call(Sh.Tangled.FeedListReactions.self, input: try Sh.Tangled.FeedListReactions.Input.Query.make(cursor: cursor, limit: limit, order: order, subject: subject))
   }
   public func FeedListReactionsBy(cursor: Swift.String? = nil, limit: Swift.Int? = nil, order: Sh.Tangled.FeedListReactionsBy_Order? = nil, subject: FormatString<DID>) async throws -> Sh.Tangled.FeedListReactionsBy.ResponseBody {
-    try await call(Sh.Tangled.FeedListReactionsBy.self, input: .init(cursor: cursor, limit: limit, order: order, subject: subject))
+    try await call(Sh.Tangled.FeedListReactionsBy.self, input: try Sh.Tangled.FeedListReactionsBy.Input.Query.make(cursor: cursor, limit: limit, order: order, subject: subject))
   }
   public func FeedListStars(cursor: Swift.String? = nil, limit: Swift.Int? = nil, order: Sh.Tangled.FeedListStars_Order? = nil, subject: Swift.String) async throws -> Sh.Tangled.FeedListStars.ResponseBody {
-    try await call(Sh.Tangled.FeedListStars.self, input: .init(cursor: cursor, limit: limit, order: order, subject: subject))
+    try await call(Sh.Tangled.FeedListStars.self, input: try Sh.Tangled.FeedListStars.Input.Query.make(cursor: cursor, limit: limit, order: order, subject: subject))
   }
   public func FeedListStarsBy(cursor: Swift.String? = nil, limit: Swift.Int? = nil, order: Sh.Tangled.FeedListStarsBy_Order? = nil, subject: FormatString<DID>) async throws -> Sh.Tangled.FeedListStarsBy.ResponseBody {
-    try await call(Sh.Tangled.FeedListStarsBy.self, input: .init(cursor: cursor, limit: limit, order: order, subject: subject))
+    try await call(Sh.Tangled.FeedListStarsBy.self, input: try Sh.Tangled.FeedListStarsBy.Input.Query.make(cursor: cursor, limit: limit, order: order, subject: subject))
   }
   public func GraphCountFollows(subject: FormatString<DID>) async throws -> Sh.Tangled.GraphCountFollows.ResponseBody {
     try await call(Sh.Tangled.GraphCountFollows.self, input: .init(subject: subject))
@@ -15236,10 +15236,10 @@ extension XRPCCallable {
     try await call(Sh.Tangled.GraphCountFollowsBy.self, input: .init(subject: subject))
   }
   public func GraphListFollows(cursor: Swift.String? = nil, limit: Swift.Int? = nil, order: Sh.Tangled.GraphListFollows_Order? = nil, subject: FormatString<DID>) async throws -> Sh.Tangled.GraphListFollows.ResponseBody {
-    try await call(Sh.Tangled.GraphListFollows.self, input: .init(cursor: cursor, limit: limit, order: order, subject: subject))
+    try await call(Sh.Tangled.GraphListFollows.self, input: try Sh.Tangled.GraphListFollows.Input.Query.make(cursor: cursor, limit: limit, order: order, subject: subject))
   }
   public func GraphListFollowsBy(cursor: Swift.String? = nil, limit: Swift.Int? = nil, order: Sh.Tangled.GraphListFollowsBy_Order? = nil, subject: FormatString<DID>) async throws -> Sh.Tangled.GraphListFollowsBy.ResponseBody {
-    try await call(Sh.Tangled.GraphListFollowsBy.self, input: .init(cursor: cursor, limit: limit, order: order, subject: subject))
+    try await call(Sh.Tangled.GraphListFollowsBy.self, input: try Sh.Tangled.GraphListFollowsBy.Input.Query.make(cursor: cursor, limit: limit, order: order, subject: subject))
   }
   /// Get the version of a knot
   public func KnotVersion() async throws -> Sh.Tangled.KnotVersion.ResponseBody {
@@ -15255,13 +15255,13 @@ extension XRPCCallable {
     try await call(Sh.Tangled.LabelCountOpsBy.self, input: .init(subject: subject))
   }
   public func LabelListDefinitions(cursor: Swift.String? = nil, limit: Swift.Int? = nil, order: Sh.Tangled.LabelListDefinitions_Order? = nil, subject: Swift.String) async throws -> Sh.Tangled.LabelListDefinitions.ResponseBody {
-    try await call(Sh.Tangled.LabelListDefinitions.self, input: .init(cursor: cursor, limit: limit, order: order, subject: subject))
+    try await call(Sh.Tangled.LabelListDefinitions.self, input: try Sh.Tangled.LabelListDefinitions.Input.Query.make(cursor: cursor, limit: limit, order: order, subject: subject))
   }
   public func LabelListOps(cursor: Swift.String? = nil, limit: Swift.Int? = nil, order: Sh.Tangled.LabelListOps_Order? = nil, subject: Swift.String) async throws -> Sh.Tangled.LabelListOps.ResponseBody {
-    try await call(Sh.Tangled.LabelListOps.self, input: .init(cursor: cursor, limit: limit, order: order, subject: subject))
+    try await call(Sh.Tangled.LabelListOps.self, input: try Sh.Tangled.LabelListOps.Input.Query.make(cursor: cursor, limit: limit, order: order, subject: subject))
   }
   public func LabelListOpsBy(cursor: Swift.String? = nil, limit: Swift.Int? = nil, order: Sh.Tangled.LabelListOpsBy_Order? = nil, subject: FormatString<DID>) async throws -> Sh.Tangled.LabelListOpsBy.ResponseBody {
-    try await call(Sh.Tangled.LabelListOpsBy.self, input: .init(cursor: cursor, limit: limit, order: order, subject: subject))
+    try await call(Sh.Tangled.LabelListOpsBy.self, input: try Sh.Tangled.LabelListOpsBy.Input.Query.make(cursor: cursor, limit: limit, order: order, subject: subject))
   }
   /// Add a collaborator to a repository on this knot
   public func RepoAddCollaborator(input: Sh.Tangled.RepoAddCollaborator_Input) async throws -> Sh.Tangled.RepoAddCollaborator.ResponseBody {
@@ -15281,7 +15281,7 @@ extension XRPCCallable {
     try await call(Sh.Tangled.RepoBranch.self, input: .init(name: name, repo: repo))
   }
   public func RepoBranches(cursor: Swift.String? = nil, limit: Swift.Int? = nil, repo: Swift.String) async throws -> Sh.Tangled.RepoBranches.ResponseBody {
-    try await call(Sh.Tangled.RepoBranches.self, input: .init(cursor: cursor, limit: limit, repo: repo))
+    try await call(Sh.Tangled.RepoBranches.self, input: try Sh.Tangled.RepoBranches.Input.Query.make(cursor: cursor, limit: limit, repo: repo))
   }
   public func RepoCompare(repo: Swift.String, rev1: Swift.String, rev2: Swift.String) async throws -> Sh.Tangled.RepoCompare.ResponseBody {
     try await call(Sh.Tangled.RepoCompare.self, input: .init(repo: repo, rev1: rev1, rev2: rev2))
@@ -15329,13 +15329,13 @@ extension XRPCCallable {
     try await call(Sh.Tangled.RepoGetIssue.self, input: .init(issue: issue))
   }
   public func RepoGetIssues(issues: [FormatString<ATURI>]) async throws -> Sh.Tangled.RepoGetIssues.ResponseBody {
-    try await call(Sh.Tangled.RepoGetIssues.self, input: .init(issues: issues))
+    try await call(Sh.Tangled.RepoGetIssues.self, input: try Sh.Tangled.RepoGetIssues.Input.Query.make(issues: issues))
   }
   public func RepoGetPull(pull: FormatString<ATURI>) async throws -> Sh.Tangled.RepoGetPull.ResponseBody {
     try await call(Sh.Tangled.RepoGetPull.self, input: .init(pull: pull))
   }
   public func RepoGetPulls(pulls: [FormatString<ATURI>]) async throws -> Sh.Tangled.RepoGetPulls.ResponseBody {
-    try await call(Sh.Tangled.RepoGetPulls.self, input: .init(pulls: pulls))
+    try await call(Sh.Tangled.RepoGetPulls.self, input: try Sh.Tangled.RepoGetPulls.Input.Query.make(pulls: pulls))
   }
   public func RepoGetRepo(repo: FormatString<ATURI>) async throws -> Sh.Tangled.RepoGetRepo.ResponseBody {
     try await call(Sh.Tangled.RepoGetRepo.self, input: .init(repo: repo))
@@ -15344,7 +15344,7 @@ extension XRPCCallable {
     try await call(Sh.Tangled.RepoGetRepoByRepoDid.self, input: .init(repoDid: repoDid))
   }
   public func RepoGetRepos(repos: [FormatString<ATURI>]) async throws -> Sh.Tangled.RepoGetRepos.ResponseBody {
-    try await call(Sh.Tangled.RepoGetRepos.self, input: .init(repos: repos))
+    try await call(Sh.Tangled.RepoGetRepos.self, input: try Sh.Tangled.RepoGetRepos.Input.Query.make(repos: repos))
   }
   /// Create a hidden ref in a repository
   public func RepoHiddenRef(input: Sh.Tangled.RepoHiddenRef_Input) async throws -> Sh.Tangled.RepoHiddenRef.ResponseBody {
@@ -15354,31 +15354,31 @@ extension XRPCCallable {
     try await call(Sh.Tangled.RepoLanguages.self, input: .init(ref: ref, repo: repo))
   }
   public func RepoListArtifacts(cursor: Swift.String? = nil, limit: Swift.Int? = nil, order: Sh.Tangled.RepoListArtifacts_Order? = nil, subject: Swift.String) async throws -> Sh.Tangled.RepoListArtifacts.ResponseBody {
-    try await call(Sh.Tangled.RepoListArtifacts.self, input: .init(cursor: cursor, limit: limit, order: order, subject: subject))
+    try await call(Sh.Tangled.RepoListArtifacts.self, input: try Sh.Tangled.RepoListArtifacts.Input.Query.make(cursor: cursor, limit: limit, order: order, subject: subject))
   }
   public func RepoListCollaborators(cursor: Swift.String? = nil, limit: Swift.Int? = nil, order: Sh.Tangled.RepoListCollaborators_Order? = nil, subject: FormatString<DID>) async throws -> Sh.Tangled.RepoListCollaborators.ResponseBody {
-    try await call(Sh.Tangled.RepoListCollaborators.self, input: .init(cursor: cursor, limit: limit, order: order, subject: subject))
+    try await call(Sh.Tangled.RepoListCollaborators.self, input: try Sh.Tangled.RepoListCollaborators.Input.Query.make(cursor: cursor, limit: limit, order: order, subject: subject))
   }
   public func RepoListIssues(author: FormatString<DID>? = nil, cursor: Swift.String? = nil, limit: Swift.Int? = nil, order: Sh.Tangled.RepoListIssues_Order? = nil, state: Sh.Tangled.RepoListIssues_State? = nil, subject: FormatString<DID>) async throws -> Sh.Tangled.RepoListIssues.ResponseBody {
-    try await call(Sh.Tangled.RepoListIssues.self, input: .init(author: author, cursor: cursor, limit: limit, order: order, state: state, subject: subject))
+    try await call(Sh.Tangled.RepoListIssues.self, input: try Sh.Tangled.RepoListIssues.Input.Query.make(author: author, cursor: cursor, limit: limit, order: order, state: state, subject: subject))
   }
   public func RepoListIssuesBy(cursor: Swift.String? = nil, limit: Swift.Int? = nil, order: Sh.Tangled.RepoListIssuesBy_Order? = nil, state: Sh.Tangled.RepoListIssuesBy_State? = nil, subject: FormatString<DID>) async throws -> Sh.Tangled.RepoListIssuesBy.ResponseBody {
-    try await call(Sh.Tangled.RepoListIssuesBy.self, input: .init(cursor: cursor, limit: limit, order: order, state: state, subject: subject))
+    try await call(Sh.Tangled.RepoListIssuesBy.self, input: try Sh.Tangled.RepoListIssuesBy.Input.Query.make(cursor: cursor, limit: limit, order: order, state: state, subject: subject))
   }
   public func RepoListPulls(author: FormatString<DID>? = nil, cursor: Swift.String? = nil, limit: Swift.Int? = nil, order: Sh.Tangled.RepoListPulls_Order? = nil, status: Sh.Tangled.RepoListPulls_Status? = nil, subject: FormatString<DID>) async throws -> Sh.Tangled.RepoListPulls.ResponseBody {
-    try await call(Sh.Tangled.RepoListPulls.self, input: .init(author: author, cursor: cursor, limit: limit, order: order, status: status, subject: subject))
+    try await call(Sh.Tangled.RepoListPulls.self, input: try Sh.Tangled.RepoListPulls.Input.Query.make(author: author, cursor: cursor, limit: limit, order: order, status: status, subject: subject))
   }
   public func RepoListPullsBy(cursor: Swift.String? = nil, limit: Swift.Int? = nil, order: Sh.Tangled.RepoListPullsBy_Order? = nil, status: Sh.Tangled.RepoListPullsBy_Status? = nil, subject: FormatString<DID>) async throws -> Sh.Tangled.RepoListPullsBy.ResponseBody {
-    try await call(Sh.Tangled.RepoListPullsBy.self, input: .init(cursor: cursor, limit: limit, order: order, status: status, subject: subject))
+    try await call(Sh.Tangled.RepoListPullsBy.self, input: try Sh.Tangled.RepoListPullsBy.Input.Query.make(cursor: cursor, limit: limit, order: order, status: status, subject: subject))
   }
   public func RepoListRepos(cursor: Swift.String? = nil, limit: Swift.Int? = nil, order: Sh.Tangled.RepoListRepos_Order? = nil, subject: FormatString<DID>) async throws -> Sh.Tangled.RepoListRepos.ResponseBody {
-    try await call(Sh.Tangled.RepoListRepos.self, input: .init(cursor: cursor, limit: limit, order: order, subject: subject))
+    try await call(Sh.Tangled.RepoListRepos.self, input: try Sh.Tangled.RepoListRepos.Input.Query.make(cursor: cursor, limit: limit, order: order, subject: subject))
   }
   public func RepoListSecrets(repo: FormatString<ATURI>) async throws -> Sh.Tangled.RepoListSecrets.ResponseBody {
     try await call(Sh.Tangled.RepoListSecrets.self, input: .init(repo: repo))
   }
   public func RepoLog(cursor: Swift.String? = nil, limit: Swift.Int? = nil, path: Swift.String? = nil, ref: Swift.String, repo: Swift.String) async throws -> Sh.Tangled.RepoLog.ResponseBody {
-    try await call(Sh.Tangled.RepoLog.self, input: .init(cursor: cursor, limit: limit, path: path, ref: ref, repo: repo))
+    try await call(Sh.Tangled.RepoLog.self, input: try Sh.Tangled.RepoLog.Input.Query.make(cursor: cursor, limit: limit, path: path, ref: ref, repo: repo))
   }
   /// Merge a patch into a repository branch
   public func RepoMerge(input: Sh.Tangled.RepoMerge_Input) async throws -> Sh.Tangled.RepoMerge.ResponseBody {
@@ -15400,13 +15400,13 @@ extension XRPCCallable {
     try await call(Sh.Tangled.RepoTag.self, input: .init(repo: repo, tag: tag))
   }
   public func RepoTags(cursor: Swift.String? = nil, limit: Swift.Int? = nil, repo: Swift.String) async throws -> Sh.Tangled.RepoTags.ResponseBody {
-    try await call(Sh.Tangled.RepoTags.self, input: .init(cursor: cursor, limit: limit, repo: repo))
+    try await call(Sh.Tangled.RepoTags.self, input: try Sh.Tangled.RepoTags.Input.Query.make(cursor: cursor, limit: limit, repo: repo))
   }
   public func RepoTree(path: Swift.String? = nil, ref: Swift.String, repo: Swift.String) async throws -> Sh.Tangled.RepoTree.ResponseBody {
     try await call(Sh.Tangled.RepoTree.self, input: .init(path: path, ref: ref, repo: repo))
   }
   public func SearchQuery(author: FormatString<DID>? = nil, cursor: Swift.String? = nil, limit: Swift.Int? = nil, nsid: FormatString<NSID>? = nil, q: Swift.String, repo: FormatString<DID>? = nil, since: FormatString<Date>? = nil, until: FormatString<Date>? = nil) async throws -> Sh.Tangled.SearchQuery.ResponseBody {
-    try await call(Sh.Tangled.SearchQuery.self, input: .init(author: author, cursor: cursor, limit: limit, nsid: nsid, q: q, repo: repo, since: since, until: until))
+    try await call(Sh.Tangled.SearchQuery.self, input: try Sh.Tangled.SearchQuery.Input.Query.make(author: author, cursor: cursor, limit: limit, nsid: nsid, q: q, repo: repo, since: since, until: until))
   }
   public func IssueCountStates(subject: FormatString<ATURI>) async throws -> Sh.Tangled.Repo.IssueCountStates.ResponseBody {
     try await call(Sh.Tangled.Repo.IssueCountStates.self, input: .init(subject: subject))
@@ -15415,10 +15415,10 @@ extension XRPCCallable {
     try await call(Sh.Tangled.Repo.IssueCountStatesBy.self, input: .init(subject: subject))
   }
   public func IssueListStates(cursor: Swift.String? = nil, limit: Swift.Int? = nil, order: Sh.Tangled.Repo.IssueListStates_Order? = nil, subject: FormatString<ATURI>) async throws -> Sh.Tangled.Repo.IssueListStates.ResponseBody {
-    try await call(Sh.Tangled.Repo.IssueListStates.self, input: .init(cursor: cursor, limit: limit, order: order, subject: subject))
+    try await call(Sh.Tangled.Repo.IssueListStates.self, input: try Sh.Tangled.Repo.IssueListStates.Input.Query.make(cursor: cursor, limit: limit, order: order, subject: subject))
   }
   public func IssueListStatesBy(cursor: Swift.String? = nil, limit: Swift.Int? = nil, order: Sh.Tangled.Repo.IssueListStatesBy_Order? = nil, subject: FormatString<DID>) async throws -> Sh.Tangled.Repo.IssueListStatesBy.ResponseBody {
-    try await call(Sh.Tangled.Repo.IssueListStatesBy.self, input: .init(cursor: cursor, limit: limit, order: order, subject: subject))
+    try await call(Sh.Tangled.Repo.IssueListStatesBy.self, input: try Sh.Tangled.Repo.IssueListStatesBy.Input.Query.make(cursor: cursor, limit: limit, order: order, subject: subject))
   }
   public func PullCountStatuses(subject: FormatString<ATURI>) async throws -> Sh.Tangled.Repo.PullCountStatuses.ResponseBody {
     try await call(Sh.Tangled.Repo.PullCountStatuses.self, input: .init(subject: subject))
@@ -15427,9 +15427,9 @@ extension XRPCCallable {
     try await call(Sh.Tangled.Repo.PullCountStatusesBy.self, input: .init(subject: subject))
   }
   public func PullListStatuses(cursor: Swift.String? = nil, limit: Swift.Int? = nil, order: Sh.Tangled.Repo.PullListStatuses_Order? = nil, subject: FormatString<ATURI>) async throws -> Sh.Tangled.Repo.PullListStatuses.ResponseBody {
-    try await call(Sh.Tangled.Repo.PullListStatuses.self, input: .init(cursor: cursor, limit: limit, order: order, subject: subject))
+    try await call(Sh.Tangled.Repo.PullListStatuses.self, input: try Sh.Tangled.Repo.PullListStatuses.Input.Query.make(cursor: cursor, limit: limit, order: order, subject: subject))
   }
   public func PullListStatusesBy(cursor: Swift.String? = nil, limit: Swift.Int? = nil, order: Sh.Tangled.Repo.PullListStatusesBy_Order? = nil, subject: FormatString<DID>) async throws -> Sh.Tangled.Repo.PullListStatusesBy.ResponseBody {
-    try await call(Sh.Tangled.Repo.PullListStatusesBy.self, input: .init(cursor: cursor, limit: limit, order: order, subject: subject))
+    try await call(Sh.Tangled.Repo.PullListStatusesBy.self, input: try Sh.Tangled.Repo.PullListStatusesBy.Input.Query.make(cursor: cursor, limit: limit, order: order, subject: subject))
   }
 }

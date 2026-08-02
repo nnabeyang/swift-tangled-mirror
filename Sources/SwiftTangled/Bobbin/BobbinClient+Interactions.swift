@@ -10,7 +10,6 @@ extension BobbinClient {
     order: BobbinSortOrder = .descending
   ) async throws -> Page<TangledRecord<Comment>> {
     try requireNonempty(subjectURI, name: "comment subject URI")
-    try validateLimit(limit)
     let response = try await generatedQuery {
       try await FeedListComments(
         cursor: cursor,
@@ -38,7 +37,6 @@ extension BobbinClient {
     order: BobbinSortOrder = .descending
   ) async throws -> Page<TangledRecord<Comment>> {
     try requireNonempty(authorDID, name: "comment author DID")
-    try validateLimit(limit)
     let response = try await generatedQuery {
       try await FeedListCommentsBy(
         cursor: cursor,
@@ -82,7 +80,6 @@ extension BobbinClient {
     order: BobbinSortOrder = .descending
   ) async throws -> Page<TangledRecord<Reaction>> {
     try requireNonempty(subjectURI, name: "reaction subject URI")
-    try validateLimit(limit)
     let response = try await generatedQuery {
       try await FeedListReactions(
         cursor: cursor,
@@ -110,7 +107,6 @@ extension BobbinClient {
     order: BobbinSortOrder = .descending
   ) async throws -> Page<TangledRecord<Reaction>> {
     try requireNonempty(authorDID, name: "reaction author DID")
-    try validateLimit(limit)
     let response = try await generatedQuery {
       try await FeedListReactionsBy(
         cursor: cursor,

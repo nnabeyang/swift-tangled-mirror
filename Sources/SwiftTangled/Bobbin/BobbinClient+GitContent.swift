@@ -101,7 +101,7 @@ extension BobbinClient {
   ) async throws -> Page<GitBranch> {
     try validateGitRepositoryURI(repositoryURI)
     let offset = try gitReferenceOffset(cursor, name: "branches")
-    let pageLimit = try gitReferenceLimit(limit)
+    let pageLimit = limit ?? 50
     let data = try await generatedQuery {
       try await RepoBranches(cursor: cursor, limit: limit, repo: repositoryURI)
     }
@@ -125,7 +125,7 @@ extension BobbinClient {
   ) async throws -> Page<GitTag> {
     try validateGitRepositoryURI(repositoryURI)
     let offset = try gitReferenceOffset(cursor, name: "tags")
-    let pageLimit = try gitReferenceLimit(limit)
+    let pageLimit = limit ?? 50
     let data = try await generatedQuery {
       try await RepoTags(cursor: cursor, limit: limit, repo: repositoryURI)
     }
@@ -236,9 +236,6 @@ extension BobbinClient {
     try requireNonempty(ref, name: "git ref")
     if let path { try requireNonempty(path, name: "log path") }
     let offset = try gitLogOffset(cursor)
-    if let limit, !(1 ... 100).contains(limit) {
-      throw TangledError.invalidRequest("limit must be between 1 and 100")
-    }
     let response = try await generatedQuery {
       try await RepoLog(
         cursor: cursor,
@@ -382,14 +379,6 @@ private extension BobbinClient {
       throw TangledError.invalidRequest("\(name) cursor must be a non-negative integer")
     }
     return offset
-  }
-
-  func gitReferenceLimit(_ limit: Int?) throws -> Int {
-    guard let limit else { return 50 }
-    guard (1 ... 100).contains(limit) else {
-      throw TangledError.invalidRequest("limit must be between 1 and 100")
-    }
-    return limit
   }
 
   func gitReferenceNextCursor(offset: Int, itemCount: Int, limit: Int) -> String? {

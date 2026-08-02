@@ -157,13 +157,13 @@ import TangledLexicons
     let transport = DiscoveryTransport([])
     let client = makeClient(transport: transport)
 
-    await expectInvalidRequest {
+    await #expect(throws: LexiconConstraintError.self) {
       _ = try await client.profiles(uris: Array(repeating: "at://example", count: 51))
     }
-    await expectInvalidRequest {
+    await #expect(throws: LexiconConstraintError.self) {
       _ = try await client.repositories(ownerDID: "did:plc:owner", limit: 0)
     }
-    await expectInvalidRequest {
+    await #expect(throws: LexiconConstraintError.self) {
       _ = try await client.search("")
     }
     await expectInvalidRequest {

@@ -10,7 +10,6 @@ extension BobbinClient {
     order: BobbinSortOrder = .descending
   ) async throws -> Page<TangledRecord<LabelDefinition>> {
     try requireNonempty(scope, name: "label definition scope")
-    try validateLimit(limit)
     let response = try await generatedQuery {
       try await LabelListDefinitions(
         cursor: cursor,
@@ -46,7 +45,6 @@ extension BobbinClient {
     order: BobbinSortOrder = .descending
   ) async throws -> Page<TangledRecord<LabelOperation>> {
     try requireNonempty(subjectURI, name: "label operation subject URI")
-    try validateLimit(limit)
     let response = try await generatedQuery {
       try await LabelListOps(
         cursor: cursor,
@@ -74,7 +72,6 @@ extension BobbinClient {
     order: BobbinSortOrder = .descending
   ) async throws -> Page<TangledRecord<LabelOperation>> {
     try requireNonempty(authorDID, name: "label operation author DID")
-    try validateLimit(limit)
     let response = try await generatedQuery {
       try await LabelListOpsBy(
         cursor: cursor,

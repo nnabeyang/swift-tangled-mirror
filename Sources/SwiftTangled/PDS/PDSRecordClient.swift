@@ -208,9 +208,6 @@ extension PDSRecordClient {
     } catch {
       throw TangledError.invalidRequest("invalid record owner DID: \(rawOwnerDID)")
     }
-    if let limit, !(1 ... 100).contains(limit) {
-      throw TangledError.invalidRequest("PDS record limit must be between 1 and 100")
-    }
     let pdsURL = try await pdsURL(for: ownerDID)
     let output = try await decode {
       try await PDSRecordXRPCClient(
@@ -325,6 +322,8 @@ extension PDSRecordClient {
     } catch is CancellationError {
       throw CancellationError()
     } catch let error as TangledError {
+      throw error
+    } catch let error as LexiconConstraintError {
       throw error
     } catch let error as any XRPCError {
       throw error

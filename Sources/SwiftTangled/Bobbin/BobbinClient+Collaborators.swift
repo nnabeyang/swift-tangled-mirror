@@ -10,7 +10,6 @@ extension BobbinClient {
     order: BobbinSortOrder = .descending
   ) async throws -> Page<RepositoryCollaborator> {
     let repositoryDID = try collaboratorDID(repositoryDID, name: "repository DID")
-    try validateLimit(limit)
     let output = try await generatedQuery {
       try await RepoListCollaborators(
         cursor: cursor,

@@ -79,7 +79,6 @@ extension BobbinClient {
     order: BobbinSortOrder = .descending
   ) async throws -> Page<TangledRecord<Repository>> {
     try requireNonempty(ownerDID, name: "owner DID")
-    try validateLimit(limit)
     let response = try await generatedQuery {
       try await RepoListRepos(
         cursor: cursor,
@@ -110,8 +109,6 @@ extension BobbinClient {
     _ query: String,
     options: SearchOptions = SearchOptions()
   ) async throws -> Page<SearchHit> {
-    try requireNonempty(query, name: "search query")
-    try validateLimit(options.limit)
     try options.validateDates()
 
     let response = try await generatedQuery {

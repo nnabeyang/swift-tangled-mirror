@@ -190,27 +190,27 @@ import Testing
     #expect(query(named: "cursor", request: requests[1]) == "status-cursor")
   }
 
-  @Test func repositoryListingRejectsInvalidInputsBeforeResolution() async {
+  @Test func repositoryListingRejectsInvalidInputsBeforeRequest() async {
     let transport = PDSRecordTransport([])
-    let resolver = PDSRecordResolver(document: nil)
+    let resolver = PDSRecordResolver(document: document(did: ownerDID))
     let client = PDSRecordClient(resolver: resolver, transport: transport)
 
     await #expect(throws: TangledError.self) {
       _ = try await client.repositories(ownerDID: "invalid")
     }
-    await #expect(throws: TangledError.self) {
+    await #expect(throws: LexiconConstraintError.self) {
       _ = try await client.repositories(ownerDID: ownerDID, limit: 0)
     }
-    await #expect(throws: TangledError.self) {
+    await #expect(throws: LexiconConstraintError.self) {
       _ = try await client.repositories(ownerDID: ownerDID, limit: 101)
     }
-    await #expect(throws: TangledError.self) {
+    await #expect(throws: LexiconConstraintError.self) {
       _ = try await client.pullRequests(ownerDID: ownerDID, limit: 0)
     }
     await #expect(throws: TangledError.self) {
       _ = try await client.pullRequestStatuses(ownerDID: "invalid")
     }
-    #expect(await resolver.resolutionCount() == 0)
+    #expect(await resolver.resolutionCount() == 3)
     #expect(await transport.recordedRequests().isEmpty)
   }
 

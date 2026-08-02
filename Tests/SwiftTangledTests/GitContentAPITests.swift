@@ -1,4 +1,5 @@
 import Foundation
+import SwiftAtproto
 import TangledLexicons
 import Testing
 
@@ -401,9 +402,13 @@ import Testing
     await expectInvalid { _ = try await client.defaultBranch(repositoryURI: "") }
     await expectInvalid { _ = try await client.branches(repositoryURI: "") }
     await expectInvalid { _ = try await client.branches(repositoryURI: repositoryURI, cursor: "sha") }
-    await expectInvalid { _ = try await client.branches(repositoryURI: repositoryURI, limit: 0) }
+    await #expect(throws: LexiconConstraintError.self) {
+      _ = try await client.branches(repositoryURI: repositoryURI, limit: 0)
+    }
     await expectInvalid { _ = try await client.tags(repositoryURI: repositoryURI, cursor: "-1") }
-    await expectInvalid { _ = try await client.tags(repositoryURI: repositoryURI, limit: 101) }
+    await #expect(throws: LexiconConstraintError.self) {
+      _ = try await client.tags(repositoryURI: repositoryURI, limit: 101)
+    }
     await expectInvalid {
       _ = try await client.describeRepository(
         repositoryURI: "did:plc:repo",
@@ -421,8 +426,12 @@ import Testing
     await expectInvalid { _ = try await client.tree(repositoryURI: repositoryURI, ref: "") }
     await expectInvalid { _ = try await client.tree(repositoryURI: repositoryURI, ref: "main", path: "") }
     await expectInvalid { _ = try await client.log(repositoryURI: repositoryURI, ref: "main", cursor: "sha") }
-    await expectInvalid { _ = try await client.log(repositoryURI: repositoryURI, ref: "main", limit: 0) }
-    await expectInvalid { _ = try await client.log(repositoryURI: repositoryURI, ref: "main", limit: 101) }
+    await #expect(throws: LexiconConstraintError.self) {
+      _ = try await client.log(repositoryURI: repositoryURI, ref: "main", limit: 0)
+    }
+    await #expect(throws: LexiconConstraintError.self) {
+      _ = try await client.log(repositoryURI: repositoryURI, ref: "main", limit: 101)
+    }
     await expectInvalid { _ = try await client.blob(repositoryURI: repositoryURI, ref: "main", path: "") }
     #expect(await transport.requestCount() == 0)
   }

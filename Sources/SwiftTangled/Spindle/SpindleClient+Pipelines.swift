@@ -14,9 +14,6 @@ extension SpindleClient {
     guard commits.allSatisfy({ !$0.isEmpty }) else {
       throw TangledError.invalidRequest("commits must not contain an empty value")
     }
-    if let limit, !(1 ... 250).contains(limit) {
-      throw TangledError.invalidRequest("limit must be between 1 and 250")
-    }
 
     let generatedKinds = try triggerKinds.map { kind in
       guard

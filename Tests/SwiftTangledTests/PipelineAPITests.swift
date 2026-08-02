@@ -329,10 +329,10 @@ import TangledLexicons
     await expectInvalidRequest {
       _ = try await client.pipelines(repositoryDID: "did:plc:repository", commits: [""])
     }
-    await expectInvalidRequest {
+    await #expect(throws: LexiconConstraintError.self) {
       _ = try await client.pipelines(repositoryDID: "did:plc:repository", limit: 0)
     }
-    await expectInvalidRequest {
+    await #expect(throws: LexiconConstraintError.self) {
       _ = try await client.pipelines(repositoryDID: "did:plc:repository", limit: 251)
     }
     await expectInvalidRequest {

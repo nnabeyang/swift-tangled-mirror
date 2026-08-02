@@ -35,18 +35,8 @@ extension BobbinClient {
   }
 
   func validateBatch(_ values: [String], name: String) throws {
-    guard values.count <= 50 else {
-      throw TangledError.invalidRequest("\(name) must contain at most 50 values")
-    }
     guard values.allSatisfy({ !$0.isEmpty }) else {
       throw TangledError.invalidRequest("\(name) must not contain an empty value")
-    }
-  }
-
-  func validateLimit(_ limit: Int?) throws {
-    guard let limit else { return }
-    guard (1 ... 1000).contains(limit) else {
-      throw TangledError.invalidRequest("limit must be between 1 and 1000")
     }
   }
 }

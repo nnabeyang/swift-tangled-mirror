@@ -10,7 +10,6 @@ extension BobbinClient {
     sort: ArtifactSortOrder = .desc
   ) async throws -> Page<TangledRecord<Artifact>> {
     try validateArtifactRepositoryDID(repositoryDID)
-    try validateLimit(limit)
     let output = try await generatedQuery {
       try await RepoListArtifacts(
         cursor: cursor,

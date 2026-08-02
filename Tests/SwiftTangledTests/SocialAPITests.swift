@@ -1,4 +1,5 @@
 import Foundation
+import SwiftAtproto
 import Testing
 
 #if canImport(FoundationNetworking)
@@ -129,14 +130,14 @@ import SwiftTangled
 
     await expectInvalidRequest { _ = try await client.stars(repositoryDID: "") }
     await expectInvalidRequest { _ = try await client.stars(authorDID: "", limit: 1) }
-    await expectInvalidRequest {
+    await #expect(throws: LexiconConstraintError.self) {
       _ = try await client.stars(repositoryDID: repositoryDID, limit: 0)
     }
     await expectInvalidRequest { _ = try await client.starCount(repositoryDID: "") }
     await expectInvalidRequest { _ = try await client.starCount(authorDID: "") }
     await expectInvalidRequest { _ = try await client.followers(actorDID: "") }
     await expectInvalidRequest { _ = try await client.following(actorDID: "", limit: 1) }
-    await expectInvalidRequest {
+    await #expect(throws: LexiconConstraintError.self) {
       _ = try await client.followers(actorDID: followedDID, limit: 1001)
     }
     await expectInvalidRequest { _ = try await client.followerCount(actorDID: "") }

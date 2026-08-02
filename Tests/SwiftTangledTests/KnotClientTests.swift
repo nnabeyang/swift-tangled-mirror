@@ -1,4 +1,5 @@
 import Foundation
+import SwiftAtproto
 import SwiftTangled
 import TangledLexicons
 import Testing
@@ -8,6 +9,19 @@ import Testing
 #endif
 
 @Suite struct KnotClientTests {
+  @Test func collaboratorLimitUsesGeneratedQueryValidation() async {
+    let transport = KnotTransport(statusCode: 200, body: Data(#"{"items":[]}"#.utf8))
+
+    await #expect(throws: LexiconConstraintError.self) {
+      _ = try await KnotClient(transport: transport).collaborators(
+        knot: "knot.example",
+        repositoryDID: "did:plc:repository",
+        limit: 0
+      )
+    }
+    #expect(await transport.request() == nil)
+  }
+
   @Test func collaboratorAPIsUseKnotCapabilityAndAuthenticatedProcedures() async throws {
     let versionTransport = KnotTransport(
       statusCode: 200,

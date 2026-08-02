@@ -1,4 +1,5 @@
 import Foundation
+import SwiftAtproto
 import Testing
 
 #if canImport(FoundationNetworking)
@@ -202,7 +203,7 @@ import TangledLexicons
     let transport = PullRequestTransport([])
     let client = makeClient(transport: transport)
 
-    await expectInvalidRequest {
+    await #expect(throws: LexiconConstraintError.self) {
       _ = try await client.pullRequests(uris: Array(repeating: "at://example", count: 51))
     }
     await expectInvalidRequest {
@@ -223,7 +224,7 @@ import TangledLexicons
         status: PullRequestStatus(rawValue: "")
       )
     }
-    await expectInvalidRequest {
+    await #expect(throws: LexiconConstraintError.self) {
       _ = try await client.pullRequestStatuses(pullRequestURI: "at://pull", limit: 0)
     }
     await expectInvalidRequest {
