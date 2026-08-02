@@ -120,6 +120,7 @@
             "sh.tangled.repo.listSecrets",
             "sh.tangled.repo.removeCollaborator",
             "sh.tangled.repo.removeSecret",
+            "sh.tangled.repo.setDefaultBranch",
             "sh.tangled.repo.pull",
             "sh.tangled.repo.pull.status",
             "sh.tangled.repo.pull.countStatuses",

@@ -13154,6 +13154,76 @@ extension Sh.Tangled {
       try _unknownValues.encode(to: encoder)
     }
   }
+  /// Set the default branch for a repository
+  public enum RepoSetDefaultBranch: XRPCProcedure {
+    public static let id = "sh.tangled.repo.setDefaultBranch"
+    public static let contentType = "application/json"
+    public typealias RequestBody = RepoSetDefaultBranch_Input
+    public typealias ResponseBody = EmptyResponse
+    public indirect enum Error: XRPCError {
+      case unexpected(error: Swift.String?, message: Swift.String?)
+
+      public init(error: UnExpectedError) {
+        switch error.error {
+        default:
+          self = .unexpected(error: error.error, message: error.message)
+        }
+      }
+
+      public var error: Swift.String? {
+        switch self {
+        case .unexpected(let error, _):
+          return error
+        }
+      }
+
+      public var message: Swift.String? {
+        switch self {
+        case .unexpected(_, let message):
+          return message
+        }
+      }
+    }
+  }
+
+  public struct RepoSetDefaultBranch_Input: Codable, Hashable, Sendable {
+    public var defaultBranch: Swift.String
+    public var repo: FormatString<ATURI>
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(defaultBranch: Swift.String, repo: FormatString<ATURI>) {
+      self.defaultBranch = defaultBranch
+      self.repo = repo
+      self._unknownValues = [:]
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case defaultBranch
+      case repo
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      self.defaultBranch = try keyedContainer.decode(Swift.String.self, forKey: .defaultBranch)
+      self.repo = try keyedContainer.decode(FormatString<ATURI>.self, forKey: .repo)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      self._unknownValues = _unknownValues
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encode(self.defaultBranch, forKey: .defaultBranch)
+      try container.encode(self.repo, forKey: .repo)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
   public enum RepoTag: XRPCQuery {
     public static let id = "sh.tangled.repo.tag"
     public typealias ResponseBody = Foundation.Data
@@ -15113,6 +15183,8 @@ public protocol XRPCCallable: _XRPCCallable {
   func RepoRemoveCollaborator(input: Sh.Tangled.RepoRemoveCollaborator_Input) async throws -> Sh.Tangled.RepoRemoveCollaborator.ResponseBody
   /// Remove a CI secret
   func RepoRemoveSecret(input: Sh.Tangled.RepoRemoveSecret_Input) async throws -> Sh.Tangled.RepoRemoveSecret.ResponseBody
+  /// Set the default branch for a repository
+  func RepoSetDefaultBranch(input: Sh.Tangled.RepoSetDefaultBranch_Input) async throws -> Sh.Tangled.RepoSetDefaultBranch.ResponseBody
   func RepoTag(repo: Swift.String, tag: Swift.String) async throws -> Sh.Tangled.RepoTag.ResponseBody
   func RepoTags(cursor: Swift.String?, limit: Swift.Int?, repo: Swift.String) async throws -> Sh.Tangled.RepoTags.ResponseBody
   func RepoTree(path: Swift.String?, ref: Swift.String, repo: Swift.String) async throws -> Sh.Tangled.RepoTree.ResponseBody
@@ -15395,6 +15467,10 @@ extension XRPCCallable {
   /// Remove a CI secret
   public func RepoRemoveSecret(input: Sh.Tangled.RepoRemoveSecret_Input) async throws -> Sh.Tangled.RepoRemoveSecret.ResponseBody {
     try await call(Sh.Tangled.RepoRemoveSecret.self, input: input)
+  }
+  /// Set the default branch for a repository
+  public func RepoSetDefaultBranch(input: Sh.Tangled.RepoSetDefaultBranch_Input) async throws -> Sh.Tangled.RepoSetDefaultBranch.ResponseBody {
+    try await call(Sh.Tangled.RepoSetDefaultBranch.self, input: input)
   }
   public func RepoTag(repo: Swift.String, tag: Swift.String) async throws -> Sh.Tangled.RepoTag.ResponseBody {
     try await call(Sh.Tangled.RepoTag.self, input: .init(repo: repo, tag: tag))
