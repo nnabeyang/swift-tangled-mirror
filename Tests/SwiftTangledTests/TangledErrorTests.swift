@@ -4,7 +4,7 @@ import Testing
 @testable import SwiftTangled
 
 @Test func versionIsExposed() {
-  #expect(SwiftTangled.version == "0.4.1")
+  #expect(SwiftTangled.version == "0.5.0")
 }
 
 @Test func tangledErrorCasesArePatternMatchable() {
