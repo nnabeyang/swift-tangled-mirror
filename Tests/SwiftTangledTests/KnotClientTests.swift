@@ -9,6 +9,61 @@ import Testing
 #endif
 
 @Suite struct KnotClientTests {
+  @Test func defaultBranchAPIsReadAndWriteTheKnot() async throws {
+    let defaultTransport = KnotTransport(
+      statusCode: 200,
+      body: Data(
+        #"{"name":"main","hash":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","when":"2026-08-01T00:00:00Z"}"#.utf8
+      )
+    )
+    let current = try await KnotClient(transport: defaultTransport).defaultBranch(
+      knot: "knot.example",
+      repositoryDID: "did:plc:repository"
+    )
+    #expect(current.name == "main")
+    #expect(
+      await defaultTransport.request()?.url?.absoluteString
+        == "https://knot.example/xrpc/sh.tangled.repo.getDefaultBranch?repo=did%3Aplc%3Arepository"
+    )
+
+    let branchTransport = KnotTransport(
+      statusCode: 200,
+      body: Data(
+        #"{"name":"release","hash":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","when":"2026-08-01T00:00:00Z"}"#.utf8
+      )
+    )
+    let branch = try await KnotClient(transport: branchTransport).branch(
+      knot: "knot.example",
+      repositoryDID: "did:plc:repository",
+      name: "release"
+    )
+    #expect(branch.name == "release")
+    let branchURL = try #require(await branchTransport.request()?.url?.absoluteString)
+    #expect(branchURL.contains("name=release"))
+    #expect(branchURL.contains("repo=did%3Aplc%3Arepository"))
+
+    let setTransport = KnotTransport(statusCode: 200, body: Data())
+    try await KnotClient(transport: setTransport).setDefaultBranch(
+      knot: "knot.example",
+      token: "service-token",
+      repositoryURI: "at://did:plc:owner/sh.tangled.repo/core",
+      branch: "release"
+    )
+    let request = try #require(await setTransport.request())
+    #expect(
+      request.url?.absoluteString
+        == "https://knot.example/xrpc/sh.tangled.repo.setDefaultBranch"
+    )
+    #expect(request.httpMethod == "POST")
+    #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer service-token")
+    let input = try JSONDecoder().decode(
+      Sh.Tangled.RepoSetDefaultBranch_Input.self,
+      from: try #require(request.httpBody)
+    )
+    #expect(input.repo.rawValue == "at://did:plc:owner/sh.tangled.repo/core")
+    #expect(input.defaultBranch == "release")
+  }
+
   @Test func collaboratorLimitUsesGeneratedQueryValidation() async {
     let transport = KnotTransport(statusCode: 200, body: Data(#"{"items":[]}"#.utf8))
 

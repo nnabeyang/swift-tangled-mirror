@@ -60,6 +60,56 @@ public struct KnotClient: Sendable {
     return Set(output.capabilities ?? [])
   }
 
+  public func defaultBranch(
+    knot: String,
+    repositoryDID: String
+  ) async throws -> GitDefaultBranch {
+    let repositoryDID = try validDID(repositoryDID, name: "repository DID")
+    let output = try await client(knot: knot).RepoGetDefaultBranch(repo: repositoryDID.rawValue)
+    return GitDefaultBranch(
+      name: output.name,
+      hash: output.hash,
+      shortHash: output.shortHash,
+      when: output.when,
+      message: output.message,
+      author: output.author.map {
+        GitSignature(name: $0.name, email: $0.email, when: $0.when)
+      }
+    )
+  }
+
+  public func branch(
+    knot: String,
+    repositoryDID: String,
+    name: String
+  ) async throws -> GitReference {
+    let repositoryDID = try validDID(repositoryDID, name: "repository DID")
+    let name = try required(name, name: "branch")
+    let output = try await client(knot: knot).RepoBranch(
+      name: name,
+      repo: repositoryDID.rawValue
+    )
+    return GitReference(name: output.name, hash: output.hash)
+  }
+
+  public func setDefaultBranch(
+    knot: String,
+    token: String,
+    repositoryURI: String,
+    branch: String
+  ) async throws {
+    guard let repositoryURI = FormatString<ATURI>(rawValue: repositoryURI).typed else {
+      throw TangledError.invalidRequest("repository URI must be a valid AT URI")
+    }
+    let branch = try required(branch, name: "branch")
+    _ = try await client(knot: knot, token: token).RepoSetDefaultBranch(
+      input: Sh.Tangled.RepoSetDefaultBranch_Input(
+        defaultBranch: branch,
+        repo: FormatString(repositoryURI)
+      )
+    )
+  }
+
   public func collaborators(
     knot: String,
     repositoryDID: String,
