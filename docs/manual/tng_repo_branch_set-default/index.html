@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Add a collaborator to a repository">
-  <title>tng repo collaborator add manual · tng CLI</title>
+  <meta name="description" content="Set the default branch for a repository">
+  <title>tng repo branch set-default manual · tng CLI</title>
   <link rel="stylesheet" href="../../assets/manual.css">
   <script src="../../assets/manual.js" defer></script>
 </head>
@@ -73,9 +73,9 @@
   </li>  <li data-command-item data-search="tng repo branch list list branches in a repository">
     <a href="../../manual/tng_repo_branch_list/">tng repo branch list</a>
   </li>  <li data-command-item data-search="tng repo branch set-default set the default branch for a repository">
-    <a href="../../manual/tng_repo_branch_set-default/">tng repo branch set-default</a>
+    <a href="../../manual/tng_repo_branch_set-default/" aria-current="page">tng repo branch set-default</a>
   </li>  <li data-command-item data-search="tng repo collaborator add add a collaborator to a repository">
-    <a href="../../manual/tng_repo_collaborator_add/" aria-current="page">tng repo collaborator add</a>
+    <a href="../../manual/tng_repo_collaborator_add/">tng repo collaborator add</a>
   </li>  <li data-command-item data-search="tng repo collaborator list list repository collaborators from its knot">
     <a href="../../manual/tng_repo_collaborator_list/">tng repo collaborator list</a>
   </li>  <li data-command-item data-search="tng repo collaborator remove remove a collaborator from a repository">
@@ -206,11 +206,11 @@
   </nav>
     <main id="content" tabindex="-1">
         <nav class="breadcrumbs" aria-label="Breadcrumb">
-    <a href="../tng/">tng</a><span aria-hidden="true">/</span><a href="../tng_repo/">repo</a><span aria-hidden="true">/</span><a href="../tng_repo_collaborator/">collaborator</a><span aria-hidden="true">/</span><span aria-current="page">add</span>
-  </nav><h1><code>tng repo collaborator add</code></h1><p class="lead">Add a collaborator to a repository</p>  <section>
+    <a href="../tng/">tng</a><span aria-hidden="true">/</span><a href="../tng_repo/">repo</a><span aria-hidden="true">/</span><a href="../tng_repo_branch/">branch</a><span aria-hidden="true">/</span><span aria-current="page">set-default</span>
+  </nav><h1><code>tng repo branch set-default</code></h1><p class="lead">Set the default branch for a repository</p>  <section>
     <h2>Usage</h2>
-    <pre class="usage"><code>tng repo collaborator add &lt;repository&gt; &lt;collaborator&gt; [--json] [--version] [--help]</code></pre>
-  </section><section><h2>Arguments</h2><dl class="arguments"><div><dt><code>&lt;repository&gt;</code></dt><dd><p>Repository AT URI, repo DID, handle/name, or clone URL</p></dd></div><div><dt><code>&lt;collaborator&gt;</code></dt><dd><p>Collaborator DID or ATProto handle</p></dd></div></dl></section><section><h2>Options</h2><dl class="arguments"><div><dt><code>--json</code></dt><dd><p>Output a versioned collaborator mutation result as JSON</p></dd></div><div><dt><code>--version</code></dt><dd><p>Show the version.</p></dd></div><div><dt><code>-h, --help</code></dt><dd><p>Show help information.</p></dd></div></dl></section>  <p class="root-reference">
+    <pre class="usage"><code>tng repo branch set-default &lt;branch&gt; [&lt;repository&gt;] [--json] [--version] [--help]</code></pre>
+  </section><section><h2>Arguments</h2><dl class="arguments"><div><dt><code>&lt;branch&gt;</code></dt><dd><p>Existing branch to make the repository default</p></dd></div><div><dt><code>&lt;repository&gt;</code></dt><dd><p>Repository AT URI, repo DID, handle/name, or clone URL (defaults to Git origin)</p></dd></div></dl></section><section><h2>Options</h2><dl class="arguments"><div><dt><code>--json</code></dt><dd><p>Output a versioned default branch change result as JSON</p></dd></div><div><dt><code>--version</code></dt><dd><p>Show the version.</p></dd></div><div><dt><code>-h, --help</code></dt><dd><p>Show help information.</p></dd></div></dl></section>  <p class="root-reference">
     See also <a href="../tng/"><code>tng</code></a>.
   </p>
       <footer>
