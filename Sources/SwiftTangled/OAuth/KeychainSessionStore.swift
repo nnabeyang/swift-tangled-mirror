@@ -16,7 +16,7 @@
       self.account = account
     }
 
-    public func load() throws -> StoredSession? {
+    public func load() throws(TangledError) -> StoredSession? {
       let query: [String: Any] = [
         kSecClass as String: kSecClassGenericPassword,
         kSecAttrService as String: service,
@@ -42,7 +42,7 @@
       }
     }
 
-    public func write(_ session: StoredSession) throws {
+    public func write(_ session: StoredSession) throws(TangledError) {
       let data: Data
       do {
         data = try encoder.encode(session)
@@ -77,7 +77,7 @@
       throw TangledError.keychainFailure(updateStatus)
     }
 
-    public func clear() throws {
+    public func clear() throws(TangledError) {
       let query: [String: Any] = [
         kSecClass as String: kSecClassGenericPassword,
         kSecAttrService as String: service,

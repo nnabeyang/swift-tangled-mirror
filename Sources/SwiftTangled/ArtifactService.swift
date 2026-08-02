@@ -108,7 +108,7 @@ enum ArtifactPageMerger {
     position: ArtifactCursor.Position?,
     limit: Int?,
     sort: ArtifactSortOrder
-  ) throws -> ArtifactPageRead {
+  ) throws(TangledError) -> ArtifactPageRead {
     var recordsByURI: [String: TangledRecord<Artifact>] = [:]
     for record in indexed {
       recordsByURI[record.uri] = record
@@ -126,10 +126,12 @@ enum ArtifactPageMerger {
     }
     let pageLimit = limit ?? records.count
     let pageItems = Array(records.prefix(pageLimit))
-    let nextCursor =
-      records.count > pageItems.count
-      ? try pageItems.last.map { try ArtifactCursor.encode(record: $0, sort: sort) }
-      : nil
+    let nextCursor: String?
+    if records.count > pageItems.count, let last = pageItems.last {
+      nextCursor = try ArtifactCursor.encode(record: last, sort: sort)
+    } else {
+      nextCursor = nil
+    }
     return ArtifactPageRead(
       page: Page(items: pageItems, cursor: nextCursor),
       authoritativeChanges: authoritativeChanges
@@ -154,15 +156,20 @@ enum ArtifactCursor {
   static func encode(
     record: TangledRecord<Artifact>,
     sort: ArtifactSortOrder
-  ) throws -> String {
-    let data = try JSONEncoder().encode(
-      Position(
-        version: 1,
-        sort: sort,
-        createdAt: record.value.createdAt.rawValue,
-        uri: record.uri
+  ) throws(TangledError) -> String {
+    let data: Data
+    do {
+      data = try JSONEncoder().encode(
+        Position(
+          version: 1,
+          sort: sort,
+          createdAt: record.value.createdAt.rawValue,
+          uri: record.uri
+        )
       )
-    )
+    } catch {
+      throw TangledError.decoding(error)
+    }
     return prefix
       + data.base64EncodedString()
       .replacingOccurrences(of: "+", with: "-")
@@ -170,7 +177,10 @@ enum ArtifactCursor {
       .replacingOccurrences(of: "=", with: "")
   }
 
-  static func decode(_ cursor: String, sort: ArtifactSortOrder) throws -> Position {
+  static func decode(
+    _ cursor: String,
+    sort: ArtifactSortOrder
+  ) throws(TangledError) -> Position {
     guard cursor.hasPrefix(prefix) else {
       throw TangledError.invalidRequest("invalid integrated artifact cursor")
     }

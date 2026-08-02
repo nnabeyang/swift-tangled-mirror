@@ -69,7 +69,7 @@ package func validateRepositorySecretInput(
   )
 }
 
-private func repositoryATURI(_ value: String) throws -> ATURI {
+private func repositoryATURI(_ value: String) throws(TangledError) -> ATURI {
   do {
     return try ATURI(string: value)
   } catch {

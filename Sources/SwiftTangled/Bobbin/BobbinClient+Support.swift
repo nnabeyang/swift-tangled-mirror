@@ -17,7 +17,7 @@ extension BobbinClient {
     return value.addingPercentEncoding(withAllowedCharacters: allowed) ?? value
   }
 
-  func validateGitRepositoryURI(_ value: String) throws {
+  func validateGitRepositoryURI(_ value: String) throws(TangledError) {
     try requireNonempty(value, name: "repository URI")
     guard let uri = FormatString<ATURI>(rawValue: value).typed,
       uri.collection?.rawValue == Sh.Tangled.Repo.nsId
@@ -28,13 +28,13 @@ extension BobbinClient {
     }
   }
 
-  func requireNonempty(_ value: String, name: String) throws {
+  func requireNonempty(_ value: String, name: String) throws(TangledError) {
     guard !value.isEmpty else {
       throw TangledError.invalidRequest("\(name) must not be empty")
     }
   }
 
-  func validateBatch(_ values: [String], name: String) throws {
+  func validateBatch(_ values: [String], name: String) throws(TangledError) {
     guard values.allSatisfy({ !$0.isEmpty }) else {
       throw TangledError.invalidRequest("\(name) must not contain an empty value")
     }

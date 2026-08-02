@@ -29,7 +29,7 @@ extension BobbinClient {
     return CountSummary(count: output.count, distinctAuthors: output.distinctAuthors)
   }
 
-  private func collaboratorDID(_ value: String, name: String) throws -> DID {
+  private func collaboratorDID(_ value: String, name: String) throws(TangledError) -> DID {
     do {
       return try DID(string: value)
     } catch {

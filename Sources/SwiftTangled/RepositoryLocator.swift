@@ -28,7 +28,12 @@ public struct RepositoryLocator: Sendable {
   }
 
   public func resolve(_ rawReference: String) async throws -> TangledRecord<Repository> {
-    let reference = try RepositoryReference(rawReference)
+    let reference: RepositoryReference
+    do throws(TangledError) {
+      reference = try RepositoryReference(rawReference)
+    } catch {
+      throw error
+    }
     switch reference {
     case .atURI(let uri):
       return try await recordReader.repository(uri: uri).record

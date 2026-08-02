@@ -33,7 +33,7 @@ public struct SystemBrowserLauncher: BrowserLauncher {
     self.runner = runner
   }
 
-  public func open(_ url: URL) async throws {
+  public func open(_ url: URL) async throws(TangledError) {
     guard let executableURL else {
       throw TangledError.browserLaunchFailed(
         "no supported browser launcher was found; use --no-browser --callback-port <port>"

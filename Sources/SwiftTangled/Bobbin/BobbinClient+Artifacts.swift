@@ -70,7 +70,7 @@ extension BobbinClient {
     return CountSummary(count: output.count, distinctAuthors: output.distinctAuthors)
   }
 
-  private func validateArtifactRepositoryDID(_ value: String) throws {
+  private func validateArtifactRepositoryDID(_ value: String) throws(TangledError) {
     guard FormatString<DID>(rawValue: value).typed != nil else {
       throw TangledError.invalidRequest("repository DID must be a valid DID")
     }

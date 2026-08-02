@@ -283,7 +283,7 @@ extension PullRequestMergeService {
   private func validate(
     indexedState: PullRequestIndexedState,
     matches authoritativeRecord: TangledRecord<PullRequest>
-  ) throws {
+  ) throws(TangledError) {
     guard let authoritativeCID = authoritativeRecord.cid, !authoritativeCID.isEmpty else {
       throw TangledError.upstreamFailed(
         "PDS pull request record does not expose a CID: \(authoritativeRecord.uri)"

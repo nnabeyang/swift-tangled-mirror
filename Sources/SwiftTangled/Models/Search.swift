@@ -35,7 +35,7 @@ public struct SearchOptions: Equatable, Sendable {
 }
 
 extension SearchOptions {
-  package func validateDates() throws {
+  package func validateDates() throws(TangledError) {
     let parsedSince: Date?
     if let since {
       guard let date = since.typed else {

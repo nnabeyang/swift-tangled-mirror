@@ -25,7 +25,7 @@ extension BobbinClient {
   }
 }
 
-func decodeGitComparison(from data: Data) throws -> GitComparison {
+func decodeGitComparison(from data: Data) throws(TangledError) -> GitComparison {
   do {
     return try JSONDecoder().decode(WireGitComparison.self, from: data).model
   } catch {
@@ -34,7 +34,10 @@ func decodeGitComparison(from data: Data) throws -> GitComparison {
 }
 
 private extension BobbinClient {
-  func decodeGitResponse<Value: Decodable>(_ type: Value.Type, from data: Data) throws -> Value {
+  func decodeGitResponse<Value: Decodable>(
+    _ type: Value.Type,
+    from data: Data
+  ) throws(TangledError) -> Value {
     do {
       return try JSONDecoder().decode(type, from: data)
     } catch {

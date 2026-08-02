@@ -12,7 +12,7 @@ struct CLITextFileReader: Sendable {
     self.readStandardInput = readStandardInput
   }
 
-  func read(path: String) throws -> String {
+  func read(path: String) throws(TangledError) -> String {
     let data: Data
     do {
       data =

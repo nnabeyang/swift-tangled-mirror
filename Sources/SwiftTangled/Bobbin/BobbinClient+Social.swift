@@ -162,7 +162,7 @@ private extension BobbinClient {
 
 private extension Sh.Tangled.FeedStar_Subject {
   var starSubject: StarSubject {
-    get throws {
+    get throws(TangledError) {
       switch self {
       case .feedStarRepo(let value):
         return .repository(did: value.did.rawValue)

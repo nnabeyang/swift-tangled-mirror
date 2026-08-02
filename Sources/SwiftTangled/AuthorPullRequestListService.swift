@@ -127,7 +127,7 @@ enum AuthorPullRequestPageBuilder {
     position: AuthorPullRequestCursor.Position?,
     limit: Int,
     order: BobbinSortOrder
-  ) throws -> Page<PullRequestListItem> {
+  ) throws(TangledError) -> Page<PullRequestListItem> {
     let latestStatuses = latestStatusesByPullRequest(statuses)
     var items = pulls.compactMap { pull -> PullRequestListItem? in
       guard pull.value.target.repositoryDID == repositoryDID else { return nil }
@@ -148,18 +148,18 @@ enum AuthorPullRequestPageBuilder {
       }
     }
     let pageItems = Array(items.prefix(limit))
-    let nextCursor =
-      items.count > pageItems.count
-      ? try pageItems.last.map {
-        try AuthorPullRequestCursor.encode(
-          record: $0.record,
-          repositoryDID: repositoryDID,
-          authorDID: authorDID,
-          status: status,
-          order: order
-        )
-      }
-      : nil
+    let nextCursor: String?
+    if items.count > pageItems.count, let last = pageItems.last {
+      nextCursor = try AuthorPullRequestCursor.encode(
+        record: last.record,
+        repositoryDID: repositoryDID,
+        authorDID: authorDID,
+        status: status,
+        order: order
+      )
+    } else {
+      nextCursor = nil
+    }
     return Page(items: pageItems, cursor: nextCursor)
   }
 
@@ -251,18 +251,23 @@ enum AuthorPullRequestCursor {
     authorDID: String,
     status: PullRequestStatus?,
     order: BobbinSortOrder
-  ) throws -> String {
-    let data = try JSONEncoder().encode(
-      Position(
-        version: 1,
-        repositoryDID: repositoryDID,
-        authorDID: authorDID,
-        status: status?.rawValue,
-        order: order.rawValue,
-        createdAt: record.value.createdAt,
-        uri: record.uri
+  ) throws(TangledError) -> String {
+    let data: Data
+    do {
+      data = try JSONEncoder().encode(
+        Position(
+          version: 1,
+          repositoryDID: repositoryDID,
+          authorDID: authorDID,
+          status: status?.rawValue,
+          order: order.rawValue,
+          createdAt: record.value.createdAt,
+          uri: record.uri
+        )
       )
-    )
+    } catch {
+      throw TangledError.decoding(error)
+    }
     return prefix
       + data.base64EncodedString()
       .replacingOccurrences(of: "+", with: "-")
@@ -276,7 +281,7 @@ enum AuthorPullRequestCursor {
     authorDID: String,
     status: PullRequestStatus?,
     order: BobbinSortOrder
-  ) throws -> Position {
+  ) throws(TangledError) -> Position {
     guard cursor.hasPrefix(prefix) else {
       throw TangledError.invalidRequest(
         "--author requires a cursor returned by an author PDS listing"

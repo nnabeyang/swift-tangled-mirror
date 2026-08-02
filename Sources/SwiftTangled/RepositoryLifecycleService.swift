@@ -378,7 +378,7 @@ extension RepositoryLifecycleService {
     )
   }
 
-  private func normalizedRepositoryName(_ rawValue: String) throws -> String {
+  private func normalizedRepositoryName(_ rawValue: String) throws(TangledError) -> String {
     var value = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
     if value.lowercased().hasSuffix(".git") {
       value.removeLast(4)
@@ -405,7 +405,7 @@ extension RepositoryLifecycleService {
     return value
   }
 
-  private func validatedSource(_ rawValue: String) throws -> String {
+  private func validatedSource(_ rawValue: String) throws(TangledError) -> String {
     let value = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
     guard let components = URLComponents(string: value), components.scheme != nil,
       components.host != nil
@@ -420,7 +420,7 @@ extension RepositoryLifecycleService {
     return value
   }
 
-  private func validatedCustomRepositoryDID(_ rawValue: String) throws -> String {
+  private func validatedCustomRepositoryDID(_ rawValue: String) throws(TangledError) -> String {
     let value = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
     guard value.hasPrefix("did:web:") else {
       throw TangledError.invalidRequest("custom repository DID must be a did:web DID")

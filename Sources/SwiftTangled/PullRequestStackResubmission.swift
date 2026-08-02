@@ -431,8 +431,13 @@ public struct PullRequestStackResubmissionService: Sendable {
     return ordered
   }
 
-  private func recordOwnerDID(_ rawURI: String) throws -> String {
-    let uri = try ATURI(string: rawURI)
+  private func recordOwnerDID(_ rawURI: String) throws(TangledError) -> String {
+    let uri: ATURI
+    do {
+      uri = try ATURI(string: rawURI)
+    } catch {
+      throw TangledError.invalidRequest("record URI must be owned by a DID")
+    }
     guard case .did(let did) = uri.authority, uri.rkey != nil else {
       throw TangledError.invalidRequest("record URI must be owned by a DID")
     }
@@ -452,7 +457,7 @@ struct PullRequestStackResubmissionDependencies: Sendable {
 }
 
 package enum FormatPatchSeries {
-  package static func changeID(in data: Data) throws -> String {
+  package static func changeID(in data: Data) throws(TangledError) -> String {
     guard let text = String(data: data, encoding: .utf8) else {
       throw TangledError.invalidRequest("pull request patch must be valid UTF-8")
     }
@@ -473,7 +478,7 @@ package enum FormatPatchSeries {
     return values[0]
   }
 
-  package static func parse(_ data: Data) throws -> [PullRequestStackCommit] {
+  package static func parse(_ data: Data) throws(TangledError) -> [PullRequestStackCommit] {
     guard let text = String(data: data, encoding: .utf8), !text.isEmpty else {
       throw TangledError.invalidRequest("pull request patch must be valid UTF-8")
     }
@@ -487,7 +492,8 @@ package enum FormatPatchSeries {
     guard !chunks.isEmpty else {
       throw TangledError.invalidRequest("stack resubmission requires git format-patches")
     }
-    return try chunks.map { lines in
+    var commits: [PullRequestStackCommit] = []
+    for lines in chunks {
       let raw = Data((lines.joined(separator: "\n") + "\n").utf8)
       let changeID = try changeID(in: raw)
       guard let subject = lines.first(where: { $0.hasPrefix("Subject: ") }) else {
@@ -509,12 +515,15 @@ package enum FormatPatchSeries {
       let body = lines[bodyStart ..< separator]
         .joined(separator: "\n")
         .trimmingCharacters(in: .whitespacesAndNewlines)
-      return PullRequestStackCommit(
-        title: title,
-        body: body.isEmpty ? nil : body,
-        changeID: changeID,
-        patch: raw
+      commits.append(
+        PullRequestStackCommit(
+          title: title,
+          body: body.isEmpty ? nil : body,
+          changeID: changeID,
+          patch: raw
+        )
       )
     }
+    return commits
   }
 }

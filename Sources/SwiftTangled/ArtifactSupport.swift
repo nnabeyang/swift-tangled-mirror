@@ -17,7 +17,7 @@ enum ArtifactValidation {
     return rawValue
   }
 
-  static func tagData(_ hash: String) throws -> Data {
+  static func tagData(_ hash: String) throws(TangledError) -> Data {
     guard hash.count == 40 else {
       throw TangledError.invalidRequest("tag object hash must contain 40 hexadecimal characters")
     }
@@ -37,7 +37,7 @@ enum ArtifactValidation {
     return data
   }
 
-  static func recordOwner(_ uriValue: String, collection: String) throws -> DID {
+  static func recordOwner(_ uriValue: String, collection: String) throws(TangledError) -> DID {
     guard let uri = FormatString<ATURI>(rawValue: uriValue).typed,
       uri.collection?.rawValue == collection,
       uri.rkey != nil,

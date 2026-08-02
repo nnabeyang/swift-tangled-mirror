@@ -69,7 +69,7 @@ private enum PipelineTriggerError: Error, Sendable {
   case invalidPipelineURI(String)
 }
 
-package func spindleServiceAudience(_ url: URL) throws -> String {
+package func spindleServiceAudience(_ url: URL) throws(TangledError) -> String {
   guard url.scheme?.lowercased() == "https", let host = url.host else {
     throw TangledError.invalidRequest(
       "authenticated Spindle operations require an HTTPS endpoint"

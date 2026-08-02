@@ -230,7 +230,7 @@ extension PDSRecordClient {
     let collection: NSID
     let rkey: RecordKey
 
-    init(uri rawURI: String, expectedCollection: String) throws {
+    init(uri rawURI: String, expectedCollection: String) throws(TangledError) {
       let uri: ATURI
       do {
         uri = try ATURI(string: rawURI)
@@ -337,7 +337,7 @@ extension PDSRecordClient {
     ownerDID: DID,
     collection: String,
     rkey: RecordKey? = nil
-  ) throws {
+  ) throws(TangledError) {
     let uri: ATURI
     do {
       uri = try ATURI(string: rawURI)

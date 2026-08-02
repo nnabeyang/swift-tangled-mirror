@@ -43,8 +43,6 @@ struct APICommandService: Sendable {
     do {
       let value = try JSONDecoder().decode(JSONValue.self, from: data)
       return CLICommandOutput(stdout: try formatter.json(value))
-    } catch let error as TangledError {
-      throw error
     } catch {
       throw TangledError.decoding(error)
     }

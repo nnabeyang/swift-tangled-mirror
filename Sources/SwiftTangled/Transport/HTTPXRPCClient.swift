@@ -55,7 +55,9 @@ struct HTTPXRPCClient: XRPCCallable, Sendable {
     return data
   }
 
-  func request(for components: XRPCRequestComponents) throws -> URLRequest {
+  func request(
+    for components: XRPCRequestComponents
+  ) throws(TangledError) -> URLRequest {
     let endpoint =
       baseURL
       .appendingPathComponent("xrpc", isDirectory: true)

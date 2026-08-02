@@ -283,7 +283,7 @@ extension PullRequestResubmissionService {
   private func validateChangedPatch(
     _ patch: Data,
     context: PullRequestResubmissionContext
-  ) throws {
+  ) throws(TangledError) {
     guard !patch.isEmpty else {
       throw TangledError.invalidRequest("pull request patch must not be empty")
     }
@@ -292,7 +292,7 @@ extension PullRequestResubmissionService {
     }
   }
 
-  private func normalizedPatch(_ patch: Data) throws -> Data {
+  private func normalizedPatch(_ patch: Data) throws(TangledError) -> Data {
     guard let text = String(data: patch, encoding: .utf8) else {
       throw TangledError.invalidRequest("pull request patch must be valid UTF-8")
     }
@@ -358,7 +358,7 @@ extension PullRequestResubmissionService {
     return items
   }
 
-  private func ownerDID(_ rawURI: String, name: String) throws -> String {
+  private func ownerDID(_ rawURI: String, name: String) throws(TangledError) -> String {
     let uri: ATURI
     do {
       uri = try ATURI(string: rawURI)

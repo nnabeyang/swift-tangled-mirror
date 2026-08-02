@@ -46,7 +46,11 @@ struct SearchCommandService: Sendable {
       since: since.map { .init(rawValue: $0) },
       until: until.map { .init(rawValue: $0) }
     )
-    try dateOptions.validateDates()
+    do throws(TangledError) {
+      try dateOptions.validateDates()
+    } catch {
+      throw error
+    }
 
     let authorDID: String?
     if let author {

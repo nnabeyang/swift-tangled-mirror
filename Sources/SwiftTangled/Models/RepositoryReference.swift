@@ -7,7 +7,7 @@ public enum RepositoryReference: Equatable, Hashable, Sendable {
   case repositoryDID(String)
   case ownerAndName(owner: String, name: String)
 
-  public init(_ rawValue: String) throws {
+  public init(_ rawValue: String) throws(TangledError) {
     let value = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !value.isEmpty else {
       throw TangledError.invalidRequest("repository reference must not be empty")

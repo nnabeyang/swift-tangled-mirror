@@ -526,7 +526,13 @@ struct PRCommandService: Sendable {
           "patch-based pull request resubmission requires --patch-file"
         )
       }
-      result = try await resubmission.submitPatch(PatchFileReader().read(path: patchFile))
+      let patch: Data
+      do throws(TangledError) {
+        patch = try PatchFileReader().read(path: patchFile)
+      } catch {
+        throw error
+      }
+      result = try await resubmission.submitPatch(patch)
     } else if let source = pull.source, let sourceRepositoryDID = source.repositoryDID {
       guard patchFile == nil else {
         throw TangledError.invalidRequest(
@@ -591,7 +597,11 @@ struct PRCommandService: Sendable {
           "patch-based stack resubmission requires --patch-file"
         )
       }
-      commits = try FormatPatchSeries.parse(PatchFileReader().read(path: patchFile))
+      do throws(TangledError) {
+        commits = try FormatPatchSeries.parse(PatchFileReader().read(path: patchFile))
+      } catch {
+        throw error
+      }
     } else if let source = pull.source, let sourceRepositoryDID = source.repositoryDID {
       guard patchFile == nil else {
         throw TangledError.invalidRequest(

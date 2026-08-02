@@ -197,7 +197,7 @@ extension BobbinClient {
 }
 
 extension BobbinClient {
-  fileprivate func validateIssueState(_ state: IssueStatus?) throws {
+  fileprivate func validateIssueState(_ state: IssueStatus?) throws(TangledError) {
     guard let state else { return }
     try requireNonempty(state.rawValue, name: "issue state")
   }
@@ -209,7 +209,7 @@ extension BobbinClient {
     state: String,
     stateUpdatedAt: FormatString<Date>?,
     commentCount: Int
-  ) throws -> IssueListItem {
+  ) throws(TangledError) -> IssueListItem {
     let record = try TangledRecordDecoder.issue(
       uri: uri.rawValue,
       cid: cid?.rawValue,

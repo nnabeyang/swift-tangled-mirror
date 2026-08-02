@@ -97,7 +97,9 @@ extension PDSClient {
     }
   }
 
-  private func requireRepositoryRecordScope(action: LexPermissionAction) throws {
+  private func requireRepositoryRecordScope(
+    action: LexPermissionAction
+  ) throws(TangledError) {
     guard grantedScopes.allowsRepo(collection: Sh.Tangled.Repo.nsId, action: action) else {
       throw TangledError.insufficientScope("repo:\(Sh.Tangled.Repo.nsId)")
     }

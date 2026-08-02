@@ -470,7 +470,13 @@ extension RepoCommandService {
 
   private func writableRepository(_ repository: String?) async throws -> WritableRepository {
     let reference = try repository ?? dependencies.originURL()
-    if case .repositoryDID(let did) = try RepositoryReference(reference) {
+    let parsedReference: RepositoryReference
+    do throws(TangledError) {
+      parsedReference = try RepositoryReference(reference)
+    } catch {
+      throw error
+    }
+    if case .repositoryDID(let did) = parsedReference {
       return WritableRepository(did: did, name: did)
     }
 

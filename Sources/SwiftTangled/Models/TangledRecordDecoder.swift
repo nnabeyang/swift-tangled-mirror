@@ -7,7 +7,7 @@ enum TangledRecordDecoder {
     uri: String,
     cid: String?,
     value: UnknownATPValue
-  ) throws -> TangledRecord<Repository> {
+  ) throws(TangledError) -> TangledRecord<Repository> {
     let wire: Sh.Tangled.Repo = try decode(value)
     return TangledRecord(
       uri: uri,
@@ -31,7 +31,7 @@ enum TangledRecordDecoder {
     uri: String,
     cid: String?,
     value: UnknownATPValue
-  ) throws -> TangledRecord<Issue> {
+  ) throws(TangledError) -> TangledRecord<Issue> {
     let wire: Sh.Tangled.RepoIssue = try decode(value)
     return TangledRecord(
       uri: uri,
@@ -51,7 +51,7 @@ enum TangledRecordDecoder {
     uri: String,
     cid: String?,
     value: UnknownATPValue
-  ) throws -> TangledRecord<PullRequest> {
+  ) throws(TangledError) -> TangledRecord<PullRequest> {
     let wire: Sh.Tangled.RepoPull = try decode(value)
     return TangledRecord(
       uri: uri,
@@ -88,7 +88,7 @@ enum TangledRecordDecoder {
     uri: String,
     cid: String?,
     value: UnknownATPValue
-  ) throws -> TangledRecord<PullRequestStatusChange> {
+  ) throws(TangledError) -> TangledRecord<PullRequestStatusChange> {
     let wire: Sh.Tangled.Repo.PullStatus = try decode(value)
     return TangledRecord(
       uri: uri,
@@ -105,7 +105,7 @@ enum TangledRecordDecoder {
     uri: String,
     cid: String?,
     value: UnknownATPValue
-  ) throws -> TangledRecord<Artifact> {
+  ) throws(TangledError) -> TangledRecord<Artifact> {
     let wire: Sh.Tangled.RepoArtifact = try decode(value)
     guard let repositoryDID = wire.repoDid else {
       throw TangledError.decoding(ArtifactRecordDecodeError.missingRepositoryDID)
@@ -133,7 +133,7 @@ enum TangledRecordDecoder {
     name: String,
     blob: BlobReference,
     createdAt: FormatString<Date>
-  ) throws -> TangledRecord<Artifact> {
+  ) throws(TangledError) -> TangledRecord<Artifact> {
     guard tag.count == 20 else {
       throw TangledError.decoding(ArtifactRecordDecodeError.invalidTagLength(tag.count))
     }
@@ -155,7 +155,7 @@ enum TangledRecordDecoder {
     )
   }
 
-  static func recordType(of value: UnknownATPValue) throws -> String {
+  static func recordType(of value: UnknownATPValue) throws(TangledError) -> String {
     if case .record(let record) = value, let unknown = record as? UnknownRecord {
       return unknown.type
     }
@@ -165,7 +165,9 @@ enum TangledRecordDecoder {
     return type
   }
 
-  private static func decode<Value: Decodable>(_ value: UnknownATPValue) throws -> Value {
+  private static func decode<Value: Decodable>(
+    _ value: UnknownATPValue
+  ) throws(TangledError) -> Value {
     do {
       let data = try JSONEncoder().encode(value)
       let decoder = JSONDecoder()

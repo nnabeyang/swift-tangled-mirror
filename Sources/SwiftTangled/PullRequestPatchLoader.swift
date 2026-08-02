@@ -84,7 +84,7 @@ public struct PullRequestPatchLoader: Sendable {
 }
 
 extension PullRequestPatchLoader {
-  fileprivate func pullRequestOwnerDID(_ value: String) throws -> DID {
+  fileprivate func pullRequestOwnerDID(_ value: String) throws(TangledError) -> DID {
     let uri: ATURI
     do {
       uri = try ATURI(string: value)
@@ -134,7 +134,7 @@ extension PullRequestPatchLoader {
 }
 
 private enum Gzip {
-  static func decompress(_ data: Data) throws -> Data {
+  static func decompress(_ data: Data) throws(TangledError) -> Data {
     guard !data.isEmpty, data.count <= Int(UInt32.max) else {
       throw TangledError.decoding(PullRequestPatchError.invalidGzip)
     }
@@ -183,7 +183,7 @@ private enum UnifiedDiffExtractor {
   private static let diffHeader = Data("diff --git ".utf8)
   private static let signature = Data("-- ".utf8)
 
-  static func extract(from patch: Data) throws -> Data {
+  static func extract(from patch: Data) throws(TangledError) -> Data {
     let lines = lineRanges(in: patch)
     var result = Data()
     var isReadingDiff = false

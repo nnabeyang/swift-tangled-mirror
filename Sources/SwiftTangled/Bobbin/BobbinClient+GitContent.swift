@@ -347,7 +347,7 @@ private extension BobbinClient {
     )
   }
 
-  func archiveRangeHeader(_ range: GitArchiveByteRange) throws -> String {
+  func archiveRangeHeader(_ range: GitArchiveByteRange) throws(TangledError) -> String {
     switch range {
     case .bytes(let values):
       guard values.lowerBound >= 0 else {
@@ -367,13 +367,13 @@ private extension BobbinClient {
     }
   }
 
-  func validateDID(_ value: String, name: String) throws {
+  func validateDID(_ value: String, name: String) throws(TangledError) {
     guard FormatString<DID>(rawValue: value).typed != nil else {
       throw TangledError.invalidRequest("\(name) must be a valid DID")
     }
   }
 
-  func gitReferenceOffset(_ cursor: String?, name: String) throws -> Int {
+  func gitReferenceOffset(_ cursor: String?, name: String) throws(TangledError) -> Int {
     guard let cursor else { return 0 }
     guard let offset = Int(cursor), offset >= 0 else {
       throw TangledError.invalidRequest("\(name) cursor must be a non-negative integer")
@@ -387,7 +387,7 @@ private extension BobbinClient {
     itemCount == limit ? String(offset + itemCount) : nil
   }
 
-  func gitLogOffset(_ cursor: String?) throws -> Int {
+  func gitLogOffset(_ cursor: String?) throws(TangledError) -> Int {
     guard let cursor else { return 0 }
     guard let offset = Int(cursor), offset >= 0 else {
       throw TangledError.invalidRequest("log cursor must be a non-negative integer")

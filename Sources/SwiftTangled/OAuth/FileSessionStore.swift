@@ -14,7 +14,7 @@ public final class FileSessionStore: SessionStore {
     self.fileURL = fileURL
   }
 
-  public func load() throws -> StoredSession? {
+  public func load() throws(TangledError) -> StoredSession? {
     guard fileURL.isFileURL else {
       throw failure("session location is not a file URL")
     }
@@ -41,7 +41,7 @@ public final class FileSessionStore: SessionStore {
     }
   }
 
-  public func write(_ session: StoredSession) throws {
+  public func write(_ session: StoredSession) throws(TangledError) {
     guard fileURL.isFileURL else {
       throw failure("session location is not a file URL")
     }
@@ -111,7 +111,7 @@ public final class FileSessionStore: SessionStore {
     }
   }
 
-  public func clear() throws {
+  public func clear() throws(TangledError) {
     guard fileURL.isFileURL else {
       throw failure("session location is not a file URL")
     }
@@ -144,7 +144,7 @@ public final class FileSessionStore: SessionStore {
 }
 
 extension FileSessionStore {
-  fileprivate func prepareDirectory(at directoryURL: URL) throws {
+  fileprivate func prepareDirectory(at directoryURL: URL) throws(TangledError) {
     if try validateDirectoryIfPresent(at: directoryURL) {
       return
     }
@@ -162,7 +162,9 @@ extension FileSessionStore {
     }
   }
 
-  fileprivate func validateDirectoryIfPresent(at directoryURL: URL) throws -> Bool {
+  fileprivate func validateDirectoryIfPresent(
+    at directoryURL: URL
+  ) throws(TangledError) -> Bool {
     guard let info = try metadata(at: directoryURL.path) else {
       return false
     }
@@ -178,7 +180,7 @@ extension FileSessionStore {
     return true
   }
 
-  fileprivate func validateExistingSessionFileIfPresent() throws {
+  fileprivate func validateExistingSessionFileIfPresent() throws(TangledError) {
     guard let info = try metadata(at: fileURL.path) else {
       return
     }
@@ -188,7 +190,7 @@ extension FileSessionStore {
     try validateSessionMetadata(info)
   }
 
-  fileprivate func validateSessionFile(descriptor: Int32) throws {
+  fileprivate func validateSessionFile(descriptor: Int32) throws(TangledError) {
     var info = stat()
     guard fstat(descriptor, &info) == 0 else {
       throw posixFailure("could not inspect session file")
@@ -199,7 +201,7 @@ extension FileSessionStore {
     try validateSessionMetadata(info)
   }
 
-  fileprivate func validateSessionMetadata(_ info: stat) throws {
+  fileprivate func validateSessionMetadata(_ info: stat) throws(TangledError) {
     guard info.st_uid == geteuid() else {
       throw failure("session file is not owned by the current user")
     }
@@ -211,7 +213,7 @@ extension FileSessionStore {
     }
   }
 
-  fileprivate func openExistingFile() throws -> Int32 {
+  fileprivate func openExistingFile() throws(TangledError) -> Int32 {
     let descriptor = systemOpen(fileURL.path, O_RDONLY | O_NOFOLLOW | O_CLOEXEC, 0)
     if descriptor >= 0 {
       return descriptor
@@ -222,7 +224,7 @@ extension FileSessionStore {
     throw posixFailure("could not open session file")
   }
 
-  fileprivate func metadata(at path: String) throws -> stat? {
+  fileprivate func metadata(at path: String) throws(TangledError) -> stat? {
     var info = stat()
     let result = path.withCString { lstat($0, &info) }
     if result == 0 {
@@ -234,23 +236,32 @@ extension FileSessionStore {
     throw posixFailure("could not inspect session storage")
   }
 
-  fileprivate func writeAll(_ data: Data, to descriptor: Int32) throws {
-    try data.withUnsafeBytes { rawBuffer in
-      guard var address = rawBuffer.baseAddress else {
-        return
-      }
-      var remaining = rawBuffer.count
-      while remaining > 0 {
-        let written = systemWrite(descriptor, address, remaining)
-        if written < 0 {
-          if errno == EINTR {
-            continue
-          }
-          throw posixFailure("could not write temporary session file")
+  fileprivate func writeAll(
+    _ data: Data,
+    to descriptor: Int32
+  ) throws(TangledError) {
+    do {
+      try data.withUnsafeBytes { rawBuffer in
+        guard var address = rawBuffer.baseAddress else {
+          return
         }
-        remaining -= written
-        address = address.advanced(by: written)
+        var remaining = rawBuffer.count
+        while remaining > 0 {
+          let written = systemWrite(descriptor, address, remaining)
+          if written < 0 {
+            if errno == EINTR {
+              continue
+            }
+            throw posixFailure("could not write temporary session file")
+          }
+          remaining -= written
+          address = address.advanced(by: written)
+        }
       }
+    } catch let error as TangledError {
+      throw error
+    } catch {
+      throw failure("could not write temporary session file")
     }
   }
 

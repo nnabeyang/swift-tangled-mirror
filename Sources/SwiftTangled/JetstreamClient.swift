@@ -263,7 +263,7 @@ extension JetstreamClient {
     try await sleeper.sleep(for: delay)
   }
 
-  private func validate(_ options: JetstreamOptions) throws {
+  private func validate(_ options: JetstreamOptions) throws(TangledError) {
     guard endpoint.scheme == "wss" || endpoint.scheme == "ws",
       endpoint.host != nil
     else {
@@ -289,7 +289,10 @@ extension JetstreamClient {
     }
   }
 
-  private func subscriptionURL(options: JetstreamOptions, cursor: Int64?) throws -> URL {
+  private func subscriptionURL(
+    options: JetstreamOptions,
+    cursor: Int64?
+  ) throws(TangledError) -> URL {
     guard var components = URLComponents(url: endpoint, resolvingAgainstBaseURL: false) else {
       throw TangledError.invalidRequest("invalid Jetstream endpoint")
     }

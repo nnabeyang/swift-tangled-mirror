@@ -58,14 +58,14 @@ struct PipelineRunDependencies: Sendable {
 }
 
 extension PipelineRunService {
-  private func validatedCommit(_ commit: String) throws -> String {
+  private func validatedCommit(_ commit: String) throws(TangledError) -> String {
     guard commit.utf8.count == 40, commit.allSatisfy(\.isHexDigit) else {
       throw TangledError.invalidRequest("commit must be a 40-character hexadecimal SHA")
     }
     return commit
   }
 
-  private func normalizedRef(_ ref: String?) throws -> String? {
+  private func normalizedRef(_ ref: String?) throws(TangledError) -> String? {
     guard let ref else { return nil }
     let normalized = ref.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !normalized.isEmpty else {
@@ -74,7 +74,7 @@ extension PipelineRunService {
     return normalized
   }
 
-  private func normalizedWorkflows(_ workflows: [String]) throws -> [String] {
+  private func normalizedWorkflows(_ workflows: [String]) throws(TangledError) -> [String] {
     var seen = Set<String>()
     var normalized: [String] = []
     for workflow in workflows {
@@ -91,9 +91,10 @@ extension PipelineRunService {
 
   private func normalizedInputs(
     _ inputs: [PipelineManualInput]
-  ) throws -> [PipelineManualInput] {
+  ) throws(TangledError) -> [PipelineManualInput] {
     var seen = Set<String>()
-    return try inputs.map { input in
+    var normalized: [PipelineManualInput] = []
+    for input in inputs {
       let key = input.key.trimmingCharacters(in: .whitespacesAndNewlines)
       guard !key.isEmpty else {
         throw TangledError.invalidRequest("input key must not be empty")
@@ -101,7 +102,8 @@ extension PipelineRunService {
       guard seen.insert(key.uppercased()).inserted else {
         throw TangledError.invalidRequest("duplicate input key: \(key)")
       }
-      return PipelineManualInput(key: key, value: input.value)
+      normalized.append(PipelineManualInput(key: key, value: input.value))
     }
+    return normalized
   }
 }

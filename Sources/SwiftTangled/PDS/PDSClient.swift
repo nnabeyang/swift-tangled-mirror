@@ -766,7 +766,7 @@ extension PDSClient {
     return try decoder.decode(UnknownATPValue.self, from: updated)
   }
 
-  private func validatedDID(_ value: String) throws -> String {
+  private func validatedDID(_ value: String) throws(TangledError) -> String {
     do {
       return try DID(string: value).rawValue
     } catch {
@@ -774,19 +774,19 @@ extension PDSClient {
     }
   }
 
-  private func requireStarScope(action: LexPermissionAction) throws {
+  private func requireStarScope(action: LexPermissionAction) throws(TangledError) {
     guard grantedScopes.allowsRepo(collection: Self.starCollection, action: action) else {
       throw TangledError.insufficientScope("repo:\(Self.starCollection)")
     }
   }
 
-  package func requirePullScope() throws {
+  package func requirePullScope() throws(TangledError) {
     guard grantedScopes.allowsRepo(collection: Self.pullCollection, action: .update) else {
       throw TangledError.insufficientScope("repo:\(Self.pullCollection)")
     }
   }
 
-  private func validatedNonempty(_ value: String, name: String) throws -> String {
+  private func validatedNonempty(_ value: String, name: String) throws(TangledError) -> String {
     let value = value.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !value.isEmpty else {
       throw TangledError.invalidRequest("\(name) must not be empty")
@@ -794,7 +794,7 @@ extension PDSClient {
     return value
   }
 
-  private func validatedIssueURI(_ value: String) throws -> ATURI {
+  private func validatedIssueURI(_ value: String) throws(TangledError) -> ATURI {
     guard let uri = FormatString<ATURI>(rawValue: value).typed,
       uri.collection?.rawValue == Self.issueCollection,
       uri.rkey != nil
@@ -807,7 +807,7 @@ extension PDSClient {
   private func validatedStrongReference(
     _ reference: RecordReference,
     name: String
-  ) throws -> Com.Atproto.RepoStrongRef {
+  ) throws(TangledError) -> Com.Atproto.RepoStrongRef {
     guard FormatString<ATURI>(rawValue: reference.uri).typed != nil else {
       throw TangledError.invalidRequest("\(name) has an invalid AT URI: \(reference.uri)")
     }

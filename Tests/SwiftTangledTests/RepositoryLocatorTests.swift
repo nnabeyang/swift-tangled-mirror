@@ -12,7 +12,7 @@ import Testing
   let repoDID = "did:plc:repository"
   let uri = "at://did:plc:owner/sh.tangled.repo/core"
 
-  @Test func parsesEverySupportedRepositoryReference() throws {
+  @Test func parsesEverySupportedRepositoryReference() throws(TangledError) {
     #expect(try RepositoryReference(uri) == .atURI(uri))
     #expect(try RepositoryReference(repoDID) == .repositoryDID(repoDID))
     #expect(

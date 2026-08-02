@@ -50,7 +50,7 @@ struct PipelineRetryDependencies: Sendable {
 }
 
 extension PipelineRetryService {
-  private func requiredCommit(_ commit: String) throws -> String {
+  private func requiredCommit(_ commit: String) throws(TangledError) -> String {
     guard commit.utf8.count == 40, commit.allSatisfy(\.isHexDigit) else {
       throw TangledError.invalidRequest(
         "original pipeline does not expose a 40-character commit hash"
@@ -62,7 +62,7 @@ extension PipelineRetryService {
   private func selectedWorkflows(
     _ requested: String?,
     from workflows: [PipelineWorkflow]
-  ) throws -> [String] {
+  ) throws(TangledError) -> [String] {
     guard !workflows.isEmpty else {
       throw TangledError.invalidRequest("original pipeline does not contain any workflows")
     }
@@ -85,7 +85,7 @@ extension PipelineRetryService {
     _ trigger: PipelineTrigger,
     pipeline: Pipeline,
     commit: String
-  ) throws -> PipelineTrigger {
+  ) throws(TangledError) -> PipelineTrigger {
     switch trigger {
     case .pullRequest(let value):
       let sourceSHA = value.sourceSHA.isEmpty ? commit : value.sourceSHA

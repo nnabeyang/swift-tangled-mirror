@@ -56,7 +56,7 @@ extension SpindleClient {
 }
 
 extension SpindleClient {
-  private func requireNonempty(_ value: String, name: String) throws {
+  private func requireNonempty(_ value: String, name: String) throws(TangledError) {
     guard !value.isEmpty else {
       throw TangledError.invalidRequest("\(name) must not be empty")
     }
@@ -72,7 +72,9 @@ extension SpindleClient {
     }
   }
 
-  private func pipeline(from value: Sh.Tangled.CiPipeline) throws -> Pipeline {
+  private func pipeline(
+    from value: Sh.Tangled.CiPipeline
+  ) throws(TangledError) -> Pipeline {
     Pipeline(
       id: value.id,
       repositoryDID: value.repo?.rawValue,
@@ -93,7 +95,9 @@ extension SpindleClient {
     )
   }
 
-  private func trigger(from value: Sh.Tangled.CiPipeline_Trigger) throws -> PipelineTrigger {
+  private func trigger(
+    from value: Sh.Tangled.CiPipeline_Trigger
+  ) throws(TangledError) -> PipelineTrigger {
     switch value {
     case .ciTriggerPush(let trigger):
       return .push(
@@ -124,8 +128,13 @@ extension SpindleClient {
         )
       )
     case ._other(let trigger):
-      let data = try JSONEncoder().encode(trigger)
-      var fields = try JSONDecoder().decode([String: JSONValue].self, from: data)
+      var fields: [String: JSONValue]
+      do {
+        let data = try JSONEncoder().encode(trigger)
+        fields = try JSONDecoder().decode([String: JSONValue].self, from: data)
+      } catch {
+        throw TangledError.decoding(error)
+      }
       fields.removeValue(forKey: "$type")
       return .unknown(type: trigger.type, fields: fields)
     }

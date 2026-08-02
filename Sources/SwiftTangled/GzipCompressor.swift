@@ -2,7 +2,7 @@ import CZlib
 import Foundation
 
 enum GzipCompressor {
-  static func compress(_ data: Data) throws -> Data {
+  static func compress(_ data: Data) throws(TangledError) -> Data {
     guard !data.isEmpty else {
       throw TangledError.invalidRequest("pull request patch must not be empty")
     }

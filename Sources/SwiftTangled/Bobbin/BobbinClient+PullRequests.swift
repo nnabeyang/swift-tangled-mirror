@@ -197,7 +197,7 @@ extension BobbinClient {
 }
 
 extension BobbinClient {
-  fileprivate func validatePullRequestStatus(_ status: PullRequestStatus?) throws {
+  fileprivate func validatePullRequestStatus(_ status: PullRequestStatus?) throws(TangledError) {
     guard let status else { return }
     try requireNonempty(status.rawValue, name: "pull request status")
   }
@@ -209,7 +209,7 @@ extension BobbinClient {
     state: String,
     stateUpdatedAt: FormatString<Date>?,
     commentCount: Int
-  ) throws -> PullRequestListItem {
+  ) throws(TangledError) -> PullRequestListItem {
     let record = try TangledRecordDecoder.pullRequest(
       uri: uri.rawValue,
       cid: cid?.rawValue,

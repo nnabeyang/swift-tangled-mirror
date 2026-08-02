@@ -8,7 +8,7 @@ import SwiftTangled
 #endif
 
 struct PatchFileReader {
-  func read(path: String) throws -> Data {
+  func read(path: String) throws(TangledError) -> Data {
     let descriptor = open(path, O_RDONLY | O_NOFOLLOW)
     guard descriptor >= 0 else {
       throw TangledError.invalidRequest(

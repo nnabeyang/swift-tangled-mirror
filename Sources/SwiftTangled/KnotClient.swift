@@ -235,7 +235,7 @@ public struct PullRequestMergeCheckResponse: Equatable, Sendable {
   }
 }
 
-func knotServiceAudience(_ knot: String) throws -> String {
+func knotServiceAudience(_ knot: String) throws(TangledError) -> String {
   let rawValue = knot.contains("://") ? knot : "https://\(knot)"
   guard let url = URL(string: rawValue),
     url.scheme?.lowercased() == "https",
@@ -257,7 +257,7 @@ extension KnotClient {
   fileprivate func client(
     knot: String,
     token: String? = nil
-  ) throws -> HTTPXRPCClient {
+  ) throws(TangledError) -> HTTPXRPCClient {
     HTTPXRPCClient(
       baseURL: try knotBaseURL(knot),
       transport: transport,
@@ -266,7 +266,7 @@ extension KnotClient {
     )
   }
 
-  fileprivate func knotBaseURL(_ value: String) throws -> URL {
+  fileprivate func knotBaseURL(_ value: String) throws(TangledError) -> URL {
     let rawValue = value.contains("://") ? value : "https://\(value)"
     guard let url = URL(string: rawValue),
       url.scheme?.lowercased() == "https",
@@ -277,7 +277,7 @@ extension KnotClient {
     return url
   }
 
-  private func required(_ value: String, name: String) throws -> String {
+  private func required(_ value: String, name: String) throws(TangledError) -> String {
     let value = value.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !value.isEmpty else {
       throw TangledError.invalidRequest("\(name) must not be empty")
@@ -285,7 +285,7 @@ extension KnotClient {
     return value
   }
 
-  private func validDID(_ value: String, name: String) throws -> DID {
+  private func validDID(_ value: String, name: String) throws(TangledError) -> DID {
     do {
       return try DID(string: value)
     } catch {
@@ -293,7 +293,7 @@ extension KnotClient {
     }
   }
 
-  private func validRecordKey(_ value: String) throws -> RecordKey {
+  private func validRecordKey(_ value: String) throws(TangledError) -> RecordKey {
     do {
       return try RecordKey(string: value)
     } catch {

@@ -60,7 +60,7 @@ struct PipelineCancelDependencies: Sendable {
 }
 
 extension PipelineCancelService {
-  private func normalizedWorkflows(_ workflows: [String]) throws -> [String] {
+  private func normalizedWorkflows(_ workflows: [String]) throws(TangledError) -> [String] {
     var seen = Set<String>()
     var normalized: [String] = []
     for workflow in workflows {
@@ -78,7 +78,7 @@ extension PipelineCancelService {
   private func selectedWorkflows(
     _ requested: [String],
     from pipeline: Pipeline
-  ) throws -> [String] {
+  ) throws(TangledError) -> [String] {
     guard !pipeline.workflows.isEmpty else {
       throw TangledError.invalidRequest("pipeline does not contain any workflows")
     }
