@@ -37,6 +37,7 @@ private struct TaskBobbinSleeper: BobbinSleeping {
 
 public struct BobbinClient: XRPCCallable, Sendable {
   public static let defaultBaseURL = URL(string: "https://api.tangled.org")!
+  private static let rateLimitFallbackBaseDelay: TimeInterval = 2
 
   public let baseURL: URL
   public let retryPolicy: BobbinRetryPolicy
@@ -186,7 +187,13 @@ public struct BobbinClient: XRPCCallable, Sendable {
           now: now
         )
         if shouldRetry(statusCode: response.statusCode), attempt < retryPolicy.maxAttempts {
-          try await sleeper.sleep(for: retryDelay(attempt: attempt, retryAfter: retryAfter))
+          try await sleeper.sleep(
+            for: retryDelay(
+              attempt: attempt,
+              statusCode: response.statusCode,
+              retryAfter: retryAfter
+            )
+          )
           attempt += 1
           continue
         }
@@ -230,7 +237,13 @@ public struct BobbinClient: XRPCCallable, Sendable {
           now: now
         )
         if shouldRetry(statusCode: response.statusCode), attempt < retryPolicy.maxAttempts {
-          try await sleeper.sleep(for: retryDelay(attempt: attempt, retryAfter: retryAfter))
+          try await sleeper.sleep(
+            for: retryDelay(
+              attempt: attempt,
+              statusCode: response.statusCode,
+              retryAfter: retryAfter
+            )
+          )
           attempt += 1
           continue
         }
@@ -292,11 +305,17 @@ public struct BobbinClient: XRPCCallable, Sendable {
     }
   }
 
-  private func retryDelay(attempt: Int, retryAfter: TimeInterval?) -> TimeInterval {
+  private func retryDelay(
+    attempt: Int,
+    statusCode: Int? = nil,
+    retryAfter: TimeInterval?
+  ) -> TimeInterval {
     if let retryAfter {
       return min(max(0, retryAfter), retryPolicy.maxRetryAfter)
     }
-    return retryPolicy.baseDelay * pow(2, Double(attempt - 1))
+    let baseDelay =
+      statusCode == 429 ? Self.rateLimitFallbackBaseDelay : retryPolicy.baseDelay
+    return baseDelay * pow(2, Double(attempt - 1))
   }
 
   private func mapHTTPError(

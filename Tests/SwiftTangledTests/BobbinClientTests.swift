@@ -178,6 +178,42 @@ import Testing
     #expect(await transport.requestCount() == 2)
   }
 
+  @Test func rateLimitWithoutRetryAfterUsesRecoveryBackoffThenSucceeds() async throws {
+    let sleeper = RecordingSleeper()
+    let transport = MockHTTPTransport([
+      .response(statusCode: 429, body: try fixture("rate-limit-exceeded")),
+      .response(statusCode: 429, body: try fixture("rate-limit-exceeded")),
+      .response(statusCode: 200, body: try fixture("bobbin-coverage-ready")),
+    ])
+    let client = makeClient(transport: transport, sleeper: sleeper)
+
+    let coverage = try await client.coverage()
+
+    #expect(coverage.ready)
+    #expect(await sleeper.recordedDelays() == [2, 4])
+    #expect(await transport.requestCount() == 3)
+  }
+
+  @Test func streamingRateLimitWithoutRetryAfterUsesRecoveryBackoff() async throws {
+    let sleeper = RecordingSleeper()
+    let transport = MockHTTPTransport([
+      .response(statusCode: 429, body: try fixture("rate-limit-exceeded")),
+      .response(statusCode: 200, body: Data([1, 2, 3])),
+    ])
+    let client = makeClient(transport: transport, sleeper: sleeper)
+
+    let archive = try await client.archiveStream(
+      repositoryURI: "at://did:plc:owner/sh.tangled.repo/repository",
+      ref: "main"
+    )
+    var iterator = archive.makeAsyncIterator()
+
+    #expect(try await iterator.next() == Data([1, 2, 3]))
+    #expect(try await iterator.next() == nil)
+    #expect(await sleeper.recordedDelays() == [2])
+    #expect(await transport.requestCount() == 2)
+  }
+
   @Test func upstreamFailureRetriesWithExponentialBackoff() async throws {
     let sleeper = RecordingSleeper()
     let transport = MockHTTPTransport([
