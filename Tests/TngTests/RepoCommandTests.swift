@@ -134,6 +134,14 @@ import Testing
       _ = try RepoBranchListCommand.parse(["--limit", "101"])
     }
 
+    let setDefault = try RepoBranchSetDefaultCommand.parse([
+      "release", "alice.example/core", "--json",
+    ])
+    #expect(setDefault.branch == "release")
+    #expect(setDefault.repository == "alice.example/core")
+    #expect(setDefault.json)
+    #expect(try RepoBranchSetDefaultCommand.parse(["main"]).repository == nil)
+
     let tags = try RepoTagListCommand.parse([
       "alice.example/core", "--limit", "10", "--cursor", "20", "--json",
     ])
@@ -271,9 +279,75 @@ import Testing
       from: Data(json.stdout.utf8)
     )
     #expect(decoded.value.name == "core")
+    let view = try JSONDecoder().decode(RepositoryView.self, from: Data(json.stdout.utf8))
+    #expect(view.defaultBranch?.name == "main")
     #expect(
       await recorder.references()
         == ["did:plc:repository", "git@tangled.org:alice.example/core.git"]
+    )
+  }
+
+  @Test func setDefaultBranchFormatsChangedAndNoOpResults() async throws {
+    let recorder = DefaultBranchCommandRecorder()
+    let target = RepositoryDefaultBranchTarget(
+      uri: "at://did:plc:owner/sh.tangled.repo/core",
+      did: "did:plc:repository",
+      name: "core",
+      knot: "knot.example"
+    )
+    let service = RepoCommandService(
+      dependencies: dependencies(
+        recorder: RepoCommandRecorder(),
+        originURL: { "git@tangled.org:alice.example/core.git" }
+      ),
+      defaultBranchDependencies: RepositoryDefaultBranchCommandDependencies(
+        prepareChange: { repository, branch in
+          await recorder.recordPreparation(repository: repository, branch: branch)
+          return RepositoryDefaultBranchChangePlan(
+            repository: target,
+            oldBranch: "main",
+            newBranch: branch
+          )
+        },
+        change: { plan in
+          await recorder.recordChange()
+          return RepositoryDefaultBranchChangeResult(
+            outcome: .changed,
+            repository: plan.repository,
+            oldBranch: plan.oldBranch,
+            newBranch: plan.newBranch
+          )
+        }
+      ),
+      formatter: .plain
+    )
+
+    let changed = try await service.setDefaultBranch(
+      branch: "release",
+      repository: nil,
+      json: false
+    )
+    #expect(changed.stdout.contains("Outcome\tchanged"))
+    #expect(changed.stdout.contains("Old branch\tmain"))
+    #expect(changed.stdout.contains("New branch\trelease"))
+
+    let unchanged = try await service.setDefaultBranch(
+      branch: "main",
+      repository: "alice.example/core",
+      json: true
+    )
+    let envelope = try JSONDecoder().decode(
+      RepositoryJSONEnvelope<RepositoryDefaultBranchChangeResult>.self,
+      from: Data(unchanged.stdout.utf8)
+    )
+    #expect(envelope.result.outcome == .unchanged)
+    #expect(await recorder.changeCount() == 1)
+    #expect(
+      await recorder.preparations()
+        == [
+          "git@tangled.org:alice.example/core.git:release",
+          "alice.example/core:main",
+        ]
     )
   }
 
@@ -932,6 +1006,17 @@ extension RepoCommandTests {
         await recorder.record(reference: reference)
         return record
       },
+      repositoryView: { reference in
+        await recorder.record(reference: reference)
+        return RepositoryView(
+          record: record,
+          defaultBranch: GitDefaultBranch(
+            name: "main",
+            hash: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            when: FormatString<Date>(rawValue: "2026-07-22T12:00:00Z")
+          )
+        )
+      },
       resolveOwnerDID: { owner in
         await recorder.record(owner: owner)
         return owner.hasPrefix("did:") ? owner : "did:plc:resolved-owner"
@@ -1362,4 +1447,17 @@ private actor RepoCommandRecorder {
   func archiveCalls() -> [RepoArchiveCall] {
     recordedArchiveCalls
   }
+}
+
+private actor DefaultBranchCommandRecorder {
+  private var prepared: [String] = []
+  private var changes = 0
+
+  func recordPreparation(repository: String, branch: String) {
+    prepared.append("\(repository):\(branch)")
+  }
+
+  func recordChange() { changes += 1 }
+  func preparations() -> [String] { prepared }
+  func changeCount() -> Int { changes }
 }

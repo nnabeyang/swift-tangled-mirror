@@ -57,6 +57,71 @@ import Testing
     guard clone.status == 0 else {
       throw RepositoryLifecycleLiveTestError.commandFailed("clone: \(clone.stderr)")
     }
+    let checkout = directory.appendingPathComponent(name)
+    try Data("main\n".utf8).write(to: checkout.appendingPathComponent("README.md"))
+    for arguments in [
+      ["config", "user.name", "swift-tangled live test"],
+      ["config", "user.email", "swift-tangled-live@example.invalid"],
+      ["add", "README.md"],
+      ["commit", "-m", "Initialize repository"],
+      ["push", "origin", "main"],
+      ["switch", "-c", "release"],
+    ] {
+      let result = try runGit(arguments, currentDirectory: checkout)
+      guard result.status == 0 else {
+        throw RepositoryLifecycleLiveTestError.commandFailed(
+          "git \(arguments.joined(separator: " ")): \(result.stderr)"
+        )
+      }
+    }
+    try Data("release\n".utf8).write(to: checkout.appendingPathComponent("README.md"))
+    for arguments in [
+      ["add", "README.md"],
+      ["commit", "-m", "Add release branch"],
+      ["push", "origin", "release"],
+    ] {
+      let result = try runGit(arguments, currentDirectory: checkout)
+      guard result.status == 0 else {
+        throw RepositoryLifecycleLiveTestError.commandFailed(
+          "git \(arguments.joined(separator: " ")): \(result.stderr)"
+        )
+      }
+    }
+
+    let changed = try TngProcess.run([
+      "repo", "branch", "set-default", "release", created.target.recordURI, "--json",
+    ])
+    guard changed.status == 0 else {
+      throw RepositoryLifecycleLiveTestError.commandFailed(
+        "set-default: \(changed.stderr)\(changed.stdout)"
+      )
+    }
+    let change = try JSONDecoder().decode(
+      RepositoryJSONEnvelope<RepositoryDefaultBranchChangeResult>.self,
+      from: Data(changed.stdout.utf8)
+    ).result
+    guard change.outcome == .changed, change.newBranch == "release" else {
+      throw RepositoryLifecycleLiveTestError.invalidDefaultBranchResult
+    }
+
+    let view = try TngProcess.run(["repo", "view", created.target.recordURI, "--json"])
+    guard view.status == 0 else {
+      throw RepositoryLifecycleLiveTestError.commandFailed(
+        "view: \(view.stderr)\(view.stdout)"
+      )
+    }
+    let repositoryView = try JSONDecoder().decode(
+      RepositoryView.self,
+      from: Data(view.stdout.utf8)
+    )
+    guard repositoryView.defaultBranch?.name == "release" else {
+      throw RepositoryLifecycleLiveTestError.invalidDefaultBranchResult
+    }
+
+    let remoteHead = try runGit(["ls-remote", "--symref", cloneURL, "HEAD"])
+    guard remoteHead.status == 0, remoteHead.stdout.contains("ref: refs/heads/release\tHEAD") else {
+      throw RepositoryLifecycleLiveTestError.invalidDefaultBranchResult
+    }
 
     let deletion = try TngProcess.run([
       "repo", "delete", created.target.recordURI, "--yes", "--json",
@@ -76,12 +141,16 @@ import Testing
     createdTarget = nil
   }
 
-  private func runGit(_ arguments: [String]) throws -> TngProcessResult {
+  private func runGit(
+    _ arguments: [String],
+    currentDirectory: URL? = nil
+  ) throws -> TngProcessResult {
     let process = Process()
     let standardOutput = Pipe()
     let standardError = Pipe()
     process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
     process.arguments = ["git"] + arguments
+    process.currentDirectoryURL = currentDirectory
     process.standardOutput = standardOutput
     process.standardError = standardError
     try process.run()
@@ -104,5 +173,6 @@ private enum RepositoryLifecycleLiveTestError: Error {
   case missingKnot
   case commandFailed(String)
   case invalidCreationResult
+  case invalidDefaultBranchResult
   case invalidDeletionResult
 }

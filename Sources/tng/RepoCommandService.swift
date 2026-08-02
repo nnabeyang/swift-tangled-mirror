@@ -36,6 +36,24 @@ struct RepositoryLifecycleCommandDependencies: Sendable {
   }()
 }
 
+struct RepositoryDefaultBranchCommandDependencies: Sendable {
+  let prepareChange: @Sendable (String, String) async throws -> RepositoryDefaultBranchChangePlan
+  let change:
+    @Sendable (RepositoryDefaultBranchChangePlan) async throws
+      -> RepositoryDefaultBranchChangeResult
+
+  static let live: RepositoryDefaultBranchCommandDependencies = {
+    let service = RepositoryDefaultBranchService()
+    return RepositoryDefaultBranchCommandDependencies(
+      prepareChange: { try await service.prepareChange(repository: $0, branch: $1) },
+      change: { plan in
+        let pdsClient = try PDSClient.restore(from: CLISessionStore.make().store)
+        return try await service.change(plan, pdsClient: pdsClient)
+      }
+    )
+  }()
+}
+
 struct RepositoryJSONEnvelope<Result: Codable & Sendable>: Codable, Sendable {
   let schemaVersion: Int
   let result: Result
@@ -48,6 +66,7 @@ struct RepositoryJSONEnvelope<Result: Codable & Sendable>: Codable, Sendable {
 
 struct RepoCommandDependencies: Sendable {
   let resolveRepository: @Sendable (String) async throws -> TangledRecord<Repository>
+  let repositoryView: @Sendable (String) async throws -> RepositoryView
   let resolveOwnerDID: @Sendable (String) async throws -> String
   let repositories:
     @Sendable (String, String?, Int, BobbinSortOrder) async throws -> Page<
@@ -69,9 +88,11 @@ struct RepoCommandDependencies: Sendable {
   static let live: RepoCommandDependencies = {
     let client = BobbinClient()
     let locator = RepositoryLocator(client: client)
+    let defaultBranchService = RepositoryDefaultBranchService(repositoryLocator: locator)
     let pdsRecordClient = PDSRecordClient()
     return RepoCommandDependencies(
       resolveRepository: { try await locator.resolve($0) },
+      repositoryView: { try await defaultBranchService.view(repository: $0) },
       resolveOwnerDID: { try await locator.resolveOwnerDID($0) },
       repositories: { ownerDID, cursor, limit, order in
         try await authoritativeRepositories(
@@ -172,15 +193,18 @@ private func authoritativeRepositories(
 struct RepoCommandService: Sendable {
   private let dependencies: RepoCommandDependencies
   private let lifecycleDependencies: RepositoryLifecycleCommandDependencies
+  private let defaultBranchDependencies: RepositoryDefaultBranchCommandDependencies
   private let formatter: CLIFormatter
 
   init(
     dependencies: RepoCommandDependencies = .live,
     lifecycleDependencies: RepositoryLifecycleCommandDependencies = .live,
+    defaultBranchDependencies: RepositoryDefaultBranchCommandDependencies = .live,
     formatter: CLIFormatter = .plain
   ) {
     self.dependencies = dependencies
     self.lifecycleDependencies = lifecycleDependencies
+    self.defaultBranchDependencies = defaultBranchDependencies
     self.formatter = formatter
   }
 
@@ -239,10 +263,34 @@ struct RepoCommandService: Sendable {
 
   func view(repository: String?, json: Bool) async throws -> CLICommandOutput {
     let reference = try repository ?? dependencies.originURL()
-    let record = try await dependencies.resolveRepository(reference)
+    let view = try await dependencies.repositoryView(reference)
     return CLICommandOutput(
-      stdout: try json ? formatter.json(record) : format(record),
+      stdout: try json ? formatter.json(view) : format(view),
       isPageable: !json
+    )
+  }
+
+  func setDefaultBranch(
+    branch: String,
+    repository: String?,
+    json: Bool
+  ) async throws -> CLICommandOutput {
+    let reference = try repository ?? dependencies.originURL()
+    let plan = try await defaultBranchDependencies.prepareChange(reference, branch)
+    let result: RepositoryDefaultBranchChangeResult
+    if plan.requiresChange {
+      result = try await defaultBranchDependencies.change(plan)
+    } else {
+      result = RepositoryDefaultBranchChangeResult(
+        outcome: .unchanged,
+        repository: plan.repository,
+        oldBranch: plan.oldBranch,
+        newBranch: plan.newBranch
+      )
+    }
+    return CLICommandOutput(
+      stdout: try json ? formatter.json(RepositoryJSONEnvelope(result: result)) : format(result),
+      exitCode: result.outcome == .outcomeUnknown ? .api : nil
     )
   }
 
@@ -414,6 +462,23 @@ struct RepoCommandService: Sendable {
 }
 
 extension RepoCommandService {
+  fileprivate func format(_ result: RepositoryDefaultBranchChangeResult) -> String {
+    var output = formatter.details([
+      ("Outcome", result.outcome.rawValue),
+      ("Repository", result.repository.name),
+      ("Repository DID", result.repository.did),
+      ("Record URI", result.repository.uri),
+      ("Knot", result.repository.knot),
+      ("Old branch", result.oldBranch),
+      ("New branch", result.newBranch),
+      ("Error", result.error),
+    ])
+    if result.outcome == .outcomeUnknown {
+      output += "Do not rerun `tng repo branch set-default` automatically; inspect the Knot default branch first.\n"
+    }
+    return output
+  }
+
   fileprivate func format(_ result: RepositoryCreationResult) -> String {
     let target = result.target
     var output = formatter.details([
@@ -555,6 +620,14 @@ extension RepoCommandService {
       ],
       markdownLabels: ["Description"]
     )
+  }
+
+  fileprivate func format(_ view: RepositoryView) -> String {
+    var output = format(view.record)
+    if let defaultBranch = view.defaultBranch {
+      output += formatter.details([("Default branch", defaultBranch.name)])
+    }
+    return output
   }
 
   fileprivate func format(_ repositories: [TangledRecord<Repository>]) -> String {

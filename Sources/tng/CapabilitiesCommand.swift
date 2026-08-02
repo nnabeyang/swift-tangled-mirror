@@ -94,6 +94,7 @@ enum CapabilityCatalog {
     "repo star": Metadata(access: .write, authenticationRequired: true),
     "repo unstar": Metadata(access: .write, authenticationRequired: true),
     "repo branch list": Metadata(access: .read, authenticationRequired: false),
+    "repo branch set-default": Metadata(access: .write, authenticationRequired: true),
     "repo tag list": Metadata(access: .read, authenticationRequired: false),
     "artifact list": Metadata(access: .read, authenticationRequired: false),
     "artifact view": Metadata(access: .read, authenticationRequired: false),

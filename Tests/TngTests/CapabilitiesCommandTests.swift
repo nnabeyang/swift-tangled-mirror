@@ -20,7 +20,7 @@ import Testing
 
     #expect(document.schemaVersion == 1)
     #expect(document.cliVersion == SwiftTangled.version)
-    #expect(paths.count == 57)
+    #expect(paths.count == 58)
     #expect(paths.contains("capabilities"))
     #expect(paths.contains("pr create"))
     #expect(paths.contains("pr edit"))
@@ -45,6 +45,7 @@ import Testing
     #expect(paths.contains("artifact delete"))
     #expect(paths.contains("repo create"))
     #expect(paths.contains("repo delete"))
+    #expect(paths.contains("repo branch set-default"))
     #expect(paths.contains("repo collaborator list"))
     #expect(paths.contains("repo collaborator add"))
     #expect(paths.contains("repo collaborator remove"))
@@ -79,6 +80,9 @@ import Testing
     )
     let repoDelete = try #require(
       document.commands.first { $0.path == ["repo", "delete"] }
+    )
+    let repoSetDefault = try #require(
+      document.commands.first { $0.path == ["repo", "branch", "set-default"] }
     )
     let collaboratorList = try #require(
       document.commands.first { $0.path == ["repo", "collaborator", "list"] }
@@ -162,6 +166,10 @@ import Testing
     #expect(repoDelete.access == .write)
     #expect(repoDelete.authenticationRequired)
     #expect(repoDelete.options.contains { $0.names == ["--yes"] })
+    #expect(repoSetDefault.access == .write)
+    #expect(repoSetDefault.authenticationRequired)
+    #expect(repoSetDefault.arguments.map(\.name) == ["branch", "repository"])
+    #expect(repoSetDefault.options.contains { $0.names == ["--json"] })
     #expect(collaboratorList.access == .read)
     #expect(!collaboratorList.authenticationRequired)
     #expect(collaboratorList.options.contains { $0.names == ["-L", "--limit"] })
