@@ -1,0 +1,15 @@
+when:
+  - event: ["manual"]
+
+engine: "agent"
+platform: "macos"
+xcode: "27.0"
+
+clone:
+  submodules: false
+
+steps:
+  - name: "Test"
+    command: |
+      set -euo pipefail
+      swift test --disable-default-traits

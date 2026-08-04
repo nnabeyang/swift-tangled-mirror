@@ -8,6 +8,13 @@ let package = Package(
   products: [
     .executable(name: "tng", targets: ["tng"])
   ],
+  traits: [
+    .trait(
+      name: "KeychainIntegrationTests",
+      description: "Run integration tests against the macOS login Keychain"
+    ),
+    .default(enabledTraits: ["KeychainIntegrationTests"]),
+  ],
   dependencies: [
     .package(
       url: "https://github.com/nnabeyang/swift-atproto.git",

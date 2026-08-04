@@ -77,7 +77,7 @@ OAuth login uses a loopback callback server. In a Dev Container or remote
 environment, pass `--no-browser` and `--callback-port PORT`, open the printed
 URL on the host, and forward that port when it is not forwarded automatically.
 
-### Linux CI
+### CI
 
 Tangled is the canonical repository. The maintainers mirror Pull Request
 source commits to the read-only
@@ -104,6 +104,18 @@ The workflow does not require credentials. If a future workflow needs a
 secret, add it through the GitHub repository settings. Never put tokens, SSH
 keys, `.env` contents, or other credentials in a workflow file, command, log,
 or artifact.
+
+The macOS workflow runs on the repository's assigned Spindle with an external
+worker advertising Xcode 27.0. It uses that Xcode toolchain's SwiftPM to test
+the package with quiet output. The default-on `KeychainIntegrationTests`
+package trait is disabled because the worker is noninteractive; regular local
+and GitHub test runs continue to exercise the login Keychain integration.
+
+External workers execute workflow commands natively on their host instead of
+inside a microVM. The worker may allow `refs/heads/*` only when its repository
+policy is manual-only. Before starting the macOS workflow, review the exact
+branch and commit and confirm that the manual dispatch targets them. Do not
+enable push or Pull Request triggers for this workflow.
 
 ## Design Guidelines
 
