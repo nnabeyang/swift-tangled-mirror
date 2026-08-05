@@ -103,15 +103,7 @@ extension RepositoryLocator {
     guard let document = try await identityResolver.resolve(did: repoDID) else {
       throw TangledError.handleNotResolved("DID document not found: \(rawRepoDID)")
     }
-    let knotURL: URL
-    do {
-      knotURL = try document.pdsUrl
-    } catch {
-      throw TangledError.handleNotResolved("Knot endpoint not found for \(rawRepoDID)")
-    }
-    guard knotURL.scheme?.lowercased() == "https" else {
-      throw TangledError.invalidRequest("Knot endpoint must use HTTPS")
-    }
+    let knotURL = try repositoryKnotURL(document: document, repoDID: repoDID)
 
     let description: Sh.Tangled.RepoDescribeRepo_Output
     do {
@@ -134,6 +126,47 @@ extension RepositoryLocator {
     let record = try await recordReader.repository(uri: uri).record
     try validate(record: record, repoDID: rawRepoDID)
     return record
+  }
+
+  private func repositoryKnotURL(document: DIDDocument, repoDID: DID) throws -> URL {
+    let tangledKnotID = "\(repoDID.rawValue)#tangled_knot"
+    let endpoint: URL
+    if let service = (document.service ?? []).first(where: {
+      ($0.id == "#tangled_knot" || $0.id == tangledKnotID) && $0.type == "TangledKnot"
+    }) {
+      guard let url = URL(string: service.serviceEndpoint) else {
+        throw TangledError.invalidRequest("Knot endpoint is not a valid HTTPS URL")
+      }
+      endpoint = url
+    } else {
+      do {
+        endpoint = try document.pdsUrl
+      } catch {
+        throw TangledError.handleNotResolved(
+          "Knot endpoint not found for \(repoDID.rawValue)"
+        )
+      }
+    }
+
+    guard var components = URLComponents(url: endpoint, resolvingAgainstBaseURL: false),
+      components.scheme?.lowercased() == "https",
+      components.host?.isEmpty == false,
+      components.user == nil,
+      components.password == nil,
+      components.query == nil,
+      components.fragment == nil
+    else {
+      throw TangledError.invalidRequest("Knot endpoint is not a valid HTTPS URL")
+    }
+    components.scheme = "https"
+    components.path = ""
+    if components.port == 443 {
+      components.port = nil
+    }
+    guard let knotURL = components.url else {
+      throw TangledError.invalidRequest("Knot endpoint is not a valid HTTPS URL")
+    }
+    return knotURL
   }
 
   fileprivate func repository(

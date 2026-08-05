@@ -77,6 +77,100 @@ import Testing
     #expect(await bobbin.requestCount() == 0)
     #expect(await knot.requestCount() == 1)
     #expect(await pds.requestCount() == 1)
+    let request = try #require(await knot.recordedRequests().first)
+    #expect(request.url?.path == "/xrpc/sh.tangled.repo.describeRepo")
+  }
+
+  @Test func repoDIDUsesTangledKnotServiceAndStripsRepositoryPath() async throws {
+    let bobbin = LocatorTransport([])
+    let knot = LocatorTransport([.init(statusCode: 200, body: knotDescription())])
+    let pds = LocatorTransport([.init(statusCode: 200, body: pdsRecord())])
+    let locator = makeLocator(
+      bobbin: bobbin,
+      knot: knot,
+      pds: pds,
+      repoDocument: document(
+        did: repoDID,
+        services: [
+          .init(
+            id: "#tangled_knot",
+            type: "TangledKnot",
+            serviceEndpoint: "https://new.knot.example/repo/txky4mr6sa32opzu3gydlyqljy"
+          ),
+          .init(
+            id: "#atproto_pds",
+            type: "AtprotoPersonalDataServer",
+            serviceEndpoint: "https://legacy.knot.example"
+          ),
+        ]
+      )
+    )
+
+    let record = try await locator.resolve(repoDID)
+
+    #expect(record.uri == uri)
+    let request = try #require(await knot.recordedRequests().first)
+    #expect(request.url?.host == "new.knot.example")
+    #expect(request.url?.path == "/xrpc/sh.tangled.repo.describeRepo")
+  }
+
+  @Test func repoDIDIgnoresTangledKnotServiceWithWrongType() async throws {
+    let knot = LocatorTransport([.init(statusCode: 200, body: knotDescription())])
+    let pds = LocatorTransport([.init(statusCode: 200, body: pdsRecord())])
+    let locator = makeLocator(
+      bobbin: LocatorTransport([]),
+      knot: knot,
+      pds: pds,
+      repoDocument: document(
+        did: repoDID,
+        services: [
+          .init(
+            id: "#tangled_knot",
+            type: "AtprotoLabeler",
+            serviceEndpoint: "https://wrong.knot.example/repo/tag"
+          ),
+          .init(
+            id: "#atproto_pds",
+            type: "AtprotoPersonalDataServer",
+            serviceEndpoint: "https://legacy.knot.example"
+          ),
+        ]
+      )
+    )
+
+    _ = try await locator.resolve(repoDID)
+
+    let request = try #require(await knot.recordedRequests().first)
+    #expect(request.url?.host == "legacy.knot.example")
+  }
+
+  @Test func repoDIDRejectsInvalidTangledKnotEndpoints() async {
+    for endpoint in [
+      "http://knot.example/repo/tag",
+      "https://user@knot.example/repo/tag",
+      "https://knot.example/repo/tag?source=did",
+      "https://knot.example/repo/tag#service",
+      "https:///repo/tag",
+    ] {
+      let locator = makeLocator(
+        bobbin: LocatorTransport([]),
+        pds: LocatorTransport([]),
+        repoDocument: document(
+          did: repoDID,
+          services: [
+            .init(
+              id: "#tangled_knot",
+              type: "TangledKnot",
+              serviceEndpoint: endpoint
+            )
+          ]
+        )
+      )
+
+      await #expect(throws: TangledError.self) {
+        _ = try await locator.resolve(repoDID)
+      }
+    }
   }
 
   @Test func repoDIDFallsBackToBobbinDiscoveryWhenKnotIsUnavailable() async throws {
@@ -175,7 +269,8 @@ extension RepositoryLocatorTests {
   fileprivate func makeLocator(
     bobbin: LocatorTransport,
     knot: LocatorTransport = LocatorTransport([]),
-    pds: LocatorTransport
+    pds: LocatorTransport,
+    repoDocument: DIDDocument? = nil
   ) -> RepositoryLocator {
     RepositoryLocator(
       client: makeClient(bobbin),
@@ -183,7 +278,11 @@ extension RepositoryLocatorTests {
         handleDID: ownerDID,
         documents: [
           ownerDID: document(did: ownerDID, endpoint: "https://pds.example/pds"),
-          repoDID: document(did: repoDID, endpoint: "https://knot.example/knot"),
+          repoDID: repoDocument
+            ?? document(
+              did: repoDID,
+              endpoint: "https://knot.example/knot"
+            ),
         ]
       ),
       knotTransport: knot,
@@ -249,16 +348,23 @@ extension RepositoryLocatorTests {
   }
 
   fileprivate func document(did: String, endpoint: String) -> DIDDocument {
-    DIDDocument(
-      context: ["https://www.w3.org/ns/did/v1"],
-      did: FormatString(rawValue: did),
-      service: [
+    document(
+      did: did,
+      services: [
         .init(
           id: "#atproto_pds",
           type: "AtprotoPersonalDataServer",
           serviceEndpoint: endpoint
         )
       ]
+    )
+  }
+
+  fileprivate func document(did: String, services: [DocService]) -> DIDDocument {
+    DIDDocument(
+      context: ["https://www.w3.org/ns/did/v1"],
+      did: FormatString(rawValue: did),
+      service: services
     )
   }
 
