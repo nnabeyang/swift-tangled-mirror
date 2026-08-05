@@ -45,6 +45,14 @@ readonly SCRATCH_DIRECTORY="${TEMPORARY_DIRECTORY}/build"
 mkdir -p "${SOURCE_DIRECTORY}" "${STAGING_DIRECTORY}" "${OUTPUT_DIRECTORY}"
 git archive "${TAG_COMMIT}" | tar -xf - -C "${SOURCE_DIRECTORY}"
 
+for required_path in LICENSE THIRD_PARTY_NOTICES.md LICENSES; do
+  [[ -e "${SOURCE_DIRECTORY}/${required_path}" ]] \
+    || fail "tag is missing release input: ${required_path}"
+done
+find "${SOURCE_DIRECTORY}/LICENSES" -type f -print -quit \
+  | grep -q . \
+  || fail "tag contains no license files in LICENSES"
+
 swift build \
   --package-path "${SOURCE_DIRECTORY}" \
   --scratch-path "${SCRATCH_DIRECTORY}" \
@@ -73,10 +81,14 @@ readonly BUILT_VERSION
   || fail "release version ${BUILT_VERSION} does not match tag ${VERSION}"
 
 cp "${SOURCE_DIRECTORY}/LICENSE" "${STAGING_DIRECTORY}/LICENSE"
+cp "${SOURCE_DIRECTORY}/THIRD_PARTY_NOTICES.md" "${STAGING_DIRECTORY}/THIRD_PARTY_NOTICES.md"
+cp -R "${SOURCE_DIRECTORY}/LICENSES" "${STAGING_DIRECTORY}/LICENSES"
 COPYFILE_DISABLE=1 tar -czf "${ARTIFACT_PATH}" \
   -C "${STAGING_DIRECTORY}" \
   "${PRODUCT_NAME}" \
-  LICENSE
+  LICENSE \
+  THIRD_PARTY_NOTICES.md \
+  LICENSES
 
 ARTIFACT_BYTES="$(stat -f '%z' "${ARTIFACT_PATH}")"
 readonly ARTIFACT_BYTES

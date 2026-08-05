@@ -1,0 +1,10 @@
+BoringSSL license notice
+
+swift-crypto vendors BoringSSL. The vendored BoringSSL sources are licensed
+under a combination of the ISC License and the OpenSSL License. The complete
+license text is maintained by BoringSSL at:
+
+https://boringssl.googlesource.com/boringssl/+/refs/heads/master/LICENSE
+
+The vendored revision used by swift-crypto 4.5.1 is recorded in
+Sources/CCryptoBoringSSL/hash.txt in the swift-crypto source distribution.

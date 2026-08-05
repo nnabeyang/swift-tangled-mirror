@@ -302,3 +302,5 @@ design, and contribution guidelines.
 ## License
 
 swift-tangled is available under the [MIT License](LICENSE).
+Release archives also include the applicable third-party notices and license
+texts in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) and `LICENSES/`.
