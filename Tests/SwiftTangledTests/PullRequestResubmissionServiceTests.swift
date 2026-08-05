@@ -147,7 +147,7 @@ import Testing
           await recorder.recordHiddenRef(
             [knot, token, uri, source, target]
           )
-          return "hidden/feature/main"
+          return "refs/hidden/feature/main"
         },
         compare: { knot, did, base, head in
           await recorder.recordComparison([knot, did, base, head])
@@ -193,7 +193,7 @@ import Testing
         == [
           "knot.example",
           sourceRepositoryDID,
-          "hidden/feature/main",
+          "refs/hidden/feature/main",
           "feature",
         ]
     )

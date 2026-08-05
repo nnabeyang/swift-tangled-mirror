@@ -526,7 +526,7 @@ import Testing
     #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer service-token")
   }
 
-  @Test func hiddenRefUsesServiceTokenAndReturnsExpectedReference() async throws {
+  @Test func hiddenRefUsesServiceTokenAndFallsBackToExpectedReference() async throws {
     let transport = KnotTransport(
       statusCode: 200,
       body: Data(#"{"success":true}"#.utf8)
@@ -556,10 +556,28 @@ import Testing
     #expect(input.remoteRef == "main")
   }
 
-  @Test func hiddenRefRejectsUnsuccessfulAndMismatchedResponses() async {
+  @Test func hiddenRefReturnsKnotReferenceExactly() async throws {
+    let reference = try await KnotClient(
+      transport: KnotTransport(
+        statusCode: 200,
+        body: Data(#"{"success":true,"ref":"refs/hidden/feature/main"}"#.utf8)
+      )
+    ).updateHiddenRef(
+      knot: "knot.example",
+      token: "service-token",
+      repositoryURI: "at://did:plc:owner/sh.tangled.repo/example",
+      sourceBranch: "feature",
+      targetBranch: "main"
+    )
+
+    #expect(reference == "refs/hidden/feature/main")
+  }
+
+  @Test func hiddenRefRejectsUnsuccessfulAndEmptyReferences() async {
     for body in [
       Data(#"{"success":false,"error":"fetch failed"}"#.utf8),
-      Data(#"{"success":true,"ref":"hidden/other/main"}"#.utf8),
+      Data(#"{"success":true,"ref":""}"#.utf8),
+      Data(#"{"success":true,"ref":"   "}"#.utf8),
     ] {
       await #expect(throws: TangledError.self) {
         _ = try await KnotClient(

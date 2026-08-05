@@ -240,10 +240,11 @@ public struct KnotClient: Sendable {
         output.error ?? "Knot failed to update the hidden tracking ref"
       )
     }
-    if let returnedRef = output.ref, returnedRef != expectedRef {
-      throw TangledError.upstreamFailed(
-        "Knot returned a different hidden tracking ref: \(returnedRef)"
-      )
+    if let returnedRef = output.ref {
+      guard !returnedRef.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        throw TangledError.upstreamFailed("Knot returned an empty hidden tracking ref")
+      }
+      return returnedRef
     }
     return expectedRef
   }
