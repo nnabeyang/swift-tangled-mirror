@@ -3,7 +3,8 @@ when:
 
 engine: "agent"
 platform: "macos"
-xcode: "27.0"
+executor: "virtual-machine"
+xcode: "26.6"
 
 clone:
   submodules: false
