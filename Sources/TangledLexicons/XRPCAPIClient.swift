@@ -3147,6 +3147,8 @@ extension Sh.Tangled {
 
   /// TODO: reference PR record with strongRef instead of embedding raw values
   public struct CiTrigger_PullRequest: Codable, Hashable, Sendable {
+    /// the pull request lifecycle action that produced this trigger
+    public var action: CiTrigger_PullRequest_Action?
     /// AT-URI of the sh.tangled.repo.pull record this run belongs to
     public var pull: FormatString<ATURI>?
     public var sourceBranch: Swift.String?
@@ -3156,7 +3158,8 @@ extension Sh.Tangled {
     public var targetBranch: Swift.String
     public let _unknownValues: [Swift.String: AnyCodable]
 
-    public init(pull: FormatString<ATURI>? = nil, sourceBranch: Swift.String? = nil, sourceRepo: FormatString<DID>? = nil, sourceSha: Swift.String, targetBranch: Swift.String) {
+    public init(action: CiTrigger_PullRequest_Action? = nil, pull: FormatString<ATURI>? = nil, sourceBranch: Swift.String? = nil, sourceRepo: FormatString<DID>? = nil, sourceSha: Swift.String, targetBranch: Swift.String) {
+      self.action = action
       self.pull = pull
       self.sourceBranch = sourceBranch
       self.sourceRepo = sourceRepo
@@ -3165,17 +3168,18 @@ extension Sh.Tangled {
       self._unknownValues = [:]
     }
 
-    public static func make(pull: FormatString<ATURI>? = nil, sourceBranch: Swift.String? = nil, sourceRepo: FormatString<DID>? = nil, sourceSha: Swift.String, targetBranch: Swift.String) throws -> Self {
+    public static func make(action: CiTrigger_PullRequest_Action? = nil, pull: FormatString<ATURI>? = nil, sourceBranch: Swift.String? = nil, sourceRepo: FormatString<DID>? = nil, sourceSha: Swift.String, targetBranch: Swift.String) throws -> Self {
       guard sourceSha.utf8.count <= 40 else {
         throw LexiconConstraintError.stringTooLong("sourceSha", limit: 40)
       }
       guard sourceSha.utf8.count >= 40 else {
         throw LexiconConstraintError.stringTooShort("sourceSha", minimum: 40)
       }
-      return Self.init(pull: pull, sourceBranch: sourceBranch, sourceRepo: sourceRepo, sourceSha: sourceSha, targetBranch: targetBranch)
+      return Self.init(action: action, pull: pull, sourceBranch: sourceBranch, sourceRepo: sourceRepo, sourceSha: sourceSha, targetBranch: targetBranch)
     }
 
     enum CodingKeys: Swift.String, CodingKey {
+      case action
       case pull
       case sourceBranch
       case sourceRepo
@@ -3185,6 +3189,7 @@ extension Sh.Tangled {
 
     public init(from decoder: any Decoder) throws {
       let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      let action = try keyedContainer.decodeIfPresent(Sh.Tangled.CiTrigger_PullRequest_Action.self, forKey: .action)
       let pull = try keyedContainer.decodeIfPresent(FormatString<ATURI>.self, forKey: .pull)
       let sourceBranch = try keyedContainer.decodeIfPresent(Swift.String.self, forKey: .sourceBranch)
       let sourceRepo = try keyedContainer.decodeIfPresent(FormatString<DID>.self, forKey: .sourceRepo)
@@ -3199,11 +3204,11 @@ extension Sh.Tangled {
         _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
       }
       if !LexiconDecodingMode.shouldValidateConstraints(in: decoder) {
-        self = Self.init(pull: pull, sourceBranch: sourceBranch, sourceRepo: sourceRepo, sourceSha: sourceSha, targetBranch: targetBranch)
+        self = Self.init(action: action, pull: pull, sourceBranch: sourceBranch, sourceRepo: sourceRepo, sourceSha: sourceSha, targetBranch: targetBranch)
         return
       }
       do {
-        self = try Self.make(pull: pull, sourceBranch: sourceBranch, sourceRepo: sourceRepo, sourceSha: sourceSha, targetBranch: targetBranch)
+        self = try Self.make(action: action, pull: pull, sourceBranch: sourceBranch, sourceRepo: sourceRepo, sourceSha: sourceSha, targetBranch: targetBranch)
       } catch let error as LexiconConstraintError {
         throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "\(error)", underlyingError: error))
       }
@@ -3211,12 +3216,33 @@ extension Sh.Tangled {
 
     public func encode(to encoder: any Encoder) throws {
       var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encodeIfPresent(self.action, forKey: .action)
       try container.encodeIfPresent(self.pull, forKey: .pull)
       try container.encodeIfPresent(self.sourceBranch, forKey: .sourceBranch)
       try container.encodeIfPresent(self.sourceRepo, forKey: .sourceRepo)
       try container.encode(self.sourceSha, forKey: .sourceSha)
       try container.encode(self.targetBranch, forKey: .targetBranch)
       try _unknownValues.encode(to: encoder)
+    }
+  }
+  /// the pull request lifecycle action that produced this trigger
+  public indirect enum CiTrigger_PullRequest_Action: Swift.String, Codable, Hashable, Sendable {
+    case opened = "opened"
+    case reopened = "reopened"
+    case closed = "closed"
+    case merged = "merged"
+    case synchronize = "synchronize"
+
+    public init(from decoder: any Decoder) throws {
+      let container = try decoder.singleValueContainer()
+      let rawValue = try container.decode(Swift.String.self)
+      guard let value = Self(rawValue: rawValue) else {
+        throw DecodingError.dataCorrupted(.init(codingPath: container.codingPath, debugDescription: "invalid rawValue: \(rawValue)"))
+      }
+      self = value
+    }
+    public func encode(to encoder: any Encoder) throws {
+      try rawValue.encode(to: encoder)
     }
   }
 
