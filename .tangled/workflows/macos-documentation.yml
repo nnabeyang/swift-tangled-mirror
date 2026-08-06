@@ -10,7 +10,7 @@ clone:
   submodules: false
 
 steps:
-  - name: "Test"
+  - name: "Documentation"
     command: |
       set -euo pipefail
-      swift test --disable-default-traits
+      ./scripts/generate-documentation.sh --check

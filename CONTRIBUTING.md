@@ -105,15 +105,17 @@ secret, add it through the GitHub repository settings. Never put tokens, SSH
 keys, `.env` contents, or other credentials in a workflow file, command, log,
 or artifact.
 
-The macOS workflow runs on the repository's assigned Spindle with an external
-worker advertising Xcode 26.6. It uses that Xcode toolchain's SwiftPM to test
-the package with quiet output. The default-on `KeychainIntegrationTests`
+The macOS test and documentation workflows run manually on the repository's
+assigned Spindle with an external worker advertising Xcode 26.6. The test
+workflow uses that Xcode toolchain's SwiftPM to test the package with quiet
+output; the documentation workflow runs the DocC generation check separately.
+The default-on `KeychainIntegrationTests`
 package trait is disabled because the worker is noninteractive; regular local
 and GitHub test runs continue to exercise the login Keychain integration.
 
 External workers execute workflow commands natively on their host instead of
 inside a microVM. The worker may allow `refs/heads/*` only when its repository
-policy is manual-only. Before starting the macOS workflow, review the exact
+policy is manual-only. Before starting a macOS workflow, review the exact
 branch and commit and confirm that the manual dispatch targets them. Do not
 enable push or Pull Request triggers for this workflow.
 
