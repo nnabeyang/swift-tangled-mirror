@@ -1,0 +1,264 @@
+{
+  "abstract" : [
+    {
+      "text" : "Add a collaborator to a repository",
+      "type" : "text"
+    }
+  ],
+  "hierarchy" : {
+    "paths" : [
+      [
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/CommandReference",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo-collaborator"
+      ]
+    ]
+  },
+  "identifier" : {
+    "interfaceLanguage" : "swift",
+    "url" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo-collaborator-add"
+  },
+  "kind" : "article",
+  "metadata" : {
+    "role" : "article",
+    "roleHeading" : "Article",
+    "title" : "tng repo collaborator add"
+  },
+  "primaryContentSections" : [
+    {
+      "content" : [
+        {
+          "anchor" : "Usage",
+          "level" : 2,
+          "text" : "Usage",
+          "type" : "heading"
+        },
+        {
+          "code" : [
+            "tng repo collaborator add <repository> <collaborator> [--json] [--version] [--help]"
+          ],
+          "syntax" : "console",
+          "type" : "codeListing"
+        },
+        {
+          "anchor" : "Arguments",
+          "level" : 2,
+          "text" : "Arguments",
+          "type" : "heading"
+        },
+        {
+          "anchor" : "%3Crepository%3E",
+          "level" : 3,
+          "text" : "<repository>",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Repository AT URI, repo DID, handle\/name, or clone URL",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "%3Ccollaborator%3E",
+          "level" : 3,
+          "text" : "<collaborator>",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Collaborator DID or ATProto handle",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "Options",
+          "level" : 2,
+          "text" : "Options",
+          "type" : "heading"
+        },
+        {
+          "anchor" : "json",
+          "level" : 3,
+          "text" : "–json",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Output a versioned collaborator mutation result as JSON",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "version",
+          "level" : 3,
+          "text" : "–version",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Show the version.",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "h-help",
+          "level" : 3,
+          "text" : "-h, –help",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Show help information.",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        }
+      ],
+      "kind" : "content"
+    }
+  ],
+  "schemaVersion" : {
+    "major" : 0,
+    "minor" : 3,
+    "patch" : 0
+  },
+  "sections" : [
+
+  ],
+  "seeAlsoSections" : [
+    {
+      "anchor" : "Related-Documentation",
+      "identifiers" : [
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo-collaborator"
+      ],
+      "title" : "Related Documentation"
+    },
+    {
+      "anchor" : "Subcommands",
+      "generated" : true,
+      "identifiers" : [
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo-collaborator-list",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo-collaborator-remove"
+      ],
+      "title" : "Subcommands"
+    }
+  ]
+, 
+"references": {
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng": {
+  "abstract" : [
+    {
+      "text" : "Use ",
+      "type" : "text"
+    },
+    {
+      "code" : "tng",
+      "type" : "codeVoice"
+    },
+    {
+      "text" : " to work with Tangled repositories, issues, pull requests, artifacts,",
+      "type" : "text"
+    },
+    {
+      "text" : " ",
+      "type" : "text"
+    },
+    {
+      "text" : "Spindle pipelines, and live events from your terminal.",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng",
+  "kind" : "article",
+  "role" : "collection",
+  "title" : "tng",
+  "type" : "topic",
+  "url" : "\/documentation\/tng"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/CommandReference": {
+  "abstract" : [
+    {
+      "text" : "Tangled CLI",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/CommandReference",
+  "kind" : "article",
+  "role" : "collectionGroup",
+  "title" : "Command reference",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/commandreference"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-repo": {
+  "abstract" : [
+    {
+      "text" : "Work with Tangled repositories",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo",
+  "kind" : "article",
+  "role" : "collectionGroup",
+  "title" : "tng repo",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-repo"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-repo-collaborator": {
+  "abstract" : [
+    {
+      "text" : "Manage repository collaborators",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo-collaborator",
+  "kind" : "article",
+  "role" : "collectionGroup",
+  "title" : "tng repo collaborator",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-repo-collaborator"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-repo-collaborator-list": {
+  "abstract" : [
+    {
+      "text" : "List repository collaborators from its Knot",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo-collaborator-list",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng repo collaborator list",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-repo-collaborator-list"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-repo-collaborator-remove": {
+  "abstract" : [
+    {
+      "text" : "Remove a collaborator from a repository",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo-collaborator-remove",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng repo collaborator remove",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-repo-collaborator-remove"
+}
+}
+}

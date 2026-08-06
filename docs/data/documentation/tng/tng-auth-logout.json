@@ -1,0 +1,198 @@
+{
+  "abstract" : [
+    {
+      "text" : "Revoke and clear the current tng authentication",
+      "type" : "text"
+    }
+  ],
+  "hierarchy" : {
+    "paths" : [
+      [
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/CommandReference",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth"
+      ]
+    ]
+  },
+  "identifier" : {
+    "interfaceLanguage" : "swift",
+    "url" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-logout"
+  },
+  "kind" : "article",
+  "metadata" : {
+    "role" : "article",
+    "roleHeading" : "Article",
+    "title" : "tng auth logout"
+  },
+  "primaryContentSections" : [
+    {
+      "content" : [
+        {
+          "anchor" : "Usage",
+          "level" : 2,
+          "text" : "Usage",
+          "type" : "heading"
+        },
+        {
+          "code" : [
+            "tng auth logout [--version] [--help]"
+          ],
+          "syntax" : "console",
+          "type" : "codeListing"
+        },
+        {
+          "anchor" : "Options",
+          "level" : 2,
+          "text" : "Options",
+          "type" : "heading"
+        },
+        {
+          "anchor" : "version",
+          "level" : 3,
+          "text" : "–version",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Show the version.",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "h-help",
+          "level" : 3,
+          "text" : "-h, –help",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Show help information.",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        }
+      ],
+      "kind" : "content"
+    }
+  ],
+  "schemaVersion" : {
+    "major" : 0,
+    "minor" : 3,
+    "patch" : 0
+  },
+  "sections" : [
+
+  ],
+  "seeAlsoSections" : [
+    {
+      "anchor" : "Related-Documentation",
+      "identifiers" : [
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth"
+      ],
+      "title" : "Related Documentation"
+    },
+    {
+      "anchor" : "Subcommands",
+      "generated" : true,
+      "identifiers" : [
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-login",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-status"
+      ],
+      "title" : "Subcommands"
+    }
+  ]
+, 
+"references": {
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng": {
+  "abstract" : [
+    {
+      "text" : "Use ",
+      "type" : "text"
+    },
+    {
+      "code" : "tng",
+      "type" : "codeVoice"
+    },
+    {
+      "text" : " to work with Tangled repositories, issues, pull requests, artifacts,",
+      "type" : "text"
+    },
+    {
+      "text" : " ",
+      "type" : "text"
+    },
+    {
+      "text" : "Spindle pipelines, and live events from your terminal.",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng",
+  "kind" : "article",
+  "role" : "collection",
+  "title" : "tng",
+  "type" : "topic",
+  "url" : "\/documentation\/tng"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/CommandReference": {
+  "abstract" : [
+    {
+      "text" : "Tangled CLI",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/CommandReference",
+  "kind" : "article",
+  "role" : "collectionGroup",
+  "title" : "Command reference",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/commandreference"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth": {
+  "abstract" : [
+    {
+      "text" : "Manage tng authentication",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth",
+  "kind" : "article",
+  "role" : "collectionGroup",
+  "title" : "tng auth",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-auth"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-login": {
+  "abstract" : [
+    {
+      "text" : "Sign in to Tangled via ATProto OAuth",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-login",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng auth login",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-auth-login"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-status": {
+  "abstract" : [
+    {
+      "text" : "Show current tng authentication status",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-status",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng auth status",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-auth-status"
+}
+}
+}

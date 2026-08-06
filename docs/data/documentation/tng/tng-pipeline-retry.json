@@ -1,0 +1,354 @@
+{
+  "abstract" : [
+    {
+      "text" : "Retry a Tangled CI pipeline",
+      "type" : "text"
+    }
+  ],
+  "hierarchy" : {
+    "paths" : [
+      [
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/CommandReference",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pipeline"
+      ]
+    ]
+  },
+  "identifier" : {
+    "interfaceLanguage" : "swift",
+    "url" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pipeline-retry"
+  },
+  "kind" : "article",
+  "metadata" : {
+    "role" : "article",
+    "roleHeading" : "Article",
+    "title" : "tng pipeline retry"
+  },
+  "primaryContentSections" : [
+    {
+      "content" : [
+        {
+          "anchor" : "Usage",
+          "level" : 2,
+          "text" : "Usage",
+          "type" : "heading"
+        },
+        {
+          "code" : [
+            "tng pipeline retry <pipeline-id> [--repo <repo>] [--spindle <spindle>] [--workflow <workflow>] [--json] [--version] [--help]"
+          ],
+          "syntax" : "console",
+          "type" : "codeListing"
+        },
+        {
+          "anchor" : "Arguments",
+          "level" : 2,
+          "text" : "Arguments",
+          "type" : "heading"
+        },
+        {
+          "anchor" : "%3Cpipeline-id%3E",
+          "level" : 3,
+          "text" : "<pipeline-id>",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Spindle-local pipeline TID",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "Options",
+          "level" : 2,
+          "text" : "Options",
+          "type" : "heading"
+        },
+        {
+          "anchor" : "repo-%3Crepo%3E",
+          "level" : 3,
+          "text" : "–repo <repo>",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Repository reference used to locate its Spindle (defaults to Git origin)",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "spindle-%3Cspindle%3E",
+          "level" : 3,
+          "text" : "–spindle <spindle>",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Spindle hostname or URL; overrides repository discovery",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "workflow-%3Cworkflow%3E",
+          "level" : 3,
+          "text" : "–workflow <workflow>",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Retry only the named workflow",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "json",
+          "level" : 3,
+          "text" : "–json",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Output the new pipeline AT URI as JSON",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "version",
+          "level" : 3,
+          "text" : "–version",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Show the version.",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "h-help",
+          "level" : 3,
+          "text" : "-h, –help",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Show help information.",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        }
+      ],
+      "kind" : "content"
+    }
+  ],
+  "schemaVersion" : {
+    "major" : 0,
+    "minor" : 3,
+    "patch" : 0
+  },
+  "sections" : [
+
+  ],
+  "seeAlsoSections" : [
+    {
+      "anchor" : "Related-Documentation",
+      "identifiers" : [
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pipeline"
+      ],
+      "title" : "Related Documentation"
+    },
+    {
+      "anchor" : "Subcommands",
+      "generated" : true,
+      "identifiers" : [
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pipeline-list",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pipeline-view",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pipeline-status",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pipeline-watch",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pipeline-logs",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pipeline-run",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pipeline-cancel"
+      ],
+      "title" : "Subcommands"
+    }
+  ]
+, 
+"references": {
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng": {
+  "abstract" : [
+    {
+      "text" : "Use ",
+      "type" : "text"
+    },
+    {
+      "code" : "tng",
+      "type" : "codeVoice"
+    },
+    {
+      "text" : " to work with Tangled repositories, issues, pull requests, artifacts,",
+      "type" : "text"
+    },
+    {
+      "text" : " ",
+      "type" : "text"
+    },
+    {
+      "text" : "Spindle pipelines, and live events from your terminal.",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng",
+  "kind" : "article",
+  "role" : "collection",
+  "title" : "tng",
+  "type" : "topic",
+  "url" : "\/documentation\/tng"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/CommandReference": {
+  "abstract" : [
+    {
+      "text" : "Tangled CLI",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/CommandReference",
+  "kind" : "article",
+  "role" : "collectionGroup",
+  "title" : "Command reference",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/commandreference"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-pipeline": {
+  "abstract" : [
+    {
+      "text" : "Manage Tangled CI pipelines",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pipeline",
+  "kind" : "article",
+  "role" : "collectionGroup",
+  "title" : "tng pipeline",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-pipeline"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-pipeline-cancel": {
+  "abstract" : [
+    {
+      "text" : "Cancel a running Tangled CI pipeline",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pipeline-cancel",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng pipeline cancel",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-pipeline-cancel"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-pipeline-list": {
+  "abstract" : [
+    {
+      "text" : "List CI pipelines for a Tangled repository",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pipeline-list",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng pipeline list",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-pipeline-list"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-pipeline-logs": {
+  "abstract" : [
+    {
+      "text" : "Stream logs from a Tangled CI pipeline",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pipeline-logs",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng pipeline logs",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-pipeline-logs"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-pipeline-run": {
+  "abstract" : [
+    {
+      "text" : "Run a Tangled CI pipeline at an explicit commit",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pipeline-run",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng pipeline run",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-pipeline-run"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-pipeline-status": {
+  "abstract" : [
+    {
+      "text" : "View workflow statuses for a Tangled CI pipeline",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pipeline-status",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng pipeline status",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-pipeline-status"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-pipeline-view": {
+  "abstract" : [
+    {
+      "text" : "View a Tangled CI pipeline",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pipeline-view",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng pipeline view",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-pipeline-view"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-pipeline-watch": {
+  "abstract" : [
+    {
+      "text" : "Watch a Tangled CI pipeline until it finishes",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pipeline-watch",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng pipeline watch",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-pipeline-watch"
+}
+}
+}

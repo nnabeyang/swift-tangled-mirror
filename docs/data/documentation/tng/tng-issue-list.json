@@ -1,0 +1,413 @@
+{
+  "abstract" : [
+    {
+      "text" : "List issues for a Tangled repository",
+      "type" : "text"
+    }
+  ],
+  "hierarchy" : {
+    "paths" : [
+      [
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/CommandReference",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-issue"
+      ]
+    ]
+  },
+  "identifier" : {
+    "interfaceLanguage" : "swift",
+    "url" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-issue-list"
+  },
+  "kind" : "article",
+  "metadata" : {
+    "role" : "article",
+    "roleHeading" : "Article",
+    "title" : "tng issue list"
+  },
+  "primaryContentSections" : [
+    {
+      "content" : [
+        {
+          "anchor" : "Usage",
+          "level" : 2,
+          "text" : "Usage",
+          "type" : "heading"
+        },
+        {
+          "code" : [
+            "tng issue list [<repository>] [--author <author>] [--state <state>] [--limit <limit>] [--cursor <cursor>] [--sort <sort>] [--json] [--version] [--help]"
+          ],
+          "syntax" : "console",
+          "type" : "codeListing"
+        },
+        {
+          "anchor" : "Arguments",
+          "level" : 2,
+          "text" : "Arguments",
+          "type" : "heading"
+        },
+        {
+          "anchor" : "%3Crepository%3E",
+          "level" : 3,
+          "text" : "<repository>",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Repository AT URI, repo DID, handle\/name, or clone URL (defaults to Git origin)",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "Options",
+          "level" : 2,
+          "text" : "Options",
+          "type" : "heading"
+        },
+        {
+          "anchor" : "author-%3Cauthor%3E",
+          "level" : 3,
+          "text" : "–author <author>",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Only include issues created by this DID or ATProto handle",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "state-%3Cstate%3E",
+          "level" : 3,
+          "text" : "–state <state>",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Only include issues whose state is open or closed",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "L-limit-%3Climit%3E",
+          "level" : 3,
+          "text" : "-L, –limit <limit>",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Maximum number of issues to return",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "items" : [
+            {
+              "content" : [
+                {
+                  "inlineContent" : [
+                    {
+                      "text" : "Default: ",
+                      "type" : "text"
+                    },
+                    {
+                      "code" : "30",
+                      "type" : "codeVoice"
+                    }
+                  ],
+                  "type" : "paragraph"
+                }
+              ]
+            }
+          ],
+          "type" : "unorderedList"
+        },
+        {
+          "anchor" : "cursor-%3Ccursor%3E",
+          "level" : 3,
+          "text" : "–cursor <cursor>",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Bobbin cursor from a previous response",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "sort-%3Csort%3E",
+          "level" : 3,
+          "text" : "–sort <sort>",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Sort by creation time: asc or desc",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "items" : [
+            {
+              "content" : [
+                {
+                  "inlineContent" : [
+                    {
+                      "text" : "Default: ",
+                      "type" : "text"
+                    },
+                    {
+                      "code" : "desc",
+                      "type" : "codeVoice"
+                    }
+                  ],
+                  "type" : "paragraph"
+                }
+              ]
+            }
+          ],
+          "type" : "unorderedList"
+        },
+        {
+          "anchor" : "json",
+          "level" : 3,
+          "text" : "–json",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Output the complete page as JSON",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "version",
+          "level" : 3,
+          "text" : "–version",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Show the version.",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "h-help",
+          "level" : 3,
+          "text" : "-h, –help",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Show help information.",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        }
+      ],
+      "kind" : "content"
+    }
+  ],
+  "schemaVersion" : {
+    "major" : 0,
+    "minor" : 3,
+    "patch" : 0
+  },
+  "sections" : [
+
+  ],
+  "seeAlsoSections" : [
+    {
+      "anchor" : "Related-Documentation",
+      "identifiers" : [
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-issue"
+      ],
+      "title" : "Related Documentation"
+    },
+    {
+      "anchor" : "Subcommands",
+      "generated" : true,
+      "identifiers" : [
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-issue-view",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-issue-create",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-issue-comment",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-issue-edit",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-issue-close",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-issue-reopen"
+      ],
+      "title" : "Subcommands"
+    }
+  ]
+, 
+"references": {
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng": {
+  "abstract" : [
+    {
+      "text" : "Use ",
+      "type" : "text"
+    },
+    {
+      "code" : "tng",
+      "type" : "codeVoice"
+    },
+    {
+      "text" : " to work with Tangled repositories, issues, pull requests, artifacts,",
+      "type" : "text"
+    },
+    {
+      "text" : " ",
+      "type" : "text"
+    },
+    {
+      "text" : "Spindle pipelines, and live events from your terminal.",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng",
+  "kind" : "article",
+  "role" : "collection",
+  "title" : "tng",
+  "type" : "topic",
+  "url" : "\/documentation\/tng"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/CommandReference": {
+  "abstract" : [
+    {
+      "text" : "Tangled CLI",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/CommandReference",
+  "kind" : "article",
+  "role" : "collectionGroup",
+  "title" : "Command reference",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/commandreference"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-issue": {
+  "abstract" : [
+    {
+      "text" : "Work with Tangled issues",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-issue",
+  "kind" : "article",
+  "role" : "collectionGroup",
+  "title" : "tng issue",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-issue"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-issue-close": {
+  "abstract" : [
+    {
+      "text" : "Close a Tangled issue",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-issue-close",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng issue close",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-issue-close"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-issue-comment": {
+  "abstract" : [
+    {
+      "text" : "Comment on a Tangled issue",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-issue-comment",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng issue comment",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-issue-comment"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-issue-create": {
+  "abstract" : [
+    {
+      "text" : "Create a Tangled issue",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-issue-create",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng issue create",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-issue-create"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-issue-edit": {
+  "abstract" : [
+    {
+      "text" : "Edit a Tangled issue",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-issue-edit",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng issue edit",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-issue-edit"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-issue-reopen": {
+  "abstract" : [
+    {
+      "text" : "Reopen a Tangled issue",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-issue-reopen",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng issue reopen",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-issue-reopen"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-issue-view": {
+  "abstract" : [
+    {
+      "text" : "View a Tangled issue",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-issue-view",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng issue view",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-issue-view"
+}
+}
+}

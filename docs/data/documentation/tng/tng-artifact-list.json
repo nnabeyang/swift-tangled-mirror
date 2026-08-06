@@ -1,0 +1,353 @@
+{
+  "abstract" : [
+    {
+      "text" : "List artifacts in a repository",
+      "type" : "text"
+    }
+  ],
+  "hierarchy" : {
+    "paths" : [
+      [
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/CommandReference",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-artifact"
+      ]
+    ]
+  },
+  "identifier" : {
+    "interfaceLanguage" : "swift",
+    "url" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-artifact-list"
+  },
+  "kind" : "article",
+  "metadata" : {
+    "role" : "article",
+    "roleHeading" : "Article",
+    "title" : "tng artifact list"
+  },
+  "primaryContentSections" : [
+    {
+      "content" : [
+        {
+          "anchor" : "Usage",
+          "level" : 2,
+          "text" : "Usage",
+          "type" : "heading"
+        },
+        {
+          "code" : [
+            "tng artifact list [<repository>] [--limit <limit>] [--cursor <cursor>] [--sort <sort>] [--json] [--version] [--help]"
+          ],
+          "syntax" : "console",
+          "type" : "codeListing"
+        },
+        {
+          "anchor" : "Arguments",
+          "level" : 2,
+          "text" : "Arguments",
+          "type" : "heading"
+        },
+        {
+          "anchor" : "%3Crepository%3E",
+          "level" : 3,
+          "text" : "<repository>",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Repository DID, AT URI, handle\/name, or clone URL (defaults to Git origin)",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "Options",
+          "level" : 2,
+          "text" : "Options",
+          "type" : "heading"
+        },
+        {
+          "anchor" : "L-limit-%3Climit%3E",
+          "level" : 3,
+          "text" : "-L, –limit <limit>",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Maximum number of artifacts to return",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "items" : [
+            {
+              "content" : [
+                {
+                  "inlineContent" : [
+                    {
+                      "text" : "Default: ",
+                      "type" : "text"
+                    },
+                    {
+                      "code" : "30",
+                      "type" : "codeVoice"
+                    }
+                  ],
+                  "type" : "paragraph"
+                }
+              ]
+            }
+          ],
+          "type" : "unorderedList"
+        },
+        {
+          "anchor" : "cursor-%3Ccursor%3E",
+          "level" : 3,
+          "text" : "–cursor <cursor>",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Pagination cursor from a previous response",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "sort-%3Csort%3E",
+          "level" : 3,
+          "text" : "–sort <sort>",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Sort by creation time: asc or desc",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "items" : [
+            {
+              "content" : [
+                {
+                  "inlineContent" : [
+                    {
+                      "text" : "Default: ",
+                      "type" : "text"
+                    },
+                    {
+                      "code" : "desc",
+                      "type" : "codeVoice"
+                    }
+                  ],
+                  "type" : "paragraph"
+                }
+              ]
+            }
+          ],
+          "type" : "unorderedList"
+        },
+        {
+          "anchor" : "json",
+          "level" : 3,
+          "text" : "–json",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Output a versioned artifact page as JSON",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "version",
+          "level" : 3,
+          "text" : "–version",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Show the version.",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "h-help",
+          "level" : 3,
+          "text" : "-h, –help",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Show help information.",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        }
+      ],
+      "kind" : "content"
+    }
+  ],
+  "schemaVersion" : {
+    "major" : 0,
+    "minor" : 3,
+    "patch" : 0
+  },
+  "sections" : [
+
+  ],
+  "seeAlsoSections" : [
+    {
+      "anchor" : "Related-Documentation",
+      "identifiers" : [
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-artifact"
+      ],
+      "title" : "Related Documentation"
+    },
+    {
+      "anchor" : "Subcommands",
+      "generated" : true,
+      "identifiers" : [
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-artifact-view",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-artifact-upload",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-artifact-download",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-artifact-delete"
+      ],
+      "title" : "Subcommands"
+    }
+  ]
+, 
+"references": {
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng": {
+  "abstract" : [
+    {
+      "text" : "Use ",
+      "type" : "text"
+    },
+    {
+      "code" : "tng",
+      "type" : "codeVoice"
+    },
+    {
+      "text" : " to work with Tangled repositories, issues, pull requests, artifacts,",
+      "type" : "text"
+    },
+    {
+      "text" : " ",
+      "type" : "text"
+    },
+    {
+      "text" : "Spindle pipelines, and live events from your terminal.",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng",
+  "kind" : "article",
+  "role" : "collection",
+  "title" : "tng",
+  "type" : "topic",
+  "url" : "\/documentation\/tng"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/CommandReference": {
+  "abstract" : [
+    {
+      "text" : "Tangled CLI",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/CommandReference",
+  "kind" : "article",
+  "role" : "collectionGroup",
+  "title" : "Command reference",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/commandreference"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-artifact": {
+  "abstract" : [
+    {
+      "text" : "Work with artifacts attached to annotated Git tags",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-artifact",
+  "kind" : "article",
+  "role" : "collectionGroup",
+  "title" : "tng artifact",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-artifact"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-artifact-delete": {
+  "abstract" : [
+    {
+      "text" : "Delete an artifact record without deleting its Git tag",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-artifact-delete",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng artifact delete",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-artifact-delete"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-artifact-download": {
+  "abstract" : [
+    {
+      "text" : "Download and verify an artifact",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-artifact-download",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng artifact download",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-artifact-download"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-artifact-upload": {
+  "abstract" : [
+    {
+      "text" : "Upload a file to an annotated Git tag",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-artifact-upload",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng artifact upload",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-artifact-upload"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-artifact-view": {
+  "abstract" : [
+    {
+      "text" : "View artifacts attached to an annotated Git tag",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-artifact-view",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng artifact view",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-artifact-view"
+}
+}
+}

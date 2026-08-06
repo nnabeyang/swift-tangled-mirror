@@ -15,7 +15,7 @@ import Testing
     }
   }
 
-  @Test func rendersVisibleCommandsAndStructuredArguments() throws {
+  @Test func rendersDocCArticles() throws {
     let repo = CommandInfo(
       commandName: "repo",
       abstract: "Work with repositories",
@@ -56,21 +56,28 @@ import Testing
       ]
     )
     let files = try renderer(commands: [repo]).render()
-    let page = try string(files, path: "manual/tng_repo_list/index.html")
+    let page = try string(files, path: "catalog/tng-repo-list.md")
 
-    #expect(files["manual/tng/index.html"] != nil)
-    #expect(files["manual/tng_repo/index.html"] != nil)
-    #expect(page.contains("tng repo list [&lt;owner&gt;] [--limit &lt;limit&gt;]"))
-    #expect(page.contains("-L, --limit &lt;limit&gt;"))
-    #expect(page.contains("Default: <code>30</code>"))
-    #expect(page.contains("Values: <code>10</code>, <code>30</code>"))
+    #expect(files["catalog/CommandReference.md"] != nil)
+    #expect(files["catalog/tng-repo.md"] != nil)
+    #expect(files.keys.allSatisfy { !$0.hasPrefix("redirects/") })
+    #expect(page.contains("tng repo list [<owner>] [--limit <limit>]"))
+    #expect(page.contains("### <owner>"))
+    #expect(page.contains("### -L, --limit <limit>"))
+    #expect(!page.contains("### `<owner>`"))
+    #expect(!page.contains("### `-L, --limit <limit>`"))
+    #expect(page.contains("-L, --limit <limit>"))
+    #expect(page.contains("Default: `30`"))
+    #expect(page.contains("Values: `10`, `30`"))
     #expect(!page.contains("--internal"))
+    #expect(page.contains("<doc:tng-repo>"))
   }
 
-  @Test func escapesCommandContentAndAttributes() throws {
+  @Test func escapesMarkdownTextAndProducesStableOutput() throws {
     let command = CommandInfo(
       commandName: "unsafe",
-      abstract: #"<script>alert("x")</script>"#,
+      abstract: #"<script>alert("x")</script> *value*"#,
+      discussion: "A & B\n\n  indented example",
       arguments: [
         ArgumentInfo(
           abstract: "A & B",
@@ -80,40 +87,26 @@ import Testing
         )
       ]
     )
-    let files = try renderer(commands: [command]).render()
-    let page = try string(files, path: "manual/tng_unsafe/index.html")
-
-    #expect(!page.contains("<script>alert"))
-    #expect(page.contains("&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;"))
-    #expect(page.contains("A &amp; B"))
-  }
-
-  @Test func omitsHiddenCommandsAndProducesStableOutput() throws {
-    let visible = CommandInfo(commandName: "visible")
-    let hidden = CommandInfo(commandName: "hidden", shouldDisplay: false)
-    let renderer = renderer(commands: [visible, hidden])
-
+    let renderer = renderer(commands: [command])
     let first = try renderer.render()
     let second = try renderer.render()
+    let page = try string(first, path: "catalog/tng-unsafe.md")
 
     #expect(first == second)
-    #expect(first["manual/tng_visible/index.html"] != nil)
-    #expect(first["manual/tng_hidden/index.html"] == nil)
+    #expect(page.contains("\\<script\\>alert(\"x\")\\</script\\> \\*value\\*"))
+    #expect(page.contains("    indented example"))
+    #expect(page.contains("A & B"))
   }
 
-  @Test func generatedLinksUseSubpathSafeRelativeURLs() throws {
-    let command = CommandInfo(
-      commandName: "repo",
-      subcommands: [CommandInfo(commandName: "view")]
-    )
-    let files = try renderer(commands: [command]).render()
-    let landing = try string(files, path: "index.html")
-    let nested = try string(files, path: "manual/tng_repo_view/index.html")
+  @Test func omitsHiddenCommandsAndUsesCommandReferenceForRoot() throws {
+    let visible = CommandInfo(commandName: "visible")
+    let hidden = CommandInfo(commandName: "hidden", shouldDisplay: false)
+    let files = try renderer(commands: [visible, hidden]).render()
 
-    #expect(landing.contains(#"href="manual/tng/""#))
-    #expect(nested.contains(#"href="../../assets/manual.css""#))
-    #expect(nested.contains(#"href="../tng_repo/""#))
-    #expect(nested.contains(#"href="../tng/""#))
+    #expect(files["catalog/CommandReference.md"] != nil)
+    #expect(files["catalog/tng-visible.md"] != nil)
+    #expect(files["catalog/tng-hidden.md"] == nil)
+    #expect(files.keys.allSatisfy { !$0.hasPrefix("redirects/") })
   }
 
   private func renderer(commands: [CommandInfo]) -> ManualSiteRenderer {
@@ -125,11 +118,6 @@ import Testing
           abstract: "Tangled CLI",
           subcommands: commands
         )
-      ),
-      source: ManualSiteSource(
-        landingHTML: "<h1>Manual</h1>",
-        stylesheet: "body {}",
-        javascript: ""
       )
     )
   }

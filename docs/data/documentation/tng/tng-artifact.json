@@ -1,0 +1,400 @@
+{
+  "abstract" : [
+    {
+      "text" : "Work with artifacts attached to annotated Git tags",
+      "type" : "text"
+    }
+  ],
+  "hierarchy" : {
+    "paths" : [
+      [
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/CommandReference"
+      ]
+    ]
+  },
+  "identifier" : {
+    "interfaceLanguage" : "swift",
+    "url" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-artifact"
+  },
+  "kind" : "article",
+  "metadata" : {
+    "role" : "collectionGroup",
+    "title" : "tng artifact"
+  },
+  "primaryContentSections" : [
+    {
+      "content" : [
+        {
+          "anchor" : "Usage",
+          "level" : 2,
+          "text" : "Usage",
+          "type" : "heading"
+        },
+        {
+          "code" : [
+            "tng artifact [--version] [--help]"
+          ],
+          "syntax" : "console",
+          "type" : "codeListing"
+        },
+        {
+          "anchor" : "Options",
+          "level" : 2,
+          "text" : "Options",
+          "type" : "heading"
+        },
+        {
+          "anchor" : "version",
+          "level" : 3,
+          "text" : "–version",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Show the version.",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "h-help",
+          "level" : 3,
+          "text" : "-h, –help",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Show help information.",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        }
+      ],
+      "kind" : "content"
+    }
+  ],
+  "schemaVersion" : {
+    "major" : 0,
+    "minor" : 3,
+    "patch" : 0
+  },
+  "sections" : [
+
+  ],
+  "seeAlsoSections" : [
+    {
+      "anchor" : "Related-Documentation",
+      "identifiers" : [
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/CommandReference"
+      ],
+      "title" : "Related Documentation"
+    },
+    {
+      "anchor" : "Subcommands",
+      "generated" : true,
+      "identifiers" : [
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-issue",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pr",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pipeline",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-events",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-search",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-api",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-completion",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-capabilities",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-help"
+      ],
+      "title" : "Subcommands"
+    }
+  ],
+  "topicSections" : [
+    {
+      "anchor" : "Subcommands",
+      "identifiers" : [
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-artifact-list",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-artifact-view",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-artifact-upload",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-artifact-download",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-artifact-delete"
+      ],
+      "title" : "Subcommands"
+    }
+  ]
+, 
+"references": {
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng": {
+  "abstract" : [
+    {
+      "text" : "Use ",
+      "type" : "text"
+    },
+    {
+      "code" : "tng",
+      "type" : "codeVoice"
+    },
+    {
+      "text" : " to work with Tangled repositories, issues, pull requests, artifacts,",
+      "type" : "text"
+    },
+    {
+      "text" : " ",
+      "type" : "text"
+    },
+    {
+      "text" : "Spindle pipelines, and live events from your terminal.",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng",
+  "kind" : "article",
+  "role" : "collection",
+  "title" : "tng",
+  "type" : "topic",
+  "url" : "\/documentation\/tng"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/CommandReference": {
+  "abstract" : [
+    {
+      "text" : "Tangled CLI",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/CommandReference",
+  "kind" : "article",
+  "role" : "collectionGroup",
+  "title" : "Command reference",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/commandreference"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-api": {
+  "abstract" : [
+    {
+      "text" : "Call an allowlisted read-only Bobbin query",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-api",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng api",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-api"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-artifact-delete": {
+  "abstract" : [
+    {
+      "text" : "Delete an artifact record without deleting its Git tag",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-artifact-delete",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng artifact delete",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-artifact-delete"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-artifact-download": {
+  "abstract" : [
+    {
+      "text" : "Download and verify an artifact",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-artifact-download",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng artifact download",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-artifact-download"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-artifact-list": {
+  "abstract" : [
+    {
+      "text" : "List artifacts in a repository",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-artifact-list",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng artifact list",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-artifact-list"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-artifact-upload": {
+  "abstract" : [
+    {
+      "text" : "Upload a file to an annotated Git tag",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-artifact-upload",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng artifact upload",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-artifact-upload"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-artifact-view": {
+  "abstract" : [
+    {
+      "text" : "View artifacts attached to an annotated Git tag",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-artifact-view",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng artifact view",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-artifact-view"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth": {
+  "abstract" : [
+    {
+      "text" : "Manage tng authentication",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth",
+  "kind" : "article",
+  "role" : "collectionGroup",
+  "title" : "tng auth",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-auth"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-capabilities": {
+  "abstract" : [
+    {
+      "text" : "Describe tng commands for tools and agents",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-capabilities",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng capabilities",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-capabilities"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-completion": {
+  "abstract" : [
+    {
+      "text" : "Generate a shell completion script",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-completion",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng completion",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-completion"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-events": {
+  "abstract" : [
+    {
+      "text" : "Watch live Tangled events",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-events",
+  "kind" : "article",
+  "role" : "collectionGroup",
+  "title" : "tng events",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-events"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-help": {
+  "abstract" : [
+    {
+      "text" : "Show subcommand help information.",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-help",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng help",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-help"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-issue": {
+  "abstract" : [
+    {
+      "text" : "Work with Tangled issues",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-issue",
+  "kind" : "article",
+  "role" : "collectionGroup",
+  "title" : "tng issue",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-issue"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-pipeline": {
+  "abstract" : [
+    {
+      "text" : "Manage Tangled CI pipelines",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pipeline",
+  "kind" : "article",
+  "role" : "collectionGroup",
+  "title" : "tng pipeline",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-pipeline"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-pr": {
+  "abstract" : [
+    {
+      "text" : "View Tangled pull requests",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pr",
+  "kind" : "article",
+  "role" : "collectionGroup",
+  "title" : "tng pr",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-pr"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-repo": {
+  "abstract" : [
+    {
+      "text" : "Work with Tangled repositories",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo",
+  "kind" : "article",
+  "role" : "collectionGroup",
+  "title" : "tng repo",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-repo"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-search": {
+  "abstract" : [
+    {
+      "text" : "Search public Tangled records",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-search",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng search",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-search"
+}
+}
+}

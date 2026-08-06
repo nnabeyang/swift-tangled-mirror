@@ -23,11 +23,11 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v6
 
-      - name: Prepare Swift 6.3.2 environment
+      - name: Prepare Swift 6.3.3 environment
         run: |
           docker build \
             --file .tangled/ci/Dockerfile \
-            --tag swift-tangled-ci:6.3.2 \
+            --tag swift-tangled-ci:6.3.3 \
             .tangled/ci
 
       - name: Build
@@ -36,7 +36,7 @@ jobs:
             --env CI=true \
             --volume "$PWD:/workspace" \
             --workdir /workspace \
-            swift-tangled-ci:6.3.2 \
+            swift-tangled-ci:6.3.3 \
             swift build
 
       - name: Test
@@ -45,7 +45,7 @@ jobs:
             --env CI=true \
             --volume "$PWD:/workspace" \
             --workdir /workspace \
-            swift-tangled-ci:6.3.2 \
+            swift-tangled-ci:6.3.3 \
             swift test
 
       - name: Manual documentation
@@ -54,8 +54,8 @@ jobs:
             --env CI=true \
             --volume "$PWD:/workspace" \
             --workdir /workspace \
-            swift-tangled-ci:6.3.2 \
-            ./generate-manual-site.sh --check
+            swift-tangled-ci:6.3.3 \
+            ./scripts/generate-documentation.sh --check
 
       - name: CLI smoke tests
         run: |
@@ -63,7 +63,7 @@ jobs:
             --env CI=true \
             --volume "$PWD:/workspace" \
             --workdir /workspace \
-            swift-tangled-ci:6.3.2 \
+            swift-tangled-ci:6.3.3 \
             bash -euo pipefail -c '
               version=$(swift run --skip-build tng --version)
               grep -Eq "^[0-9]+\.[0-9]+\.[0-9]+$" <<<"$version"

@@ -1,0 +1,8 @@
+# Documentation generation inputs. This file is sourced by scripts/generate-documentation.sh.
+DOCC_SWIFT_VERSION=6.3.3
+DOCC_XCODE_VERSION=26.6
+DOCC_XCODE_BUILD=17F113
+DOCC_HOSTING_BASE_PATH=swift-tangled
+DOCC_BUNDLE_DISPLAY_NAME=tng
+DOCC_BUNDLE_IDENTIFIER=sh.tngl.nnabeyang.swift-tangled
+DOCC_DEFAULT_MODULE_KIND='Command Line Tool'

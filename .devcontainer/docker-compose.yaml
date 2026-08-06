@@ -1,6 +1,6 @@
 services:
   devcontainer:
-    image: "swift:6.3.2-noble"
+    image: "swift:6.3.3-noble"
     env_file:
       - .env
     environment:

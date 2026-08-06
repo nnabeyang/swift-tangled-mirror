@@ -14,3 +14,4 @@ steps:
     command: |
       set -euo pipefail
       swift test --disable-default-traits
+      ./scripts/generate-documentation.sh --check

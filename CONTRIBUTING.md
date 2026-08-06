@@ -40,7 +40,7 @@ Test the installation flow without changing the current installation with:
 ### Linux Dev Container
 
 Open the repository in VS Code and run **Dev Containers: Reopen in Container**.
-The container uses Swift 6.3.2 on Ubuntu Noble and mounts both the current
+The container uses Swift 6.3.3 on Ubuntu Noble and mounts both the current
 worktree and its Git common directory at their original absolute paths, so it
 also works when the repository is opened from a Git worktree.
 
@@ -83,13 +83,13 @@ Tangled is the canonical repository. The maintainers mirror Pull Request
 source commits to the read-only
 [GitHub repository](https://github.com/nnabeyang/swift-tangled-mirror), where
 the Linux workflow runs for every pushed branch and can also be started
-manually. It builds a Swift 6.3.2 Ubuntu Noble environment with the same
+manually. It builds a Swift 6.3.3 Ubuntu Noble environment with the same
 system-package installer used by the Dev Container, then runs:
 
 ```sh
 swift build
 swift test
-./generate-manual-site.sh --check
+./scripts/generate-documentation.sh --check
 swift run --skip-build tng --version
 swift run --skip-build tng capabilities --json
 swift run --skip-build tng repo view nnabeyang.tngl.sh/swift-tangled --json
@@ -106,7 +106,7 @@ keys, `.env` contents, or other credentials in a workflow file, command, log,
 or artifact.
 
 The macOS workflow runs on the repository's assigned Spindle with an external
-worker advertising Xcode 27.0. It uses that Xcode toolchain's SwiftPM to test
+worker advertising Xcode 26.6. It uses that Xcode toolchain's SwiftPM to test
 the package with quiet output. The default-on `KeychainIntegrationTests`
 package trait is disabled because the worker is noninteractive; regular local
 and GitHub test runs continue to exercise the login Keychain integration.
@@ -186,23 +186,24 @@ Tangled. Pushing commits alone does not replace the round already under review.
 
 ## CLI Manual
 
-The static CLI manual under `docs/` is generated from ArgumentParser's command
-tree. It includes the getting-started page, navigation, and one reference page
-for every visible command.
+The static CLI manual under `docs/` is generated with Swift-DocC. Its command
+reference is derived from ArgumentParser's command tree, while the guides and
+landing page are maintained in `Documentation/Tng.docc/` and
+`Documentation/Site/`.
 
 Regenerate it after changing command names, help text, arguments, options, or
 subcommands:
 
 ```sh
-./generate-manual-site.sh
+./scripts/generate-documentation.sh
 ```
 
 Verify that the committed output is current without rewriting files:
 
 ```sh
-./generate-manual-site.sh --check
+./scripts/generate-documentation.sh --check
 ```
 
-The generator requires only the Swift toolchain already used by the package.
-Do not edit generated files in `docs/` directly. Update the English source
-content and assets in `Documentation/Manual/`, then regenerate the site.
+Documentation generation requires Swift 6.3.3. On macOS the script also pins
+Xcode 26.6 build 17F113; on Linux it uses the `docc` executable from the Swift
+toolchain. Do not edit generated files in `docs/` directly.

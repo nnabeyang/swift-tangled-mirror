@@ -1,0 +1,496 @@
+{
+  "abstract" : [
+    {
+      "text" : "List commits in a repository",
+      "type" : "text"
+    }
+  ],
+  "hierarchy" : {
+    "paths" : [
+      [
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/CommandReference",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo"
+      ]
+    ]
+  },
+  "identifier" : {
+    "interfaceLanguage" : "swift",
+    "url" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo-log"
+  },
+  "kind" : "article",
+  "metadata" : {
+    "role" : "article",
+    "roleHeading" : "Article",
+    "title" : "tng repo log"
+  },
+  "primaryContentSections" : [
+    {
+      "content" : [
+        {
+          "anchor" : "Usage",
+          "level" : 2,
+          "text" : "Usage",
+          "type" : "heading"
+        },
+        {
+          "code" : [
+            "tng repo log [<repository>] [--ref <ref>] [--path <path>] [--limit <limit>] [--cursor <cursor>] [--json] [--version] [--help]"
+          ],
+          "syntax" : "console",
+          "type" : "codeListing"
+        },
+        {
+          "anchor" : "Arguments",
+          "level" : 2,
+          "text" : "Arguments",
+          "type" : "heading"
+        },
+        {
+          "anchor" : "%3Crepository%3E",
+          "level" : 3,
+          "text" : "<repository>",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Repository AT URI, repo DID, handle\/name, or clone URL (defaults to Git origin)",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "Options",
+          "level" : 2,
+          "text" : "Options",
+          "type" : "heading"
+        },
+        {
+          "anchor" : "ref-%3Cref%3E",
+          "level" : 3,
+          "text" : "–ref <ref>",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Git branch, tag, or commit (defaults to the repository default branch)",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "path-%3Cpath%3E",
+          "level" : 3,
+          "text" : "–path <path>",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Only include commits affecting this path",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "L-limit-%3Climit%3E",
+          "level" : 3,
+          "text" : "-L, –limit <limit>",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Maximum number of commits to return",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "items" : [
+            {
+              "content" : [
+                {
+                  "inlineContent" : [
+                    {
+                      "text" : "Default: ",
+                      "type" : "text"
+                    },
+                    {
+                      "code" : "30",
+                      "type" : "codeVoice"
+                    }
+                  ],
+                  "type" : "paragraph"
+                }
+              ]
+            }
+          ],
+          "type" : "unorderedList"
+        },
+        {
+          "anchor" : "cursor-%3Ccursor%3E",
+          "level" : 3,
+          "text" : "–cursor <cursor>",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Offset cursor from a previous response",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "json",
+          "level" : 3,
+          "text" : "–json",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Output the complete log page as JSON",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "version",
+          "level" : 3,
+          "text" : "–version",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Show the version.",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "h-help",
+          "level" : 3,
+          "text" : "-h, –help",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Show help information.",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        }
+      ],
+      "kind" : "content"
+    }
+  ],
+  "schemaVersion" : {
+    "major" : 0,
+    "minor" : 3,
+    "patch" : 0
+  },
+  "sections" : [
+
+  ],
+  "seeAlsoSections" : [
+    {
+      "anchor" : "Related-Documentation",
+      "identifiers" : [
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo"
+      ],
+      "title" : "Related Documentation"
+    },
+    {
+      "anchor" : "Subcommands",
+      "generated" : true,
+      "identifiers" : [
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo-create",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo-delete",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo-view",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo-list",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo-tree",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo-blob",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo-languages",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo-archive",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo-collaborator",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo-secret",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo-branch",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo-tag",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo-star",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo-unstar"
+      ],
+      "title" : "Subcommands"
+    }
+  ]
+, 
+"references": {
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng": {
+  "abstract" : [
+    {
+      "text" : "Use ",
+      "type" : "text"
+    },
+    {
+      "code" : "tng",
+      "type" : "codeVoice"
+    },
+    {
+      "text" : " to work with Tangled repositories, issues, pull requests, artifacts,",
+      "type" : "text"
+    },
+    {
+      "text" : " ",
+      "type" : "text"
+    },
+    {
+      "text" : "Spindle pipelines, and live events from your terminal.",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng",
+  "kind" : "article",
+  "role" : "collection",
+  "title" : "tng",
+  "type" : "topic",
+  "url" : "\/documentation\/tng"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/CommandReference": {
+  "abstract" : [
+    {
+      "text" : "Tangled CLI",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/CommandReference",
+  "kind" : "article",
+  "role" : "collectionGroup",
+  "title" : "Command reference",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/commandreference"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-repo": {
+  "abstract" : [
+    {
+      "text" : "Work with Tangled repositories",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo",
+  "kind" : "article",
+  "role" : "collectionGroup",
+  "title" : "tng repo",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-repo"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-repo-archive": {
+  "abstract" : [
+    {
+      "text" : "Download a repository archive",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo-archive",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng repo archive",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-repo-archive"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-repo-blob": {
+  "abstract" : [
+    {
+      "text" : "Show a file from a repository",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo-blob",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng repo blob",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-repo-blob"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-repo-branch": {
+  "abstract" : [
+    {
+      "text" : "Work with repository branches",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo-branch",
+  "kind" : "article",
+  "role" : "collectionGroup",
+  "title" : "tng repo branch",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-repo-branch"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-repo-collaborator": {
+  "abstract" : [
+    {
+      "text" : "Manage repository collaborators",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo-collaborator",
+  "kind" : "article",
+  "role" : "collectionGroup",
+  "title" : "tng repo collaborator",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-repo-collaborator"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-repo-create": {
+  "abstract" : [
+    {
+      "text" : "Create a Tangled repository",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo-create",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng repo create",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-repo-create"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-repo-delete": {
+  "abstract" : [
+    {
+      "text" : "Delete a repository record and its Knot Git repository",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo-delete",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng repo delete",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-repo-delete"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-repo-languages": {
+  "abstract" : [
+    {
+      "text" : "Show language statistics for a repository",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo-languages",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng repo languages",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-repo-languages"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-repo-list": {
+  "abstract" : [
+    {
+      "text" : "List repositories owned by a DID or handle",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo-list",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng repo list",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-repo-list"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-repo-secret": {
+  "abstract" : [
+    {
+      "text" : "Manage repository CI secrets",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo-secret",
+  "kind" : "article",
+  "role" : "collectionGroup",
+  "title" : "tng repo secret",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-repo-secret"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-repo-star": {
+  "abstract" : [
+    {
+      "text" : "Add a repository to your favorites",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo-star",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng repo star",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-repo-star"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-repo-tag": {
+  "abstract" : [
+    {
+      "text" : "Work with repository tags",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo-tag",
+  "kind" : "article",
+  "role" : "collectionGroup",
+  "title" : "tng repo tag",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-repo-tag"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-repo-tree": {
+  "abstract" : [
+    {
+      "text" : "List files in a repository tree",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo-tree",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng repo tree",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-repo-tree"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-repo-unstar": {
+  "abstract" : [
+    {
+      "text" : "Remove a repository from your favorites",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo-unstar",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng repo unstar",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-repo-unstar"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-repo-view": {
+  "abstract" : [
+    {
+      "text" : "View a Tangled repository",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-repo-view",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng repo view",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-repo-view"
+}
+}
+}

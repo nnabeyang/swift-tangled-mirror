@@ -1,0 +1,466 @@
+{
+  "includedArchiveIdentifiers" : [
+    "sh.tngl.nnabeyang.swift-tangled"
+  ],
+  "interfaceLanguages" : {
+    "swift" : [
+      {
+        "children" : [
+          {
+            "title" : "Get started",
+            "type" : "groupMarker"
+          },
+          {
+            "path" : "\/documentation\/tng\/gettingstarted",
+            "title" : "Getting started",
+            "type" : "article"
+          },
+          {
+            "path" : "\/documentation\/tng\/terminaloutput",
+            "title" : "Terminal output",
+            "type" : "article"
+          },
+          {
+            "title" : "Command reference",
+            "type" : "groupMarker"
+          },
+          {
+            "children" : [
+              {
+                "title" : "Subcommands",
+                "type" : "groupMarker"
+              },
+              {
+                "children" : [
+                  {
+                    "title" : "Subcommands",
+                    "type" : "groupMarker"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-auth-login",
+                    "title" : "tng auth login",
+                    "type" : "article"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-auth-status",
+                    "title" : "tng auth status",
+                    "type" : "article"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-auth-logout",
+                    "title" : "tng auth logout",
+                    "type" : "article"
+                  }
+                ],
+                "path" : "\/documentation\/tng\/tng-auth",
+                "title" : "tng auth",
+                "type" : "symbol"
+              },
+              {
+                "children" : [
+                  {
+                    "title" : "Subcommands",
+                    "type" : "groupMarker"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-repo-create",
+                    "title" : "tng repo create",
+                    "type" : "article"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-repo-delete",
+                    "title" : "tng repo delete",
+                    "type" : "article"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-repo-view",
+                    "title" : "tng repo view",
+                    "type" : "article"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-repo-list",
+                    "title" : "tng repo list",
+                    "type" : "article"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-repo-tree",
+                    "title" : "tng repo tree",
+                    "type" : "article"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-repo-log",
+                    "title" : "tng repo log",
+                    "type" : "article"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-repo-blob",
+                    "title" : "tng repo blob",
+                    "type" : "article"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-repo-languages",
+                    "title" : "tng repo languages",
+                    "type" : "article"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-repo-archive",
+                    "title" : "tng repo archive",
+                    "type" : "article"
+                  },
+                  {
+                    "children" : [
+                      {
+                        "title" : "Subcommands",
+                        "type" : "groupMarker"
+                      },
+                      {
+                        "path" : "\/documentation\/tng\/tng-repo-collaborator-list",
+                        "title" : "tng repo collaborator list",
+                        "type" : "article"
+                      },
+                      {
+                        "path" : "\/documentation\/tng\/tng-repo-collaborator-add",
+                        "title" : "tng repo collaborator add",
+                        "type" : "article"
+                      },
+                      {
+                        "path" : "\/documentation\/tng\/tng-repo-collaborator-remove",
+                        "title" : "tng repo collaborator remove",
+                        "type" : "article"
+                      }
+                    ],
+                    "path" : "\/documentation\/tng\/tng-repo-collaborator",
+                    "title" : "tng repo collaborator",
+                    "type" : "symbol"
+                  },
+                  {
+                    "children" : [
+                      {
+                        "title" : "Subcommands",
+                        "type" : "groupMarker"
+                      },
+                      {
+                        "path" : "\/documentation\/tng\/tng-repo-secret-list",
+                        "title" : "tng repo secret list",
+                        "type" : "article"
+                      },
+                      {
+                        "path" : "\/documentation\/tng\/tng-repo-secret-add",
+                        "title" : "tng repo secret add",
+                        "type" : "article"
+                      },
+                      {
+                        "path" : "\/documentation\/tng\/tng-repo-secret-remove",
+                        "title" : "tng repo secret remove",
+                        "type" : "article"
+                      }
+                    ],
+                    "path" : "\/documentation\/tng\/tng-repo-secret",
+                    "title" : "tng repo secret",
+                    "type" : "symbol"
+                  },
+                  {
+                    "children" : [
+                      {
+                        "title" : "Subcommands",
+                        "type" : "groupMarker"
+                      },
+                      {
+                        "path" : "\/documentation\/tng\/tng-repo-branch-list",
+                        "title" : "tng repo branch list",
+                        "type" : "article"
+                      },
+                      {
+                        "path" : "\/documentation\/tng\/tng-repo-branch-set-default",
+                        "title" : "tng repo branch set-default",
+                        "type" : "article"
+                      }
+                    ],
+                    "path" : "\/documentation\/tng\/tng-repo-branch",
+                    "title" : "tng repo branch",
+                    "type" : "symbol"
+                  },
+                  {
+                    "children" : [
+                      {
+                        "title" : "Subcommands",
+                        "type" : "groupMarker"
+                      },
+                      {
+                        "path" : "\/documentation\/tng\/tng-repo-tag-list",
+                        "title" : "tng repo tag list",
+                        "type" : "article"
+                      }
+                    ],
+                    "path" : "\/documentation\/tng\/tng-repo-tag",
+                    "title" : "tng repo tag",
+                    "type" : "symbol"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-repo-star",
+                    "title" : "tng repo star",
+                    "type" : "article"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-repo-unstar",
+                    "title" : "tng repo unstar",
+                    "type" : "article"
+                  }
+                ],
+                "path" : "\/documentation\/tng\/tng-repo",
+                "title" : "tng repo",
+                "type" : "symbol"
+              },
+              {
+                "children" : [
+                  {
+                    "title" : "Subcommands",
+                    "type" : "groupMarker"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-artifact-list",
+                    "title" : "tng artifact list",
+                    "type" : "article"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-artifact-view",
+                    "title" : "tng artifact view",
+                    "type" : "article"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-artifact-upload",
+                    "title" : "tng artifact upload",
+                    "type" : "article"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-artifact-download",
+                    "title" : "tng artifact download",
+                    "type" : "article"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-artifact-delete",
+                    "title" : "tng artifact delete",
+                    "type" : "article"
+                  }
+                ],
+                "path" : "\/documentation\/tng\/tng-artifact",
+                "title" : "tng artifact",
+                "type" : "symbol"
+              },
+              {
+                "children" : [
+                  {
+                    "title" : "Subcommands",
+                    "type" : "groupMarker"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-issue-list",
+                    "title" : "tng issue list",
+                    "type" : "article"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-issue-view",
+                    "title" : "tng issue view",
+                    "type" : "article"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-issue-create",
+                    "title" : "tng issue create",
+                    "type" : "article"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-issue-comment",
+                    "title" : "tng issue comment",
+                    "type" : "article"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-issue-edit",
+                    "title" : "tng issue edit",
+                    "type" : "article"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-issue-close",
+                    "title" : "tng issue close",
+                    "type" : "article"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-issue-reopen",
+                    "title" : "tng issue reopen",
+                    "type" : "article"
+                  }
+                ],
+                "path" : "\/documentation\/tng\/tng-issue",
+                "title" : "tng issue",
+                "type" : "symbol"
+              },
+              {
+                "children" : [
+                  {
+                    "title" : "Subcommands",
+                    "type" : "groupMarker"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-pr-list",
+                    "title" : "tng pr list",
+                    "type" : "article"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-pr-view",
+                    "title" : "tng pr view",
+                    "type" : "article"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-pr-diff",
+                    "title" : "tng pr diff",
+                    "type" : "article"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-pr-create",
+                    "title" : "tng pr create",
+                    "type" : "article"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-pr-edit",
+                    "title" : "tng pr edit",
+                    "type" : "article"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-pr-resubmit",
+                    "title" : "tng pr resubmit",
+                    "type" : "article"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-pr-comment",
+                    "title" : "tng pr comment",
+                    "type" : "article"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-pr-close",
+                    "title" : "tng pr close",
+                    "type" : "article"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-pr-reopen",
+                    "title" : "tng pr reopen",
+                    "type" : "article"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-pr-merge",
+                    "title" : "tng pr merge",
+                    "type" : "article"
+                  }
+                ],
+                "path" : "\/documentation\/tng\/tng-pr",
+                "title" : "tng pr",
+                "type" : "symbol"
+              },
+              {
+                "children" : [
+                  {
+                    "title" : "Subcommands",
+                    "type" : "groupMarker"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-pipeline-list",
+                    "title" : "tng pipeline list",
+                    "type" : "article"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-pipeline-view",
+                    "title" : "tng pipeline view",
+                    "type" : "article"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-pipeline-status",
+                    "title" : "tng pipeline status",
+                    "type" : "article"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-pipeline-watch",
+                    "title" : "tng pipeline watch",
+                    "type" : "article"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-pipeline-logs",
+                    "title" : "tng pipeline logs",
+                    "type" : "article"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-pipeline-retry",
+                    "title" : "tng pipeline retry",
+                    "type" : "article"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-pipeline-run",
+                    "title" : "tng pipeline run",
+                    "type" : "article"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-pipeline-cancel",
+                    "title" : "tng pipeline cancel",
+                    "type" : "article"
+                  }
+                ],
+                "path" : "\/documentation\/tng\/tng-pipeline",
+                "title" : "tng pipeline",
+                "type" : "symbol"
+              },
+              {
+                "children" : [
+                  {
+                    "title" : "Subcommands",
+                    "type" : "groupMarker"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-events-watch",
+                    "title" : "tng events watch",
+                    "type" : "article"
+                  }
+                ],
+                "path" : "\/documentation\/tng\/tng-events",
+                "title" : "tng events",
+                "type" : "symbol"
+              },
+              {
+                "path" : "\/documentation\/tng\/tng-search",
+                "title" : "tng search",
+                "type" : "article"
+              },
+              {
+                "path" : "\/documentation\/tng\/tng-api",
+                "title" : "tng api",
+                "type" : "article"
+              },
+              {
+                "path" : "\/documentation\/tng\/tng-completion",
+                "title" : "tng completion",
+                "type" : "article"
+              },
+              {
+                "path" : "\/documentation\/tng\/tng-capabilities",
+                "title" : "tng capabilities",
+                "type" : "article"
+              },
+              {
+                "path" : "\/documentation\/tng\/tng-help",
+                "title" : "tng help",
+                "type" : "article"
+              }
+            ],
+            "path" : "\/documentation\/tng\/commandreference",
+            "title" : "Command reference",
+            "type" : "symbol"
+          }
+        ],
+        "path" : "\/documentation\/tng",
+        "title" : "tng",
+        "type" : "module"
+      }
+    ]
+  },
+  "schemaVersion" : {
+    "major" : 0,
+    "minor" : 1,
+    "patch" : 2
+  }
+}

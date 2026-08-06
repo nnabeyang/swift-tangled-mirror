@@ -1,0 +1,217 @@
+{
+  "abstract" : [
+    {
+      "text" : "Use ",
+      "type" : "text"
+    },
+    {
+      "code" : "tng",
+      "type" : "codeVoice"
+    },
+    {
+      "text" : " to work with Tangled repositories, issues, pull requests, artifacts,",
+      "type" : "text"
+    },
+    {
+      "text" : " ",
+      "type" : "text"
+    },
+    {
+      "text" : "Spindle pipelines, and live events from your terminal.",
+      "type" : "text"
+    }
+  ],
+  "hierarchy" : {
+    "paths" : [
+      [
+
+      ]
+    ]
+  },
+  "identifier" : {
+    "interfaceLanguage" : "swift",
+    "url" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng"
+  },
+  "kind" : "article",
+  "metadata" : {
+    "role" : "collection",
+    "title" : "tng"
+  },
+  "primaryContentSections" : [
+    {
+      "content" : [
+        {
+          "anchor" : "overview",
+          "level" : 2,
+          "text" : "Overview",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "identifier" : "\/swift-tangled\/",
+              "isActive" : true,
+              "type" : "reference"
+            }
+          ],
+          "type" : "paragraph"
+        }
+      ],
+      "kind" : "content"
+    }
+  ],
+  "schemaVersion" : {
+    "major" : 0,
+    "minor" : 3,
+    "patch" : 0
+  },
+  "sections" : [
+
+  ],
+  "topicSections" : [
+    {
+      "anchor" : "Get-started",
+      "identifiers" : [
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/GettingStarted",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/TerminalOutput"
+      ],
+      "title" : "Get started"
+    },
+    {
+      "anchor" : "Command-reference",
+      "identifiers" : [
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/CommandReference"
+      ],
+      "title" : "Command reference"
+    }
+  ]
+, 
+"references": {
+"/swift-tangled/": {
+  "identifier" : "\/swift-tangled\/",
+  "title" : "← Back to tng home",
+  "titleInlineContent" : [
+    {
+      "text" : "← Back to tng home",
+      "type" : "text"
+    }
+  ],
+  "type" : "link",
+  "url" : "\/swift-tangled\/"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/CommandReference": {
+  "abstract" : [
+    {
+      "text" : "Tangled CLI",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/CommandReference",
+  "kind" : "article",
+  "role" : "collectionGroup",
+  "title" : "Command reference",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/commandreference"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/GettingStarted": {
+  "abstract" : [
+    {
+      "text" : "Install ",
+      "type" : "text"
+    },
+    {
+      "code" : "tng",
+      "type" : "codeVoice"
+    },
+    {
+      "text" : ", sign in when a write operation requires authentication, and",
+      "type" : "text"
+    },
+    {
+      "text" : " ",
+      "type" : "text"
+    },
+    {
+      "text" : "inspect a repository.",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/GettingStarted",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "Getting started",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/gettingstarted"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/TerminalOutput": {
+  "abstract" : [
+    {
+      "text" : "When standard output is a terminal, ",
+      "type" : "text"
+    },
+    {
+      "code" : "tng",
+      "type" : "codeVoice"
+    },
+    {
+      "text" : " experimentally renders",
+      "type" : "text"
+    },
+    {
+      "text" : " ",
+      "type" : "text"
+    },
+    {
+      "text" : "human-readable Markdown, tables, and details with ANSI styling and",
+      "type" : "text"
+    },
+    {
+      "text" : " ",
+      "type" : "text"
+    },
+    {
+      "text" : "terminal-width-aware wrapping on macOS and Linux. OSC-8 hyperlinks are",
+      "type" : "text"
+    },
+    {
+      "text" : " ",
+      "type" : "text"
+    },
+    {
+      "text" : "disabled. When output is piped or redirected, ",
+      "type" : "text"
+    },
+    {
+      "code" : "tng",
+      "type" : "codeVoice"
+    },
+    {
+      "text" : " keeps the existing plain",
+      "type" : "text"
+    },
+    {
+      "text" : " ",
+      "type" : "text"
+    },
+    {
+      "text" : "output. Use ",
+      "type" : "text"
+    },
+    {
+      "code" : "--json",
+      "type" : "codeVoice"
+    },
+    {
+      "text" : " when scripts or agents need a stable, structured result.",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/TerminalOutput",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "Terminal output",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/terminaloutput"
+}
+}
+}

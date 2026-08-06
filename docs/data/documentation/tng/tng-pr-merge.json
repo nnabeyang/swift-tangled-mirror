@@ -1,0 +1,369 @@
+{
+  "abstract" : [
+    {
+      "text" : "Check or merge a Tangled pull request",
+      "type" : "text"
+    }
+  ],
+  "hierarchy" : {
+    "paths" : [
+      [
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/CommandReference",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pr"
+      ]
+    ]
+  },
+  "identifier" : {
+    "interfaceLanguage" : "swift",
+    "url" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pr-merge"
+  },
+  "kind" : "article",
+  "metadata" : {
+    "role" : "article",
+    "roleHeading" : "Article",
+    "title" : "tng pr merge"
+  },
+  "primaryContentSections" : [
+    {
+      "content" : [
+        {
+          "anchor" : "Usage",
+          "level" : 2,
+          "text" : "Usage",
+          "type" : "heading"
+        },
+        {
+          "code" : [
+            "tng pr merge <pull-request-uri> [--check] [--stack] [--json] [--version] [--help]"
+          ],
+          "syntax" : "console",
+          "type" : "codeListing"
+        },
+        {
+          "anchor" : "Arguments",
+          "level" : 2,
+          "text" : "Arguments",
+          "type" : "heading"
+        },
+        {
+          "anchor" : "%3Cpull-request-uri%3E",
+          "level" : 3,
+          "text" : "<pull-request-uri>",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Pull request AT URI",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "Options",
+          "level" : 2,
+          "text" : "Options",
+          "type" : "heading"
+        },
+        {
+          "anchor" : "check",
+          "level" : 3,
+          "text" : "–check",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Check whether the pull request can be merged without merging it",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "stack",
+          "level" : 3,
+          "text" : "–stack",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Allow all open pull requests in the dependency stack to be merged",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "json",
+          "level" : 3,
+          "text" : "–json",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Output the result as JSON",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "version",
+          "level" : 3,
+          "text" : "–version",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Show the version.",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "h-help",
+          "level" : 3,
+          "text" : "-h, –help",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Show help information.",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        }
+      ],
+      "kind" : "content"
+    }
+  ],
+  "schemaVersion" : {
+    "major" : 0,
+    "minor" : 3,
+    "patch" : 0
+  },
+  "sections" : [
+
+  ],
+  "seeAlsoSections" : [
+    {
+      "anchor" : "Related-Documentation",
+      "identifiers" : [
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pr"
+      ],
+      "title" : "Related Documentation"
+    },
+    {
+      "anchor" : "Subcommands",
+      "generated" : true,
+      "identifiers" : [
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pr-list",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pr-view",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pr-diff",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pr-create",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pr-edit",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pr-resubmit",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pr-comment",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pr-close",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pr-reopen"
+      ],
+      "title" : "Subcommands"
+    }
+  ]
+, 
+"references": {
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng": {
+  "abstract" : [
+    {
+      "text" : "Use ",
+      "type" : "text"
+    },
+    {
+      "code" : "tng",
+      "type" : "codeVoice"
+    },
+    {
+      "text" : " to work with Tangled repositories, issues, pull requests, artifacts,",
+      "type" : "text"
+    },
+    {
+      "text" : " ",
+      "type" : "text"
+    },
+    {
+      "text" : "Spindle pipelines, and live events from your terminal.",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng",
+  "kind" : "article",
+  "role" : "collection",
+  "title" : "tng",
+  "type" : "topic",
+  "url" : "\/documentation\/tng"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/CommandReference": {
+  "abstract" : [
+    {
+      "text" : "Tangled CLI",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/CommandReference",
+  "kind" : "article",
+  "role" : "collectionGroup",
+  "title" : "Command reference",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/commandreference"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-pr": {
+  "abstract" : [
+    {
+      "text" : "View Tangled pull requests",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pr",
+  "kind" : "article",
+  "role" : "collectionGroup",
+  "title" : "tng pr",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-pr"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-pr-close": {
+  "abstract" : [
+    {
+      "text" : "Close a Tangled pull request",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pr-close",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng pr close",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-pr-close"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-pr-comment": {
+  "abstract" : [
+    {
+      "text" : "Comment on a Tangled pull request",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pr-comment",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng pr comment",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-pr-comment"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-pr-create": {
+  "abstract" : [
+    {
+      "text" : "Create a pull request from a pushed branch",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pr-create",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng pr create",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-pr-create"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-pr-diff": {
+  "abstract" : [
+    {
+      "text" : "Show a pull request round as a unified diff",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pr-diff",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng pr diff",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-pr-diff"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-pr-edit": {
+  "abstract" : [
+    {
+      "text" : "Edit a Tangled pull request",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pr-edit",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng pr edit",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-pr-edit"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-pr-list": {
+  "abstract" : [
+    {
+      "text" : "List pull requests for a Tangled repository",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pr-list",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng pr list",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-pr-list"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-pr-reopen": {
+  "abstract" : [
+    {
+      "text" : "Reopen a Tangled pull request",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pr-reopen",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng pr reopen",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-pr-reopen"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-pr-resubmit": {
+  "abstract" : [
+    {
+      "text" : "Add a round from an updated branch or patch file",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pr-resubmit",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng pr resubmit",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-pr-resubmit"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-pr-view": {
+  "abstract" : [
+    {
+      "text" : "View a Tangled pull request",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-pr-view",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng pr view",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-pr-view"
+}
+}
+}
