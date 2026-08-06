@@ -88,6 +88,7 @@ DOCC_JSON_PRETTYPRINT=YES "${docc_command[@]}" convert "${catalog_path}" \
 
 cp "${repository_root}/Documentation/Site/index.html" "${output_path}/index.html"
 cp "${repository_root}/Documentation/Site/site.css" "${output_path}/site.css"
+cp "${repository_root}/Documentation/Site/og-image.jpg" "${output_path}/og-image.jpg"
 find "${output_path}" -depth -type d -empty -delete
 
 if [[ "${check_only}" == true ]]; then
