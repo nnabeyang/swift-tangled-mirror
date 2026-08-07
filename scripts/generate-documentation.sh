@@ -22,6 +22,82 @@ fi
 repository_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly repository_root
 
+normalize_documentation_for_comparison() {
+  local source_directory="$1"
+  local destination_directory="$2"
+
+  cp -R "${source_directory}" "${destination_directory}"
+
+  local javascript_directory="${destination_directory}/js"
+  if [[ ! -d "${javascript_directory}" ]]; then
+    printf 'error: generated documentation JavaScript is missing: %s\n' \
+      "${javascript_directory}" >&2
+    return 1
+  fi
+
+  local index_bundle_count
+  index_bundle_count="$(
+    find "${javascript_directory}" -maxdepth 1 -type f -name 'index.*.js' -print \
+      | wc -l \
+      | tr -d '[:space:]'
+  )"
+  if [[ "${index_bundle_count}" != 1 ]]; then
+    printf 'error: expected one DocC index JavaScript bundle in %s; found %s\n' \
+      "${javascript_directory}" "${index_bundle_count}" >&2
+    return 1
+  fi
+
+  local renderer_chunk_count
+  renderer_chunk_count="$(
+    find "${javascript_directory}" -maxdepth 1 -type f -name '416.*.js' -print \
+      | wc -l \
+      | tr -d '[:space:]'
+  )"
+  if [[ "${renderer_chunk_count}" != 1 ]]; then
+    printf 'error: expected one DocC renderer chunk in %s; found %s\n' \
+      "${javascript_directory}" "${renderer_chunk_count}" >&2
+    return 1
+  fi
+
+  local documentation_directory="${destination_directory}/documentation"
+  if [[ ! -d "${documentation_directory}" ]]; then
+    printf 'error: generated documentation routes are missing: %s\n' \
+      "${documentation_directory}" >&2
+    return 1
+  fi
+
+  local route_count=0
+  local route_path
+  while IFS= read -r -d '' route_path; do
+    route_count=$((route_count + 1))
+
+    local index_reference_count
+    index_reference_count="$(
+      { grep -Eo 'js/index\.[[:xdigit:]]+\.js' "${route_path}" || true; } \
+        | wc -l \
+        | tr -d '[:space:]'
+    )"
+    if [[ "${index_reference_count}" != 1 ]]; then
+      printf 'error: expected one DocC index JavaScript reference in %s; found %s\n' \
+        "${route_path}" "${index_reference_count}" >&2
+      return 1
+    fi
+
+    sed -E 's#js/index\.[[:xdigit:]]+\.js#js/index.DOCC_PLATFORM.js#g' \
+      "${route_path}" >"${route_path}.normalized"
+    mv -- "${route_path}.normalized" "${route_path}"
+  done < <(find "${documentation_directory}" -type f -name index.html -print0)
+
+  if [[ "${route_count}" == 0 ]]; then
+    printf 'error: generated documentation routes are missing from %s\n' \
+      "${documentation_directory}" >&2
+    return 1
+  fi
+
+  find "${javascript_directory}" -maxdepth 1 -type f \
+    \( -name 'index.*.js' -o -name '416.*.js' \) -delete
+}
+
 # shellcheck source=../documentation.lock
 source "${repository_root}/documentation.lock"
 
@@ -70,6 +146,10 @@ generated_path="${temporary_directory}/generated"
 readonly generated_path
 output_path="${temporary_directory}/docs"
 readonly output_path
+committed_comparison_path="${temporary_directory}/committed-docs"
+readonly committed_comparison_path
+generated_comparison_path="${temporary_directory}/generated-docs"
+readonly generated_comparison_path
 
 cp -R "${repository_root}/Documentation/Tng.docc" "${catalog_path}"
 swift run --package-path "${repository_root}" ManualSiteGenerator \
@@ -94,7 +174,11 @@ find "${output_path}" -depth -type d -empty -delete
 if [[ "${check_only}" == true ]]; then
   [[ -d "${repository_root}/docs" ]] \
     || { printf 'error: generated documentation is missing: %s\n' "${repository_root}/docs" >&2; exit 1; }
-  if ! diff -ru "${repository_root}/docs" "${output_path}"; then
+  normalize_documentation_for_comparison \
+    "${repository_root}/docs" "${committed_comparison_path}"
+  normalize_documentation_for_comparison \
+    "${output_path}" "${generated_comparison_path}"
+  if ! diff -ru "${committed_comparison_path}" "${generated_comparison_path}"; then
     printf 'error: generated documentation is out of date\n' >&2
     exit 1
   fi

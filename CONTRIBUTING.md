@@ -208,4 +208,7 @@ Verify that the committed output is current without rewriting files:
 
 Documentation generation requires Swift 6.3.3. On macOS the script also pins
 Xcode 26.6 build 17F113; on Linux it uses the `docc` executable from the Swift
-toolchain. Do not edit generated files in `docs/` directly.
+toolchain. The check normalizes only the known platform-specific DocC renderer
+JavaScript bundles before comparing the generated site, so output produced on
+either platform can be validated on both. All other generated content and
+assets must match exactly. Do not edit generated files in `docs/` directly.
