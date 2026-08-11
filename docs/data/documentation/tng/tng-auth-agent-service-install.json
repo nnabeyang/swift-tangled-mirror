@@ -1,7 +1,7 @@
 {
   "abstract" : [
     {
-      "text" : "Serve a restricted OAuth session over a Unix socket",
+      "text" : "Install and start a macOS auth-agent LaunchAgent",
       "type" : "text"
     }
   ],
@@ -11,19 +11,20 @@
         "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng",
         "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/CommandReference",
         "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth",
-        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent"
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service"
       ]
     ]
   },
   "identifier" : {
     "interfaceLanguage" : "swift",
-    "url" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-serve"
+    "url" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service-install"
   },
   "kind" : "article",
   "metadata" : {
     "role" : "article",
     "roleHeading" : "Article",
-    "title" : "tng auth agent serve"
+    "title" : "tng auth agent service install"
   },
   "primaryContentSections" : [
     {
@@ -36,7 +37,7 @@
         },
         {
           "code" : [
-            "tng auth agent serve --socket <socket> --profile <profile> [--max-body-bytes <max-body-bytes>] [--max-job-upload-bytes <max-job-upload-bytes>] [--version] [--help]"
+            "tng auth agent service install --session-file <session-file> --socket <socket> --profile <profile> [--executable <executable>] [--instance <instance>] [--max-body-bytes <max-body-bytes>] [--max-job-upload-bytes <max-job-upload-bytes>] [--json] [--version] [--help]"
           ],
           "syntax" : "console",
           "type" : "codeListing"
@@ -46,6 +47,21 @@
           "level" : 2,
           "text" : "Options",
           "type" : "heading"
+        },
+        {
+          "anchor" : "session-file-%3Csession-file%3E",
+          "level" : 3,
+          "text" : "–session-file <session-file>",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Absolute ci-reporting session file path",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
         },
         {
           "anchor" : "socket-%3Csocket%3E",
@@ -72,6 +88,36 @@
           "inlineContent" : [
             {
               "text" : "Required authentication profile",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "executable-%3Cexecutable%3E",
+          "level" : 3,
+          "text" : "–executable <executable>",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Absolute tng executable path",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "instance-%3Cinstance%3E",
+          "level" : 3,
+          "text" : "–instance <instance>",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Named service instance",
               "type" : "text"
             }
           ],
@@ -152,6 +198,21 @@
           "type" : "unorderedList"
         },
         {
+          "anchor" : "json",
+          "level" : 3,
+          "text" : "–json",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Output service state as JSON",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
           "anchor" : "version",
           "level" : 3,
           "text" : "–version",
@@ -197,7 +258,7 @@
     {
       "anchor" : "Related-Documentation",
       "identifiers" : [
-        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent"
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service"
       ],
       "title" : "Related Documentation"
     },
@@ -205,7 +266,11 @@
       "anchor" : "Subcommands",
       "generated" : true,
       "identifiers" : [
-        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service"
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service-start",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service-status",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service-restart",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service-stop",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service-uninstall"
       ],
       "title" : "Subcommands"
     }
@@ -297,6 +362,76 @@
   "title" : "tng auth agent service",
   "type" : "topic",
   "url" : "\/documentation\/tng\/tng-auth-agent-service"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-agent-service-restart": {
+  "abstract" : [
+    {
+      "text" : "Restart an installed auth-agent service",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service-restart",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng auth agent service restart",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-auth-agent-service-restart"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-agent-service-start": {
+  "abstract" : [
+    {
+      "text" : "Start an installed auth-agent service",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service-start",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng auth agent service start",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-auth-agent-service-start"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-agent-service-status": {
+  "abstract" : [
+    {
+      "text" : "Show auth-agent service and health state",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service-status",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng auth agent service status",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-auth-agent-service-status"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-agent-service-stop": {
+  "abstract" : [
+    {
+      "text" : "Stop an auth-agent service without uninstalling it",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service-stop",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng auth agent service stop",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-auth-agent-service-stop"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-agent-service-uninstall": {
+  "abstract" : [
+    {
+      "text" : "Stop and remove an auth-agent LaunchAgent",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service-uninstall",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng auth agent service uninstall",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-auth-agent-service-uninstall"
 }
 }
 }

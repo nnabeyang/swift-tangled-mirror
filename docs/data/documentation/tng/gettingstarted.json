@@ -201,6 +201,7 @@
       "anchor" : "Get-started",
       "generated" : true,
       "identifiers" : [
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/CIAuthenticationAgent",
         "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/TerminalOutput"
       ],
       "title" : "Get started"
@@ -237,6 +238,28 @@
   "title" : "tng",
   "type" : "topic",
   "url" : "\/documentation\/tng"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/CIAuthenticationAgent": {
+  "abstract" : [
+    {
+      "text" : "Keep a restricted Tangled identity available to self-hosted virtual-machine",
+      "type" : "text"
+    },
+    {
+      "text" : " ",
+      "type" : "text"
+    },
+    {
+      "text" : "workers without copying its OAuth session into a guest.",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/CIAuthenticationAgent",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "Run the CI authentication agent as a service",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/ciauthenticationagent"
 },
 "doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/TerminalOutput": {
   "abstract" : [

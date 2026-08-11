@@ -16,6 +16,11 @@
             "type" : "article"
           },
           {
+            "path" : "\/documentation\/tng\/ciauthenticationagent",
+            "title" : "Run the CI authentication agent as a service",
+            "type" : "article"
+          },
+          {
             "path" : "\/documentation\/tng\/terminaloutput",
             "title" : "Terminal output",
             "type" : "article"
@@ -61,6 +66,47 @@
                         "path" : "\/documentation\/tng\/tng-auth-agent-serve",
                         "title" : "tng auth agent serve",
                         "type" : "article"
+                      },
+                      {
+                        "children" : [
+                          {
+                            "title" : "Subcommands",
+                            "type" : "groupMarker"
+                          },
+                          {
+                            "path" : "\/documentation\/tng\/tng-auth-agent-service-install",
+                            "title" : "tng auth agent service install",
+                            "type" : "article"
+                          },
+                          {
+                            "path" : "\/documentation\/tng\/tng-auth-agent-service-start",
+                            "title" : "tng auth agent service start",
+                            "type" : "article"
+                          },
+                          {
+                            "path" : "\/documentation\/tng\/tng-auth-agent-service-status",
+                            "title" : "tng auth agent service status",
+                            "type" : "article"
+                          },
+                          {
+                            "path" : "\/documentation\/tng\/tng-auth-agent-service-restart",
+                            "title" : "tng auth agent service restart",
+                            "type" : "article"
+                          },
+                          {
+                            "path" : "\/documentation\/tng\/tng-auth-agent-service-stop",
+                            "title" : "tng auth agent service stop",
+                            "type" : "article"
+                          },
+                          {
+                            "path" : "\/documentation\/tng\/tng-auth-agent-service-uninstall",
+                            "title" : "tng auth agent service uninstall",
+                            "type" : "article"
+                          }
+                        ],
+                        "path" : "\/documentation\/tng\/tng-auth-agent-service",
+                        "title" : "tng auth agent service",
+                        "type" : "symbol"
                       }
                     ],
                     "path" : "\/documentation\/tng\/tng-auth-agent",

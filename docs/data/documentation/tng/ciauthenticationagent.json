@@ -1,0 +1,486 @@
+{
+  "abstract" : [
+    {
+      "text" : "Keep a restricted Tangled identity available to self-hosted virtual-machine",
+      "type" : "text"
+    },
+    {
+      "text" : " ",
+      "type" : "text"
+    },
+    {
+      "text" : "workers without copying its OAuth session into a guest.",
+      "type" : "text"
+    }
+  ],
+  "hierarchy" : {
+    "paths" : [
+      [
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng"
+      ]
+    ]
+  },
+  "identifier" : {
+    "interfaceLanguage" : "swift",
+    "url" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/CIAuthenticationAgent"
+  },
+  "kind" : "article",
+  "metadata" : {
+    "role" : "article",
+    "roleHeading" : "Article",
+    "title" : "Run the CI authentication agent as a service"
+  },
+  "primaryContentSections" : [
+    {
+      "content" : [
+        {
+          "anchor" : "Create-a-restricted-session",
+          "level" : 2,
+          "text" : "Create a restricted session",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Choose a private absolute path for each CI identity and sign in with the",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "code" : "ci-reporting",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : " profile:",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "code" : [
+            "TNG_SESSION_FILE=\"\/Users\/ci\/Library\/Application Support\/tng\/ci-reporting.json\" \\",
+            "  tng auth login CI_HANDLE --profile ci-reporting"
+          ],
+          "syntax" : "sh",
+          "type" : "codeListing"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "The session file and its parent directory must be owned by the current user and",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "inaccessible to group and other users.",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "Install-the-macOS-service",
+          "level" : 2,
+          "text" : "Install the macOS service",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Install a named per-user LaunchAgent with explicit session and socket paths:",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "code" : [
+            "tng auth agent service install \\",
+            "  --session-file \"\/Users\/ci\/Library\/Application Support\/tng\/ci-reporting.json\" \\",
+            "  --socket \"\/Users\/ci\/Library\/Application Support\/tng\/ci-agent.sock\" \\",
+            "  --profile ci-reporting \\",
+            "  --instance ci-reporting"
+          ],
+          "syntax" : "sh",
+          "type" : "codeListing"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "The service starts immediately. It starts again after an unexpected exit and",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "when the user logs in after a host restart. FileVault may require an interactive",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "login before the LaunchAgent can run. The property list contains the session",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "file path but never its OAuth tokens, refresh token, or DPoP key.",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Pass ",
+              "type" : "text"
+            },
+            {
+              "code" : "--executable",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : " during installation when ",
+              "type" : "text"
+            },
+            {
+              "code" : "tng",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : " is not installed at a stable",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "path. Reinstall the instance after moving the executable.",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "Operate-and-diagnose-the-service",
+          "level" : 2,
+          "text" : "Operate and diagnose the service",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Use the same instance for every lifecycle command:",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "code" : [
+            "tng auth agent service status --instance ci-reporting",
+            "tng auth agent service restart --instance ci-reporting",
+            "tng auth agent service stop --instance ci-reporting",
+            "tng auth agent service start --instance ci-reporting",
+            "tng auth agent service uninstall --instance ci-reporting"
+          ],
+          "syntax" : "sh",
+          "type" : "codeListing"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Add ",
+              "type" : "text"
+            },
+            {
+              "code" : "--json",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : " for structured state. Status distinguishes an uninstalled or",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "stopped service, an invalid or expired session, an unavailable socket, and an",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "incompatible protocol. It includes account metadata only after a successful",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "private-socket probe.",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Standard output and error are stored in",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "code" : "~\/Library\/Logs\/tng\/auth-agent\/<instance>\/stdout.log",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : " and ",
+              "type" : "text"
+            },
+            {
+              "code" : "stderr.log",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : ".",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "Uninstalling preserves these logs and the session file.",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Run one named instance with a distinct session file and socket for each CI",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "identity. The trusted VM host bridge selects the correct socket and exposes only",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "code" : "TNG_AUTH_AGENT=vsock:\/\/host:10241",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : " inside its guest.",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "On Linux or when debugging interactively, run the foreground ",
+              "type" : "text"
+            },
+            {
+              "code" : "tng auth agent serve",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : " command instead of the macOS service commands.",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        }
+      ],
+      "kind" : "content"
+    }
+  ],
+  "schemaVersion" : {
+    "major" : 0,
+    "minor" : 3,
+    "patch" : 0
+  },
+  "sections" : [
+
+  ],
+  "seeAlsoSections" : [
+    {
+      "anchor" : "Get-started",
+      "generated" : true,
+      "identifiers" : [
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/GettingStarted",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/TerminalOutput"
+      ],
+      "title" : "Get started"
+    }
+  ]
+, 
+"references": {
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng": {
+  "abstract" : [
+    {
+      "text" : "Use ",
+      "type" : "text"
+    },
+    {
+      "code" : "tng",
+      "type" : "codeVoice"
+    },
+    {
+      "text" : " to work with Tangled repositories, issues, pull requests, artifacts,",
+      "type" : "text"
+    },
+    {
+      "text" : " ",
+      "type" : "text"
+    },
+    {
+      "text" : "Spindle pipelines, and live events from your terminal.",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng",
+  "kind" : "article",
+  "role" : "collection",
+  "title" : "tng",
+  "type" : "topic",
+  "url" : "\/documentation\/tng"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/GettingStarted": {
+  "abstract" : [
+    {
+      "text" : "Install ",
+      "type" : "text"
+    },
+    {
+      "code" : "tng",
+      "type" : "codeVoice"
+    },
+    {
+      "text" : ", sign in when a write operation requires authentication, and",
+      "type" : "text"
+    },
+    {
+      "text" : " ",
+      "type" : "text"
+    },
+    {
+      "text" : "inspect a repository.",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/GettingStarted",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "Getting started",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/gettingstarted"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/TerminalOutput": {
+  "abstract" : [
+    {
+      "text" : "When standard output is a terminal, ",
+      "type" : "text"
+    },
+    {
+      "code" : "tng",
+      "type" : "codeVoice"
+    },
+    {
+      "text" : " experimentally renders",
+      "type" : "text"
+    },
+    {
+      "text" : " ",
+      "type" : "text"
+    },
+    {
+      "text" : "human-readable Markdown, tables, and details with ANSI styling and",
+      "type" : "text"
+    },
+    {
+      "text" : " ",
+      "type" : "text"
+    },
+    {
+      "text" : "terminal-width-aware wrapping on macOS and Linux. OSC-8 hyperlinks are",
+      "type" : "text"
+    },
+    {
+      "text" : " ",
+      "type" : "text"
+    },
+    {
+      "text" : "disabled. When output is piped or redirected, ",
+      "type" : "text"
+    },
+    {
+      "code" : "tng",
+      "type" : "codeVoice"
+    },
+    {
+      "text" : " keeps the existing plain",
+      "type" : "text"
+    },
+    {
+      "text" : " ",
+      "type" : "text"
+    },
+    {
+      "text" : "output. Use ",
+      "type" : "text"
+    },
+    {
+      "code" : "--json",
+      "type" : "codeVoice"
+    },
+    {
+      "text" : " when scripts or agents need a stable, structured result.",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/TerminalOutput",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "Terminal output",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/terminaloutput"
+}
+}
+}

@@ -1,7 +1,7 @@
 {
   "abstract" : [
     {
-      "text" : "Run the host OAuth auth-agent",
+      "text" : "Manage the macOS auth-agent LaunchAgent",
       "type" : "text"
     }
   ],
@@ -10,18 +10,19 @@
       [
         "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng",
         "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/CommandReference",
-        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth"
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent"
       ]
     ]
   },
   "identifier" : {
     "interfaceLanguage" : "swift",
-    "url" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent"
+    "url" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service"
   },
   "kind" : "article",
   "metadata" : {
     "role" : "collectionGroup",
-    "title" : "tng auth agent"
+    "title" : "tng auth agent service"
   },
   "primaryContentSections" : [
     {
@@ -34,7 +35,7 @@
         },
         {
           "code" : [
-            "tng auth agent [--version] [--help]"
+            "tng auth agent service [--version] [--help]"
           ],
           "syntax" : "console",
           "type" : "codeListing"
@@ -91,7 +92,7 @@
     {
       "anchor" : "Related-Documentation",
       "identifiers" : [
-        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth"
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent"
       ],
       "title" : "Related Documentation"
     },
@@ -99,9 +100,7 @@
       "anchor" : "Subcommands",
       "generated" : true,
       "identifiers" : [
-        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-login",
-        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-status",
-        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-logout"
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-serve"
       ],
       "title" : "Subcommands"
     }
@@ -110,8 +109,12 @@
     {
       "anchor" : "Subcommands",
       "identifiers" : [
-        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-serve",
-        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service"
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service-install",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service-start",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service-status",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service-restart",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service-stop",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service-uninstall"
       ],
       "title" : "Subcommands"
     }
@@ -176,6 +179,20 @@
   "type" : "topic",
   "url" : "\/documentation\/tng\/tng-auth"
 },
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-agent": {
+  "abstract" : [
+    {
+      "text" : "Run the host OAuth auth-agent",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent",
+  "kind" : "article",
+  "role" : "collectionGroup",
+  "title" : "tng auth agent",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-auth-agent"
+},
 "doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-agent-serve": {
   "abstract" : [
     {
@@ -190,61 +207,89 @@
   "type" : "topic",
   "url" : "\/documentation\/tng\/tng-auth-agent-serve"
 },
-"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-agent-service": {
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-agent-service-install": {
   "abstract" : [
     {
-      "text" : "Manage the macOS auth-agent LaunchAgent",
+      "text" : "Install and start a macOS auth-agent LaunchAgent",
       "type" : "text"
     }
   ],
-  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service",
-  "kind" : "article",
-  "role" : "collectionGroup",
-  "title" : "tng auth agent service",
-  "type" : "topic",
-  "url" : "\/documentation\/tng\/tng-auth-agent-service"
-},
-"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-login": {
-  "abstract" : [
-    {
-      "text" : "Sign in to Tangled via ATProto OAuth",
-      "type" : "text"
-    }
-  ],
-  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-login",
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service-install",
   "kind" : "article",
   "role" : "article",
-  "title" : "tng auth login",
+  "title" : "tng auth agent service install",
   "type" : "topic",
-  "url" : "\/documentation\/tng\/tng-auth-login"
+  "url" : "\/documentation\/tng\/tng-auth-agent-service-install"
 },
-"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-logout": {
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-agent-service-restart": {
   "abstract" : [
     {
-      "text" : "Revoke and clear the current tng authentication",
+      "text" : "Restart an installed auth-agent service",
       "type" : "text"
     }
   ],
-  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-logout",
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service-restart",
   "kind" : "article",
   "role" : "article",
-  "title" : "tng auth logout",
+  "title" : "tng auth agent service restart",
   "type" : "topic",
-  "url" : "\/documentation\/tng\/tng-auth-logout"
+  "url" : "\/documentation\/tng\/tng-auth-agent-service-restart"
 },
-"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-status": {
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-agent-service-start": {
   "abstract" : [
     {
-      "text" : "Show current tng authentication status",
+      "text" : "Start an installed auth-agent service",
       "type" : "text"
     }
   ],
-  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-status",
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service-start",
   "kind" : "article",
   "role" : "article",
-  "title" : "tng auth status",
+  "title" : "tng auth agent service start",
   "type" : "topic",
-  "url" : "\/documentation\/tng\/tng-auth-status"
+  "url" : "\/documentation\/tng\/tng-auth-agent-service-start"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-agent-service-status": {
+  "abstract" : [
+    {
+      "text" : "Show auth-agent service and health state",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service-status",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng auth agent service status",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-auth-agent-service-status"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-agent-service-stop": {
+  "abstract" : [
+    {
+      "text" : "Stop an auth-agent service without uninstalling it",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service-stop",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng auth agent service stop",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-auth-agent-service-stop"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-agent-service-uninstall": {
+  "abstract" : [
+    {
+      "text" : "Stop and remove an auth-agent LaunchAgent",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service-uninstall",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng auth agent service uninstall",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-auth-agent-service-uninstall"
 }
 }
 }

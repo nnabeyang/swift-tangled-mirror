@@ -1,7 +1,7 @@
 {
   "abstract" : [
     {
-      "text" : "Serve a restricted OAuth session over a Unix socket",
+      "text" : "Stop and remove an auth-agent LaunchAgent",
       "type" : "text"
     }
   ],
@@ -11,19 +11,20 @@
         "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng",
         "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/CommandReference",
         "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth",
-        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent"
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service"
       ]
     ]
   },
   "identifier" : {
     "interfaceLanguage" : "swift",
-    "url" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-serve"
+    "url" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service-uninstall"
   },
   "kind" : "article",
   "metadata" : {
     "role" : "article",
     "roleHeading" : "Article",
-    "title" : "tng auth agent serve"
+    "title" : "tng auth agent service uninstall"
   },
   "primaryContentSections" : [
     {
@@ -36,7 +37,7 @@
         },
         {
           "code" : [
-            "tng auth agent serve --socket <socket> --profile <profile> [--max-body-bytes <max-body-bytes>] [--max-job-upload-bytes <max-job-upload-bytes>] [--version] [--help]"
+            "tng auth agent service uninstall [--instance <instance>] [--json] [--version] [--help]"
           ],
           "syntax" : "console",
           "type" : "codeListing"
@@ -48,108 +49,34 @@
           "type" : "heading"
         },
         {
-          "anchor" : "socket-%3Csocket%3E",
+          "anchor" : "instance-%3Cinstance%3E",
           "level" : 3,
-          "text" : "–socket <socket>",
+          "text" : "–instance <instance>",
           "type" : "heading"
         },
         {
           "inlineContent" : [
             {
-              "text" : "Absolute Unix domain socket path",
+              "text" : "Named service instance",
               "type" : "text"
             }
           ],
           "type" : "paragraph"
         },
         {
-          "anchor" : "profile-%3Cprofile%3E",
+          "anchor" : "json",
           "level" : 3,
-          "text" : "–profile <profile>",
+          "text" : "–json",
           "type" : "heading"
         },
         {
           "inlineContent" : [
             {
-              "text" : "Required authentication profile",
+              "text" : "Output service state as JSON",
               "type" : "text"
             }
           ],
           "type" : "paragraph"
-        },
-        {
-          "anchor" : "max-body-bytes-%3Cmax-body-bytes%3E",
-          "level" : 3,
-          "text" : "–max-body-bytes <max-body-bytes>",
-          "type" : "heading"
-        },
-        {
-          "inlineContent" : [
-            {
-              "text" : "Maximum request or response body size in bytes",
-              "type" : "text"
-            }
-          ],
-          "type" : "paragraph"
-        },
-        {
-          "items" : [
-            {
-              "content" : [
-                {
-                  "inlineContent" : [
-                    {
-                      "text" : "Default: ",
-                      "type" : "text"
-                    },
-                    {
-                      "code" : "134217728",
-                      "type" : "codeVoice"
-                    }
-                  ],
-                  "type" : "paragraph"
-                }
-              ]
-            }
-          ],
-          "type" : "unorderedList"
-        },
-        {
-          "anchor" : "max-job-upload-bytes-%3Cmax-job-upload-bytes%3E",
-          "level" : 3,
-          "text" : "–max-job-upload-bytes <max-job-upload-bytes>",
-          "type" : "heading"
-        },
-        {
-          "inlineContent" : [
-            {
-              "text" : "Maximum attempted blob upload bytes per job",
-              "type" : "text"
-            }
-          ],
-          "type" : "paragraph"
-        },
-        {
-          "items" : [
-            {
-              "content" : [
-                {
-                  "inlineContent" : [
-                    {
-                      "text" : "Default: ",
-                      "type" : "text"
-                    },
-                    {
-                      "code" : "536870912",
-                      "type" : "codeVoice"
-                    }
-                  ],
-                  "type" : "paragraph"
-                }
-              ]
-            }
-          ],
-          "type" : "unorderedList"
         },
         {
           "anchor" : "version",
@@ -197,7 +124,7 @@
     {
       "anchor" : "Related-Documentation",
       "identifiers" : [
-        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent"
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service"
       ],
       "title" : "Related Documentation"
     },
@@ -205,7 +132,11 @@
       "anchor" : "Subcommands",
       "generated" : true,
       "identifiers" : [
-        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service"
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service-install",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service-start",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service-status",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service-restart",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service-stop"
       ],
       "title" : "Subcommands"
     }
@@ -297,6 +228,76 @@
   "title" : "tng auth agent service",
   "type" : "topic",
   "url" : "\/documentation\/tng\/tng-auth-agent-service"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-agent-service-install": {
+  "abstract" : [
+    {
+      "text" : "Install and start a macOS auth-agent LaunchAgent",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service-install",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng auth agent service install",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-auth-agent-service-install"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-agent-service-restart": {
+  "abstract" : [
+    {
+      "text" : "Restart an installed auth-agent service",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service-restart",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng auth agent service restart",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-auth-agent-service-restart"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-agent-service-start": {
+  "abstract" : [
+    {
+      "text" : "Start an installed auth-agent service",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service-start",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng auth agent service start",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-auth-agent-service-start"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-agent-service-status": {
+  "abstract" : [
+    {
+      "text" : "Show auth-agent service and health state",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service-status",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng auth agent service status",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-auth-agent-service-status"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-agent-service-stop": {
+  "abstract" : [
+    {
+      "text" : "Stop an auth-agent service without uninstalling it",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service-stop",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng auth agent service stop",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-auth-agent-service-stop"
 }
 }
 }
