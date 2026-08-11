@@ -1,7 +1,7 @@
 {
   "abstract" : [
     {
-      "text" : "Sign in to Tangled via ATProto OAuth",
+      "text" : "Serve a restricted OAuth session over a Unix socket",
       "type" : "text"
     }
   ],
@@ -10,19 +10,20 @@
       [
         "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng",
         "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/CommandReference",
-        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth"
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent"
       ]
     ]
   },
   "identifier" : {
     "interfaceLanguage" : "swift",
-    "url" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-login"
+    "url" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-serve"
   },
   "kind" : "article",
   "metadata" : {
     "role" : "article",
     "roleHeading" : "Article",
-    "title" : "tng auth login"
+    "title" : "tng auth agent serve"
   },
   "primaryContentSections" : [
     {
@@ -35,31 +36,10 @@
         },
         {
           "code" : [
-            "tng auth login <handle> [--no-browser] [--callback-port <callback-port>] [--profile <profile>] [--version] [--help]"
+            "tng auth agent serve --socket <socket> --profile <profile> [--max-body-bytes <max-body-bytes>] [--max-job-upload-bytes <max-job-upload-bytes>] [--version] [--help]"
           ],
           "syntax" : "console",
           "type" : "codeListing"
-        },
-        {
-          "anchor" : "Arguments",
-          "level" : 2,
-          "text" : "Arguments",
-          "type" : "heading"
-        },
-        {
-          "anchor" : "%3Chandle%3E",
-          "level" : 3,
-          "text" : "<handle>",
-          "type" : "heading"
-        },
-        {
-          "inlineContent" : [
-            {
-              "text" : "ATProto handle to sign in as (例: alice.bsky.social)",
-              "type" : "text"
-            }
-          ],
-          "type" : "paragraph"
         },
         {
           "anchor" : "Options",
@@ -68,30 +48,15 @@
           "type" : "heading"
         },
         {
-          "anchor" : "no-browser",
+          "anchor" : "socket-%3Csocket%3E",
           "level" : 3,
-          "text" : "–no-browser",
+          "text" : "–socket <socket>",
           "type" : "heading"
         },
         {
           "inlineContent" : [
             {
-              "text" : "Print the authorization URL instead of opening a browser",
-              "type" : "text"
-            }
-          ],
-          "type" : "paragraph"
-        },
-        {
-          "anchor" : "callback-port-%3Ccallback-port%3E",
-          "level" : 3,
-          "text" : "–callback-port <callback-port>",
-          "type" : "heading"
-        },
-        {
-          "inlineContent" : [
-            {
-              "text" : "Bind the OAuth callback server to a fixed loopback port",
+              "text" : "Absolute Unix domain socket path",
               "type" : "text"
             }
           ],
@@ -106,11 +71,85 @@
         {
           "inlineContent" : [
             {
-              "text" : "Use a restricted authentication profile",
+              "text" : "Required authentication profile",
               "type" : "text"
             }
           ],
           "type" : "paragraph"
+        },
+        {
+          "anchor" : "max-body-bytes-%3Cmax-body-bytes%3E",
+          "level" : 3,
+          "text" : "–max-body-bytes <max-body-bytes>",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Maximum request or response body size in bytes",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "items" : [
+            {
+              "content" : [
+                {
+                  "inlineContent" : [
+                    {
+                      "text" : "Default: ",
+                      "type" : "text"
+                    },
+                    {
+                      "code" : "134217728",
+                      "type" : "codeVoice"
+                    }
+                  ],
+                  "type" : "paragraph"
+                }
+              ]
+            }
+          ],
+          "type" : "unorderedList"
+        },
+        {
+          "anchor" : "max-job-upload-bytes-%3Cmax-job-upload-bytes%3E",
+          "level" : 3,
+          "text" : "–max-job-upload-bytes <max-job-upload-bytes>",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Maximum attempted blob upload bytes per job",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "items" : [
+            {
+              "content" : [
+                {
+                  "inlineContent" : [
+                    {
+                      "text" : "Default: ",
+                      "type" : "text"
+                    },
+                    {
+                      "code" : "536870912",
+                      "type" : "codeVoice"
+                    }
+                  ],
+                  "type" : "paragraph"
+                }
+              ]
+            }
+          ],
+          "type" : "unorderedList"
         },
         {
           "anchor" : "version",
@@ -158,19 +197,9 @@
     {
       "anchor" : "Related-Documentation",
       "identifiers" : [
-        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth"
-      ],
-      "title" : "Related Documentation"
-    },
-    {
-      "anchor" : "Subcommands",
-      "generated" : true,
-      "identifiers" : [
-        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-status",
-        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-logout",
         "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent"
       ],
-      "title" : "Subcommands"
+      "title" : "Related Documentation"
     }
   ]
 , 
@@ -246,34 +275,6 @@
   "title" : "tng auth agent",
   "type" : "topic",
   "url" : "\/documentation\/tng\/tng-auth-agent"
-},
-"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-logout": {
-  "abstract" : [
-    {
-      "text" : "Revoke and clear the current tng authentication",
-      "type" : "text"
-    }
-  ],
-  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-logout",
-  "kind" : "article",
-  "role" : "article",
-  "title" : "tng auth logout",
-  "type" : "topic",
-  "url" : "\/documentation\/tng\/tng-auth-logout"
-},
-"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-status": {
-  "abstract" : [
-    {
-      "text" : "Show current tng authentication status",
-      "type" : "text"
-    }
-  ],
-  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-status",
-  "kind" : "article",
-  "role" : "article",
-  "title" : "tng auth status",
-  "type" : "topic",
-  "url" : "\/documentation\/tng\/tng-auth-status"
 }
 }
 }

@@ -119,7 +119,8 @@
       "identifiers" : [
         "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-login",
         "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-status",
-        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-logout"
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-logout",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent"
       ],
       "title" : "Subcommands"
     }
@@ -197,6 +198,20 @@
   "title" : "tng artifact",
   "type" : "topic",
   "url" : "\/documentation\/tng\/tng-artifact"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-agent": {
+  "abstract" : [
+    {
+      "text" : "Run the host OAuth auth-agent",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent",
+  "kind" : "article",
+  "role" : "collectionGroup",
+  "title" : "tng auth agent",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-auth-agent"
 },
 "doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-login": {
   "abstract" : [

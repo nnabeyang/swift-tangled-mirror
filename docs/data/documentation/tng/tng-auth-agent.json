@@ -1,7 +1,7 @@
 {
   "abstract" : [
     {
-      "text" : "Sign in to Tangled via ATProto OAuth",
+      "text" : "Run the host OAuth auth-agent",
       "type" : "text"
     }
   ],
@@ -16,13 +16,12 @@
   },
   "identifier" : {
     "interfaceLanguage" : "swift",
-    "url" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-login"
+    "url" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent"
   },
   "kind" : "article",
   "metadata" : {
-    "role" : "article",
-    "roleHeading" : "Article",
-    "title" : "tng auth login"
+    "role" : "collectionGroup",
+    "title" : "tng auth agent"
   },
   "primaryContentSections" : [
     {
@@ -35,82 +34,16 @@
         },
         {
           "code" : [
-            "tng auth login <handle> [--no-browser] [--callback-port <callback-port>] [--profile <profile>] [--version] [--help]"
+            "tng auth agent [--version] [--help]"
           ],
           "syntax" : "console",
           "type" : "codeListing"
-        },
-        {
-          "anchor" : "Arguments",
-          "level" : 2,
-          "text" : "Arguments",
-          "type" : "heading"
-        },
-        {
-          "anchor" : "%3Chandle%3E",
-          "level" : 3,
-          "text" : "<handle>",
-          "type" : "heading"
-        },
-        {
-          "inlineContent" : [
-            {
-              "text" : "ATProto handle to sign in as (例: alice.bsky.social)",
-              "type" : "text"
-            }
-          ],
-          "type" : "paragraph"
         },
         {
           "anchor" : "Options",
           "level" : 2,
           "text" : "Options",
           "type" : "heading"
-        },
-        {
-          "anchor" : "no-browser",
-          "level" : 3,
-          "text" : "–no-browser",
-          "type" : "heading"
-        },
-        {
-          "inlineContent" : [
-            {
-              "text" : "Print the authorization URL instead of opening a browser",
-              "type" : "text"
-            }
-          ],
-          "type" : "paragraph"
-        },
-        {
-          "anchor" : "callback-port-%3Ccallback-port%3E",
-          "level" : 3,
-          "text" : "–callback-port <callback-port>",
-          "type" : "heading"
-        },
-        {
-          "inlineContent" : [
-            {
-              "text" : "Bind the OAuth callback server to a fixed loopback port",
-              "type" : "text"
-            }
-          ],
-          "type" : "paragraph"
-        },
-        {
-          "anchor" : "profile-%3Cprofile%3E",
-          "level" : 3,
-          "text" : "–profile <profile>",
-          "type" : "heading"
-        },
-        {
-          "inlineContent" : [
-            {
-              "text" : "Use a restricted authentication profile",
-              "type" : "text"
-            }
-          ],
-          "type" : "paragraph"
         },
         {
           "anchor" : "version",
@@ -166,9 +99,18 @@
       "anchor" : "Subcommands",
       "generated" : true,
       "identifiers" : [
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-login",
         "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-status",
-        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-logout",
-        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent"
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-logout"
+      ],
+      "title" : "Subcommands"
+    }
+  ],
+  "topicSections" : [
+    {
+      "anchor" : "Subcommands",
+      "identifiers" : [
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-serve"
       ],
       "title" : "Subcommands"
     }
@@ -233,19 +175,33 @@
   "type" : "topic",
   "url" : "\/documentation\/tng\/tng-auth"
 },
-"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-agent": {
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-agent-serve": {
   "abstract" : [
     {
-      "text" : "Run the host OAuth auth-agent",
+      "text" : "Serve a restricted OAuth session over a Unix socket",
       "type" : "text"
     }
   ],
-  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent",
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-serve",
   "kind" : "article",
-  "role" : "collectionGroup",
-  "title" : "tng auth agent",
+  "role" : "article",
+  "title" : "tng auth agent serve",
   "type" : "topic",
-  "url" : "\/documentation\/tng\/tng-auth-agent"
+  "url" : "\/documentation\/tng\/tng-auth-agent-serve"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-login": {
+  "abstract" : [
+    {
+      "text" : "Sign in to Tangled via ATProto OAuth",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-login",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng auth login",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-auth-login"
 },
 "doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-logout": {
   "abstract" : [

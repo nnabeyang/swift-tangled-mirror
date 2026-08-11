@@ -50,6 +50,22 @@
                     "path" : "\/documentation\/tng\/tng-auth-logout",
                     "title" : "tng auth logout",
                     "type" : "article"
+                  },
+                  {
+                    "children" : [
+                      {
+                        "title" : "Subcommands",
+                        "type" : "groupMarker"
+                      },
+                      {
+                        "path" : "\/documentation\/tng\/tng-auth-agent-serve",
+                        "title" : "tng auth agent serve",
+                        "type" : "article"
+                      }
+                    ],
+                    "path" : "\/documentation\/tng\/tng-auth-agent",
+                    "title" : "tng auth agent",
+                    "type" : "symbol"
                   }
                 ],
                 "path" : "\/documentation\/tng\/tng-auth",
