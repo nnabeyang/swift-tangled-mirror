@@ -4,6 +4,10 @@ import OAuth4Swift
 import SwiftAtproto
 import TangledLexicons
 
+#if canImport(FoundationNetworking)
+  import FoundationNetworking
+#endif
+
 #if canImport(Darwin)
   import Darwin
 #elseif canImport(Glibc)
