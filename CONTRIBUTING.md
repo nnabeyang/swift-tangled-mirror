@@ -119,6 +119,20 @@ policy is manual-only. Before starting a macOS workflow, review the exact
 branch and commit and confirm that the manual dispatch targets them. Do not
 enable push or Pull Request triggers for this workflow.
 
+### Release Artifacts
+
+The manual `macos-release.yml` Spindle workflow builds the macOS arm64 release
+archive. Use `action=verify` with an existing version to validate the workflow
+without publishing an artifact.
+
+Publishing is a separate maintainer-authorized step. Create and push the
+signed annotated release tag first, then dispatch the tag ref with
+`action=publish` and the matching `version`. The workflow requires the
+restricted CI authentication agent, uploads the archive, downloads the
+published artifact, and verifies its checksum, contents, version,
+architecture, minimum macOS version, and code signature. Signed tag creation
+and Homebrew formula updates remain explicit maintainer-controlled stages.
+
 ## Design Guidelines
 
 - Put reusable behavior and domain logic in `SwiftTangled`.
