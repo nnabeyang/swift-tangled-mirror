@@ -77,69 +77,71 @@ import Testing
   #expect(!text.contains("dpop"))
 }
 
-@Test func authAgentServiceStatusDistinguishesNotInstalledStoppedAndRunning() async throws {
-  let root = FileManager.default.temporaryDirectory
-    .appendingPathComponent("tng-auth-agent-service-tests-\(UUID().uuidString)")
-  try FileManager.default.createDirectory(
-    at: root.appendingPathComponent("Library/LaunchAgents"),
-    withIntermediateDirectories: true
-  )
-  try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: root.path)
-  defer { try? FileManager.default.removeItem(at: root) }
+#if os(macOS)
+  @Test func authAgentServiceStatusDistinguishesNotInstalledStoppedAndRunning() async throws {
+    let root = FileManager.default.temporaryDirectory
+      .appendingPathComponent("tng-auth-agent-service-tests-\(UUID().uuidString)")
+    try FileManager.default.createDirectory(
+      at: root.appendingPathComponent("Library/LaunchAgents"),
+      withIntermediateDirectories: true
+    )
+    try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: root.path)
+    defer { try? FileManager.default.removeItem(at: root) }
 
-  var service = AuthAgentLaunchAgentService(
-    homeDirectory: root.path,
-    userID: 501,
-    commandRunner: StubAuthAgentCommandRunner(status: 1, stdout: ""),
-    probe: { _ in
-      AuthAgentServiceProbe(
-        accountDID: "did:plc:ci",
-        handle: "ci.example",
+    var service = AuthAgentLaunchAgentService(
+      homeDirectory: root.path,
+      userID: 501,
+      commandRunner: StubAuthAgentCommandRunner(status: 1, stdout: ""),
+      probe: { _ in
+        AuthAgentServiceProbe(
+          accountDID: "did:plc:ci",
+          handle: "ci.example",
+          profile: .ciReporting,
+          protocolVersion: AuthAgentProtocol.version
+        )
+      }
+    )
+    let absent = try await service.status(instance: "reporting")
+    #expect(absent.state == .notInstalled)
+
+    let identity = AuthAgentLaunchAgentService.Identity(
+      label: "sh.tangled.tng.auth-agent.reporting",
+      homeDirectory: root.path,
+      logDirectory: root.appendingPathComponent("logs").path,
+      plistPath: root.appendingPathComponent(
+        "Library/LaunchAgents/sh.tangled.tng.auth-agent.reporting.plist"
+      ).path
+    )
+    let plist = AuthAgentLaunchAgentService.propertyList(
+      executable: "/Applications/tng",
+      configuration: AuthAgentServiceConfiguration(
+        sessionFile: root.appendingPathComponent("missing-session.json").path,
+        socketPath: root.appendingPathComponent("agent.sock").path,
         profile: .ciReporting,
-        protocolVersion: AuthAgentProtocol.version
-      )
-    }
-  )
-  let absent = try await service.status(instance: "reporting")
-  #expect(absent.state == .notInstalled)
+        maximumBodyBytes: 1024,
+        maximumJobUploadBytes: 2048
+      ),
+      identity: identity
+    )
+    let data = try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
+    try data.write(to: URL(fileURLWithPath: identity.plistPath))
 
-  let identity = AuthAgentLaunchAgentService.Identity(
-    label: "sh.tangled.tng.auth-agent.reporting",
-    homeDirectory: root.path,
-    logDirectory: root.appendingPathComponent("logs").path,
-    plistPath: root.appendingPathComponent(
-      "Library/LaunchAgents/sh.tangled.tng.auth-agent.reporting.plist"
-    ).path
-  )
-  let plist = AuthAgentLaunchAgentService.propertyList(
-    executable: "/Applications/tng",
-    configuration: AuthAgentServiceConfiguration(
-      sessionFile: root.appendingPathComponent("missing-session.json").path,
-      socketPath: root.appendingPathComponent("agent.sock").path,
-      profile: .ciReporting,
-      maximumBodyBytes: 1024,
-      maximumJobUploadBytes: 2048
-    ),
-    identity: identity
-  )
-  let data = try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
-  try data.write(to: URL(fileURLWithPath: identity.plistPath))
+    let stopped = try await service.status(instance: "reporting")
+    #expect(stopped.state == .stopped)
+    #expect(stopped.sessionState == .missing)
+    #expect(stopped.socketState == .unavailable)
 
-  let stopped = try await service.status(instance: "reporting")
-  #expect(stopped.state == .stopped)
-  #expect(stopped.sessionState == .missing)
-  #expect(stopped.socketState == .unavailable)
-
-  service.commandRunner = StubAuthAgentCommandRunner(
-    status: 0,
-    stdout: "state = running\npid = 1234\n"
-  )
-  let running = try await service.status(instance: "reporting")
-  #expect(running.state == .running)
-  #expect(running.pid == 1234)
-  #expect(running.socketState == .available)
-  #expect(running.handle == "ci.example")
-}
+    service.commandRunner = StubAuthAgentCommandRunner(
+      status: 0,
+      stdout: "state = running\npid = 1234\n"
+    )
+    let running = try await service.status(instance: "reporting")
+    #expect(running.state == .running)
+    #expect(running.pid == 1234)
+    #expect(running.socketState == .available)
+    #expect(running.handle == "ci.example")
+  }
+#endif
 
 @Test func authAgentServiceRejectsInvalidInstanceNames() {
   #expect(throws: AuthAgentLaunchAgentServiceError.invalidInstance) {
