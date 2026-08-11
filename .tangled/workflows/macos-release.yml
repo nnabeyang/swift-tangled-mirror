@@ -1,0 +1,119 @@
+when:
+  - event: ["manual"]
+
+engine: "agent"
+platform: "macos"
+executor: "virtual-machine"
+xcode: "26.6"
+
+clone:
+  submodules: false
+  tags: true
+
+steps:
+  - name: "Build release artifact"
+    command: |
+      set -euo pipefail
+
+      action="${TANGLED_INPUT_ACTION:-}"
+      version="${TANGLED_INPUT_VERSION:-}"
+      case "$action" in
+        verify|publish) ;;
+        *)
+          echo "TANGLED_INPUT_ACTION must be verify or publish" >&2
+          exit 64
+          ;;
+      esac
+      if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        echo "TANGLED_INPUT_VERSION must use MAJOR.MINOR.PATCH" >&2
+        exit 64
+      fi
+      test "$(git cat-file -t "$version")" = "tag"
+
+      tag_commit="$(git rev-parse "$version^{commit}")"
+      if [[ "$action" == "publish" ]]; then
+        test "${TANGLED_REF_TYPE:-}" = "tag"
+        test "${TANGLED_REF:-}" = "refs/tags/$version"
+        test "${TANGLED_REF_NAME:-}" = "$version"
+        test "${TANGLED_COMMIT_SHA:-}" = "$tag_commit"
+      fi
+
+      ./build-release.sh "$version"
+
+      artifact=".build/releases/$version/tng-$version-macos-arm64.tar.gz"
+      checksum="$artifact.sha256"
+      test -f "$artifact"
+      test -f "$checksum"
+      printf 'Action: %s\n' "$action"
+      printf 'Tag commit: %s\n' "$tag_commit"
+      printf 'Artifact: %s\n' "$artifact"
+      printf 'Bytes: %s\n' "$(stat -f '%z' "$artifact")"
+      printf 'SHA-256: %s\n' "$(awk '{print $1}' "$checksum")"
+
+  - name: "Publish and verify release artifact"
+    command: |
+      set -euo pipefail
+
+      action="${TANGLED_INPUT_ACTION:-}"
+      version="${TANGLED_INPUT_VERSION:-}"
+      if [[ "$action" == "verify" ]]; then
+        echo "Artifact publication skipped in verify mode."
+        exit 0
+      fi
+      test "$action" = "publish"
+      test "${TNG_AUTH_AGENT:-}" = "vsock://host:10241"
+      test -z "${TNG_SESSION_FILE:-}"
+
+      repository="nnabeyang.tngl.sh/swift-tangled"
+      repository_did="did:plc:5lkgngawfsd5jh7ch5h5ir2v"
+      artifact_name="tng-$version-macos-arm64.tar.gz"
+      artifact=".build/releases/$version/$artifact_name"
+      checksum="$artifact.sha256"
+      tag_object="$(git rev-parse "$version^{tag}")"
+      publisher_directory="$(mktemp -d)"
+      download_directory="$(mktemp -d)"
+      trap 'rm -rf "$publisher_directory" "$download_directory"' EXIT
+
+      tar -xzf "$artifact" -C "$publisher_directory" tng
+      "$publisher_directory/tng" auth status
+
+      upload_json="$download_directory/upload.json"
+      "$publisher_directory/tng" artifact upload \
+        "$version" \
+        "$artifact" \
+        --repo "$repository" \
+        --name "$artifact_name" \
+        --content-type application/gzip \
+        --json >"$upload_json"
+
+      test "$(plutil -extract schemaVersion raw -o - "$upload_json")" = "1"
+      test "$(plutil -extract result.value.name raw -o - "$upload_json")" = "$artifact_name"
+      test "$(plutil -extract result.value.repositoryDID raw -o - "$upload_json")" = "$repository_did"
+      test "$(plutil -extract result.value.tagObjectHash raw -o - "$upload_json")" = "$tag_object"
+      printf 'Artifact URI: %s\n' "$(plutil -extract result.uri raw -o - "$upload_json")"
+      printf 'Artifact CID: %s\n' "$(plutil -extract result.cid raw -o - "$upload_json")"
+
+      downloaded="$download_directory/$artifact_name"
+      "$publisher_directory/tng" artifact download \
+        "$version" \
+        "$artifact_name" \
+        --repo "$repository" \
+        --output "$downloaded" \
+        --json
+
+      expected_sha="$(awk '{print $1}' "$checksum")"
+      actual_sha="$(shasum -a 256 "$downloaded" | awk '{print $1}')"
+      test "$actual_sha" = "$expected_sha"
+
+      extracted="$download_directory/extracted"
+      mkdir -p "$extracted"
+      tar -xzf "$downloaded" -C "$extracted"
+      test -x "$extracted/tng"
+      test -f "$extracted/LICENSE"
+      test -f "$extracted/THIRD_PARTY_NOTICES.md"
+      find "$extracted/LICENSES" -type f -print -quit | grep -q .
+      test "$("$extracted/tng" --version)" = "$version"
+      file "$extracted/tng" | grep -q "Mach-O 64-bit executable arm64"
+      xcrun vtool -show-build "$extracted/tng" | grep -Eq 'minos 15(\.0+)?$'
+      codesign --verify --strict "$extracted/tng"
+      printf 'Published SHA-256: %s\n' "$actual_sha"
