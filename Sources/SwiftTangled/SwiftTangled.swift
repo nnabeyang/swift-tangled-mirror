@@ -1,3 +1,3 @@
 public enum SwiftTangled {
-  public static let version = "0.5.2"
+  public static let version = "0.6.0"
 }
