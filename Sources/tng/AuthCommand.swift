@@ -8,6 +8,7 @@ struct AuthCommand: AsyncParsableCommand {
       AuthLoginCommand.self,
       AuthStatusCommand.self,
       AuthLogoutCommand.self,
+      AuthAgentCommand.self,
     ]
   )
 }

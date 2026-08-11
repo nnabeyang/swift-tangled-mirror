@@ -28,7 +28,7 @@ struct RepoSecretCommandDependencies: Sendable {
         try await service.secrets(
           repository: repository,
           spindle: spindle,
-          pdsClient: try PDSClient.restore(from: CLISessionStore.make().store)
+          pdsClient: try await CLIAuthenticatedClient.make()
         )
       },
       prepareAddition: { repository, spindle, key in
@@ -36,7 +36,7 @@ struct RepoSecretCommandDependencies: Sendable {
           repository: repository,
           spindle: spindle,
           key: key,
-          pdsClient: try PDSClient.restore(from: CLISessionStore.make().store)
+          pdsClient: try await CLIAuthenticatedClient.make()
         )
       },
       readSecret: { try CLISecretReader().read() },
@@ -44,7 +44,7 @@ struct RepoSecretCommandDependencies: Sendable {
         try await service.add(
           plan,
           value: value,
-          pdsClient: try PDSClient.restore(from: CLISessionStore.make().store)
+          pdsClient: try await CLIAuthenticatedClient.make()
         )
       },
       prepareRemoval: { repository, spindle, key in
@@ -52,13 +52,13 @@ struct RepoSecretCommandDependencies: Sendable {
           repository: repository,
           spindle: spindle,
           key: key,
-          pdsClient: try PDSClient.restore(from: CLISessionStore.make().store)
+          pdsClient: try await CLIAuthenticatedClient.make()
         )
       },
       remove: { plan in
         try await service.remove(
           plan,
-          pdsClient: try PDSClient.restore(from: CLISessionStore.make().store)
+          pdsClient: try await CLIAuthenticatedClient.make()
         )
       },
       originURL: { try GitOriginReader().read() },

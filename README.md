@@ -61,6 +61,25 @@ DPoP key material in `$XDG_STATE_HOME/tng/session.json`, or
 `$HOME/.local/state/tng/session.json` when `XDG_STATE_HOME` is not usable.
 Protect that file and exclude it from backups and synchronization.
 
+For a self-hosted VM worker, create a dedicated restricted session at an
+explicit path and expose it through a private host Unix socket:
+
+```sh
+TNG_SESSION_FILE=/absolute/private/path/ci-session.json \
+  tng auth login CI_HANDLE --profile ci-reporting
+TNG_SESSION_FILE=/absolute/private/path/ci-session.json \
+  tng auth agent serve --profile ci-reporting --socket /absolute/private/path/ci-agent.sock
+```
+
+The socket's parent directory must be owned by the current user and inaccessible
+to group and other users. A trusted VM host bridge binds each connection to one
+job, repository DID, deadline, and the allowed artifact/comment operations.
+Inside the VM, ordinary authenticated commands select the broker through
+`TNG_AUTH_AGENT=vsock://host:10241`; OAuth tokens and the session file remain
+on the host. Use a separate session file and broker socket for each CI account.
+`TNG_AUTH_AGENT` takes precedence over `TNG_SESSION_FILE`; interactive login
+and logout are disabled while the agent variable is set.
+
 Use built-in help for command details:
 
 ```sh

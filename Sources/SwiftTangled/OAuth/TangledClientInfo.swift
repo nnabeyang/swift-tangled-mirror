@@ -2,7 +2,7 @@ import Foundation
 import OAuth4Swift
 import TangledLexicons
 
-private let tangledCLIScopes = [
+public let tangledCLIScopes = [
   "atproto",
   "repo:\(Sh.Tangled.ActorProfile.nsId)",
   "repo:\(Sh.Tangled.FeedComment.nsId)",
@@ -49,6 +49,14 @@ private let tangledCLIScopes = [
   "identity:handle",
 ]
 
+public let tangledCIReportingScopes = [
+  "atproto",
+  "identity:handle",
+  "repo:\(Sh.Tangled.RepoArtifact.nsId)",
+  "repo:\(Sh.Tangled.FeedComment.nsId)",
+  "blob:*/*",
+]
+
 extension OAuth.ClientInfo {
   public static let tangledCLI = OAuth.ClientInfo(
     clientId:
@@ -62,6 +70,18 @@ extension OAuth.ClientInfo {
       clientId:
         "https://soyokaze-pds-rc-677008170211.asia-northeast1.run.app/tangled/cli-client-metadata.json",
       scopes: tangledCLIScopes,
+      redirectURI: URL(string: "http://127.0.0.1:\(boundPort)/callback")!
+    )
+  }
+
+  public static func tangledCLI(
+    boundPort: UInt16,
+    profile: AuthenticationProfile?
+  ) -> OAuth.ClientInfo {
+    OAuth.ClientInfo(
+      clientId:
+        "https://soyokaze-pds-rc-677008170211.asia-northeast1.run.app/tangled/cli-client-metadata.json",
+      scopes: profile == .ciReporting ? tangledCIReportingScopes : tangledCLIScopes,
       redirectURI: URL(string: "http://127.0.0.1:\(boundPort)/callback")!
     )
   }

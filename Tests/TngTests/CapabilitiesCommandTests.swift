@@ -20,8 +20,9 @@ import Testing
 
     #expect(document.schemaVersion == 1)
     #expect(document.cliVersion == SwiftTangled.version)
-    #expect(paths.count == 58)
+    #expect(paths.count == 59)
     #expect(paths.contains("capabilities"))
+    #expect(paths.contains("auth agent serve"))
     #expect(paths.contains("pr create"))
     #expect(paths.contains("pr edit"))
     #expect(paths.contains("pr resubmit"))

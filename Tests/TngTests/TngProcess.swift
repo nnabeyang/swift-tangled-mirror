@@ -38,6 +38,7 @@ enum TngProcess {
     process.standardError = standardError
     var environment = ProcessInfo.processInfo.environment
     environment["NO_COLOR"] = "1"
+    environment.removeValue(forKey: "TNG_AUTH_AGENT")
     for (key, value) in overrides {
       environment[key] = value
     }

@@ -46,27 +46,27 @@ struct IssueCommandDependencies: Sendable {
       },
       coverage: { try await client.coverage() },
       createIssue: { repositoryDID, title, body in
-        try await PDSClient.restore(from: CLISessionStore.make().store).createIssue(
+        try await CLIAuthenticatedClient.make().createIssue(
           repositoryDID: repositoryDID,
           title: title,
           body: body
         )
       },
       createComment: { subject, body in
-        try await PDSClient.restore(from: CLISessionStore.make().store).createComment(
+        try await CLIAuthenticatedClient.make().createComment(
           subject: subject,
           body: body
         )
       },
       updateIssue: { current, title, body in
-        try await PDSClient.restore(from: CLISessionStore.make().store).updateIssue(
+        try await CLIAuthenticatedClient.make().updateIssue(
           current: current,
           title: title,
           body: body
         )
       },
       setIssueState: { issueURI, state in
-        try await PDSClient.restore(from: CLISessionStore.make().store).setIssueState(
+        try await CLIAuthenticatedClient.make().setIssueState(
           issueURI: issueURI,
           state: state
         )

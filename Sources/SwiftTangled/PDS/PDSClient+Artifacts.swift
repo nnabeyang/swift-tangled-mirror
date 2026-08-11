@@ -16,7 +16,7 @@ extension PDSClient {
           collection: FormatString(rawValue: Sh.Tangled.RepoArtifact.nsId),
           cursor: cursor,
           limit: 100,
-          repo: FormatString(rawValue: repoDID),
+          repo: FormatString(rawValue: self.repoDID),
           reverse: nil
         )
       }

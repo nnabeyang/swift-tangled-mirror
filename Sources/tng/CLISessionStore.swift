@@ -8,6 +8,18 @@ struct CLISessionStore {
   static func make(
     environment: [String: String] = ProcessInfo.processInfo.environment
   ) throws -> CLISessionStore {
+    if let explicitPath = environment["TNG_SESSION_FILE"] {
+      guard !explicitPath.isEmpty, explicitPath.hasPrefix("/") else {
+        throw CLICommandError.authentication(
+          "TNG_SESSION_FILE must be an absolute path"
+        )
+      }
+      let fileURL = URL(fileURLWithPath: explicitPath, isDirectory: false)
+      return CLISessionStore(
+        store: FileSessionStore(fileURL: fileURL),
+        storageDescription: fileURL.path
+      )
+    }
     #if canImport(Security)
       return CLISessionStore(
         store: KeychainSessionStore(),

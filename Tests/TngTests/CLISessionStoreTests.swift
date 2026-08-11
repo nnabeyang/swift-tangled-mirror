@@ -4,6 +4,19 @@ import Testing
 @testable import tng
 
 @Suite struct CLISessionStoreTests {
+  @Test func explicitSessionFileOverridesPlatformDefault() throws {
+    let store = try CLISessionStore.make(
+      environment: ["TNG_SESSION_FILE": "/var/lib/tng/ci-session.json"]
+    )
+    #expect(store.storageDescription == "/var/lib/tng/ci-session.json")
+  }
+
+  @Test func rejectsRelativeExplicitSessionFile() {
+    #expect(throws: CLICommandError.self) {
+      _ = try CLISessionStore.make(environment: ["TNG_SESSION_FILE": "session.json"])
+    }
+  }
+
   @Test func usesAbsoluteXDGStateHome() throws {
     let url = try CLISessionStore.linuxSessionFileURL(
       environment: [

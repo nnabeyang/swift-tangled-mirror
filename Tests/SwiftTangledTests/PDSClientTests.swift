@@ -1348,10 +1348,10 @@ struct PDSArtifactTests {
     #expect(records[0].value.name == "artifact-data")
     #expect(records[0].value.tagObjectHash == tagHash)
     #expect(records[0].value.blob.cid == blobCID)
-    #expect(
-      await mock.recordedRequests().map(\.nsID)
-        == ["com.atproto.repo.listRecords"]
-    )
+    let requests = await mock.recordedRequests()
+    #expect(requests.map(\.nsID) == ["com.atproto.repo.listRecords"])
+    #expect(requests[0].query["repo"] == "did%3Aplc%3Asession")
+    #expect(requests[0].query["collection"] == "sh.tangled.repo.artifact")
   }
 
   @Test func forceReplacementUsesExistingRkeyAndCID() async throws {

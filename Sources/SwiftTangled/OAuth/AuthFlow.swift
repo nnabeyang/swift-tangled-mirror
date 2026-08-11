@@ -18,19 +18,22 @@ public struct AuthFlow: Sendable {
   private let sessionStore: (any SessionStore)?
   private let callbackTimeout: Duration
   private let callbackPort: UInt16?
+  private let profile: AuthenticationProfile?
 
   public init(
     resolver: any ATPResolver = URLSessionATPResolver(),
     browser: any BrowserLauncher = .system,
     sessionStore: (any SessionStore)? = nil,
     callbackTimeout: Duration = .seconds(300),
-    callbackPort: UInt16? = nil
+    callbackPort: UInt16? = nil,
+    profile: AuthenticationProfile? = nil
   ) {
     self.resolver = resolver
     self.browser = browser
     self.sessionStore = sessionStore
     self.callbackTimeout = callbackTimeout
     self.callbackPort = callbackPort
+    self.profile = profile
   }
 
   public func login(handle rawHandle: String) async throws -> AuthFlowResult {
@@ -52,7 +55,7 @@ public struct AuthFlow: Sendable {
       Task { await server.stop() }
     }
 
-    let clientInfo = OAuth.ClientInfo.tangledCLI(boundPort: bound.port)
+    let clientInfo = OAuth.ClientInfo.tangledCLI(boundPort: bound.port, profile: profile)
     let client = AtprotoOAuthClient(
       clientInfo: clientInfo,
       resolver: resolver,
@@ -68,7 +71,12 @@ public struct AuthFlow: Sendable {
       identity: .handle(handle)
     )
     if let store = sessionStore {
-      let stored = StoredSession(did: did.rawValue, handle: handle.rawValue, archive: archive)
+      let stored = StoredSession(
+        did: did.rawValue,
+        handle: handle.rawValue,
+        profile: profile,
+        archive: archive
+      )
       try store.write(stored)
     }
     return AuthFlowResult(did: did.rawValue, handle: handle.rawValue)

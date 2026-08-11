@@ -10,6 +10,25 @@ struct AuthStatusCommand: AsyncParsableCommand {
 
   func run() async throws {
     try await runCLICommand {
+      if let rawEndpoint = ProcessInfo.processInfo.environment["TNG_AUTH_AGENT"] {
+        let status = try await AuthAgentClient(
+          endpoint: AuthAgentEndpoint(environmentValue: rawEndpoint)
+        ).status()
+        var lines = [
+          "Signed in as @\(status.handle)",
+          "DID: \(status.accountDID)",
+          "Source: auth-agent",
+          "Profile: \(status.profile.rawValue)",
+          "Operations: \(status.operations.map(\.rawValue).sorted().joined(separator: ", "))",
+        ]
+        if let repositoryDID = status.repositoryDID {
+          lines.append("Repository DID: \(repositoryDID)")
+        }
+        if let deadline = status.deadlineUnixMilliseconds {
+          lines.append("Deadline: \(deadline)")
+        }
+        return CLICommandOutput(stdout: lines.joined(separator: "\n") + "\n")
+      }
       let stored: StoredSession?
       do {
         stored = try CLISessionStore.make().store.load()
@@ -27,6 +46,9 @@ struct AuthStatusCommand: AsyncParsableCommand {
         "Signed in as @\(session.handle)",
         "DID: \(session.did)",
       ]
+      if let profile = session.profile {
+        lines.append("Profile: \(profile.rawValue)")
+      }
       if let expiry = session.archive.tokenState.accessToken.expiry {
         let remaining = Int(expiry.timeIntervalSinceNow)
         if remaining > 0 {

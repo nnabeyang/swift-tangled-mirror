@@ -10,6 +10,11 @@ struct AuthLogoutCommand: AsyncParsableCommand {
 
   func run() async throws {
     try await runCLICommand {
+      guard ProcessInfo.processInfo.environment["TNG_AUTH_AGENT"] == nil else {
+        throw CLICommandError.authentication(
+          "auth logout is unavailable while TNG_AUTH_AGENT is set"
+        )
+      }
       let store = try CLISessionStore.make().store
       let session: StoredSession?
       do {

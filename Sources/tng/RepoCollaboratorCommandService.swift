@@ -34,7 +34,7 @@ struct RepoCollaboratorCommandDependencies: Sendable {
         )
       },
       add: { repository, collaborator in
-        let pdsClient = try PDSClient.restore(from: CLISessionStore.make().store)
+        let pdsClient = try await CLIAuthenticatedClient.make()
         return try await service.add(
           repository: repository,
           collaborator: collaborator,
@@ -42,7 +42,7 @@ struct RepoCollaboratorCommandDependencies: Sendable {
         )
       },
       prepareRemoval: { repository, collaborator in
-        let pdsClient = try PDSClient.restore(from: CLISessionStore.make().store)
+        let pdsClient = try await CLIAuthenticatedClient.make()
         return try await service.prepareRemoval(
           repository: repository,
           collaborator: collaborator,
@@ -50,7 +50,7 @@ struct RepoCollaboratorCommandDependencies: Sendable {
         )
       },
       remove: { plan in
-        let pdsClient = try PDSClient.restore(from: CLISessionStore.make().store)
+        let pdsClient = try await CLIAuthenticatedClient.make()
         return try await service.remove(plan, pdsClient: pdsClient)
       },
       originURL: { try GitOriginReader().read() },

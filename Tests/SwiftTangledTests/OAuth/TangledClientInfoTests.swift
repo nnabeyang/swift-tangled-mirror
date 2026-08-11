@@ -72,3 +72,18 @@ import Testing
   #expect(info.redirectURI.path == "/callback")
   #expect(info.scopes == OAuth.ClientInfo.tangledCLI.scopes)
 }
+
+@Test func ciReportingProfileUsesOnlyReportingScopes() {
+  let info = OAuth.ClientInfo.tangledCLI(boundPort: 54321, profile: .ciReporting)
+  #expect(
+    info.scopes == [
+      "atproto",
+      "identity:handle",
+      "repo:sh.tangled.repo.artifact",
+      "repo:sh.tangled.feed.comment",
+      "blob:*/*",
+    ]
+  )
+  #expect(!info.scopes.contains("repo:sh.tangled.repo"))
+  #expect(!info.scopes.contains { $0.hasPrefix("rpc:") })
+}

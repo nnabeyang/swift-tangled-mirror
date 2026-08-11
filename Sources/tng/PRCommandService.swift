@@ -98,7 +98,7 @@ struct PRCommandDependencies: Sendable {
         try GitPullRequestPreparer().prepareStack(base: $0, head: $1, baseRemote: $2)
       },
       create: { repositoryDID, sourceRepositoryDID, base, head, title, body, patch in
-        try await PDSClient.restore(from: CLISessionStore.make().store).createPullRequest(
+        try await CLIAuthenticatedClient.make().createPullRequest(
           repositoryDID: repositoryDID,
           sourceRepositoryDID: sourceRepositoryDID,
           baseBranch: base,
@@ -109,7 +109,7 @@ struct PRCommandDependencies: Sendable {
         )
       },
       createStack: { repositoryDID, sourceRepositoryDID, base, head, commits in
-        try await PDSClient.restore(from: CLISessionStore.make().store).createPullRequestStack(
+        try await CLIAuthenticatedClient.make().createPullRequestStack(
           repositoryDID: repositoryDID,
           sourceRepositoryDID: sourceRepositoryDID,
           baseBranch: base,
@@ -126,7 +126,7 @@ struct PRCommandDependencies: Sendable {
               context,
               title: title,
               body: body,
-              pdsClient: try PDSClient.restore(from: CLISessionStore.make().store)
+              pdsClient: try await CLIAuthenticatedClient.make()
             )
           }
         )
@@ -141,20 +141,20 @@ struct PRCommandDependencies: Sendable {
               context,
               patch: patch,
               sourceRevision: sourceRevision,
-              pdsClient: try PDSClient.restore(from: CLISessionStore.make().store)
+              pdsClient: try await CLIAuthenticatedClient.make()
             )
           },
           submitPatch: { patch in
             try await resubmissionService.resubmit(
               context,
               patch: patch,
-              pdsClient: try PDSClient.restore(from: CLISessionStore.make().store)
+              pdsClient: try await CLIAuthenticatedClient.make()
             )
           },
           submitFork: {
             try await resubmissionService.resubmitFork(
               context,
-              pdsClient: try PDSClient.restore(from: CLISessionStore.make().store)
+              pdsClient: try await CLIAuthenticatedClient.make()
             )
           }
         )
@@ -166,7 +166,7 @@ struct PRCommandDependencies: Sendable {
           forkCommits: {
             try await stackResubmissionService.forkCommits(
               context,
-              pdsClient: try PDSClient.restore(from: CLISessionStore.make().store)
+              pdsClient: try await CLIAuthenticatedClient.make()
             )
           },
           makePlan: { commits in
@@ -174,7 +174,7 @@ struct PRCommandDependencies: Sendable {
             return PreparedPRStackPlan(
               plan: prepared.plan,
               apply: {
-                try await PDSClient.restore(from: CLISessionStore.make().store)
+                try await CLIAuthenticatedClient.make()
                   .applyPullRequestStackResubmission(prepared)
               }
             )
@@ -182,7 +182,7 @@ struct PRCommandDependencies: Sendable {
         )
       },
       createComment: { subject, body, roundIndex in
-        try await PDSClient.restore(from: CLISessionStore.make().store).createComment(
+        try await CLIAuthenticatedClient.make().createComment(
           subject: subject,
           body: body,
           pullRequestRoundIndex: roundIndex
@@ -195,11 +195,11 @@ struct PRCommandDependencies: Sendable {
         try await PullRequestMergeService(bobbinClient: client).merge(
           pullRequestURI: uri,
           allowStack: allowStack,
-          pdsClient: try PDSClient.restore(from: CLISessionStore.make().store)
+          pdsClient: try await CLIAuthenticatedClient.make()
         )
       },
       setStatus: { uri, status in
-        try await PDSClient.restore(from: CLISessionStore.make().store).setPullRequestStatus(
+        try await CLIAuthenticatedClient.make().setPullRequestStatus(
           uri,
           status: status
         )

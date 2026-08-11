@@ -79,7 +79,7 @@ struct PipelineCommandDependencies: Sendable {
         )
       },
       retry: { spindle, repositoryDID, pipelineID, workflow in
-        let pdsClient = try PDSClient.restore(from: CLISessionStore.make().store)
+        let pdsClient = try await CLIAuthenticatedClient.make()
         return try await PipelineRetryService(
           spindleClient: SpindleClient(spindle: spindle),
           pdsClient: pdsClient
@@ -90,7 +90,7 @@ struct PipelineCommandDependencies: Sendable {
         )
       },
       run: { spindle, repositoryDID, commit, ref, workflows, inputs in
-        let pdsClient = try PDSClient.restore(from: CLISessionStore.make().store)
+        let pdsClient = try await CLIAuthenticatedClient.make()
         return try await PipelineRunService(
           spindleClient: SpindleClient(spindle: spindle),
           pdsClient: pdsClient
@@ -103,7 +103,7 @@ struct PipelineCommandDependencies: Sendable {
         )
       },
       cancel: { spindle, repositoryDID, pipelineID, workflows in
-        let pdsClient = try PDSClient.restore(from: CLISessionStore.make().store)
+        let pdsClient = try await CLIAuthenticatedClient.make()
         return try await PipelineCancelService(
           spindleClient: SpindleClient(spindle: spindle),
           pdsClient: pdsClient

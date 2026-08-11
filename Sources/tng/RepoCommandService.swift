@@ -19,15 +19,15 @@ struct RepositoryLifecycleCommandDependencies: Sendable {
     let service = RepositoryLifecycleService()
     return RepositoryLifecycleCommandDependencies(
       create: { request in
-        let pdsClient = try PDSClient.restore(from: CLISessionStore.make().store)
+        let pdsClient = try await CLIAuthenticatedClient.make()
         return try await service.create(request, pdsClient: pdsClient)
       },
       prepareDeletion: { repository in
-        let pdsClient = try PDSClient.restore(from: CLISessionStore.make().store)
+        let pdsClient = try await CLIAuthenticatedClient.make()
         return try await service.prepareDeletion(repository: repository, pdsClient: pdsClient)
       },
       delete: { plan in
-        let pdsClient = try PDSClient.restore(from: CLISessionStore.make().store)
+        let pdsClient = try await CLIAuthenticatedClient.make()
         return try await service.delete(plan, pdsClient: pdsClient)
       },
       inputIsTerminal: { repositoryStandardInputIsTerminal() },
@@ -47,7 +47,7 @@ struct RepositoryDefaultBranchCommandDependencies: Sendable {
     return RepositoryDefaultBranchCommandDependencies(
       prepareChange: { try await service.prepareChange(repository: $0, branch: $1) },
       change: { plan in
-        let pdsClient = try PDSClient.restore(from: CLISessionStore.make().store)
+        let pdsClient = try await CLIAuthenticatedClient.make()
         return try await service.change(plan, pdsClient: pdsClient)
       }
     )
@@ -148,11 +148,11 @@ struct RepoCommandDependencies: Sendable {
         return try await stream.write(to: destination)
       },
       star: { repositoryDID in
-        let client = try PDSClient.restore(from: CLISessionStore.make().store)
+        let client = try await CLIAuthenticatedClient.make()
         return try await client.star(repositoryDID: repositoryDID)
       },
       unstar: { repositoryDID in
-        let client = try PDSClient.restore(from: CLISessionStore.make().store)
+        let client = try await CLIAuthenticatedClient.make()
         return try await client.unstar(repositoryDID: repositoryDID)
       }
     )

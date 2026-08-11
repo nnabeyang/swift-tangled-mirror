@@ -130,7 +130,8 @@ struct ManualSiteRenderer: Sendable {
       component = "<\(argument.valueName)>\(repeated)"
     } else {
       let name = argument.preferredName?.spelling ?? argument.names.last?.spelling ?? argument.valueName
-      component = argument.kind == "option"
+      component =
+        argument.kind == "option"
         ? "\(name) <\(argument.valueName)>\(repeated)"
         : "\(name)\(repeated)"
     }

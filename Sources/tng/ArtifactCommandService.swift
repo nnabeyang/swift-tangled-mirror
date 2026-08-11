@@ -37,18 +37,18 @@ struct ArtifactCommandDependencies: Sendable {
           cursor: $1,
           limit: $2,
           sort: $3,
-          pdsClient: restoredPDSClientIfAvailable()
+          pdsClient: await restoredPDSClientIfAvailable()
         )
       },
       view: {
         try await service.view(
           repository: $0,
           tag: $1,
-          pdsClient: restoredPDSClientIfAvailable()
+          pdsClient: await restoredPDSClientIfAvailable()
         )
       },
       upload: { repository, tag, file, name, contentType, force in
-        let pdsClient = try PDSClient.restore(from: CLISessionStore.make().store)
+        let pdsClient = try await CLIAuthenticatedClient.make()
         return try await service.upload(
           repository: repository,
           tag: tag,
@@ -66,11 +66,11 @@ struct ArtifactCommandDependencies: Sendable {
           name: name,
           destinationURL: destination,
           force: force,
-          pdsClient: restoredPDSClientIfAvailable()
+          pdsClient: await restoredPDSClientIfAvailable()
         )
       },
       delete: { repository, tag, name in
-        let pdsClient = try PDSClient.restore(from: CLISessionStore.make().store)
+        let pdsClient = try await CLIAuthenticatedClient.make()
         return try await service.delete(
           repository: repository,
           tag: tag,
@@ -299,9 +299,9 @@ private func promptForArtifactDeletion(_ prompt: String) -> Bool {
   return response.lowercased() == "y" || response.lowercased() == "yes"
 }
 
-private func restoredPDSClientIfAvailable() -> PDSClient? {
+private func restoredPDSClientIfAvailable() async -> PDSClient? {
   do {
-    return try PDSClient.restore(from: CLISessionStore.make().store)
+    return try await CLIAuthenticatedClient.make()
   } catch {
     return nil
   }

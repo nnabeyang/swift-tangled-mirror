@@ -76,6 +76,7 @@ enum CapabilityCatalog {
     "auth login": Metadata(access: .write, authenticationRequired: false),
     "auth status": Metadata(access: .read, authenticationRequired: false),
     "auth logout": Metadata(access: .write, authenticationRequired: false),
+    "auth agent serve": Metadata(access: .write, authenticationRequired: true),
     "repo list": Metadata(access: .read, authenticationRequired: false),
     "repo create": Metadata(access: .write, authenticationRequired: true),
     "repo delete": Metadata(access: .write, authenticationRequired: true),

@@ -23,12 +23,27 @@ struct AuthLoginCommand: AsyncParsableCommand {
   )
   var callbackPort: UInt16?
 
+  @Option(name: .long, help: "Use a restricted authentication profile")
+  var profile: String?
+
   mutating func validate() throws {
+    if ProcessInfo.processInfo.environment["TNG_AUTH_AGENT"] != nil {
+      throw ValidationError("auth login is unavailable while TNG_AUTH_AGENT is set")
+    }
     if noBrowser, callbackPort == nil {
       throw ValidationError("--callback-port is required with --no-browser")
     }
     if callbackPort == 0 {
       throw ValidationError("--callback-port must be between 1 and 65535")
+    }
+    if let profile {
+      guard AuthenticationProfile(rawValue: profile) != nil else {
+        throw ValidationError("--profile must be 'ci-reporting'")
+      }
+      let path = ProcessInfo.processInfo.environment["TNG_SESSION_FILE"] ?? ""
+      if !path.hasPrefix("/") {
+        throw ValidationError("--profile requires an absolute TNG_SESSION_FILE")
+      }
     }
   }
 
@@ -42,7 +57,8 @@ struct AuthLoginCommand: AsyncParsableCommand {
       let flow = AuthFlow(
         browser: browser,
         sessionStore: sessionStore.store,
-        callbackPort: callbackPort
+        callbackPort: callbackPort,
+        profile: profile.flatMap(AuthenticationProfile.init(rawValue:))
       )
       let result = try await flow.login(handle: handle)
       return CLICommandOutput(
