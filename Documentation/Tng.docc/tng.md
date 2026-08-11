@@ -14,6 +14,7 @@ Spindle pipelines, and live events from your terminal.
 ### Get started
 
 - <doc:GettingStarted>
+- <doc:CIAuthenticationAgent>
 - <doc:TerminalOutput>
 
 ### Command reference

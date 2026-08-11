@@ -20,9 +20,15 @@ import Testing
 
     #expect(document.schemaVersion == 1)
     #expect(document.cliVersion == SwiftTangled.version)
-    #expect(paths.count == 59)
+    #expect(paths.count == 65)
     #expect(paths.contains("capabilities"))
     #expect(paths.contains("auth agent serve"))
+    #expect(paths.contains("auth agent service install"))
+    #expect(paths.contains("auth agent service start"))
+    #expect(paths.contains("auth agent service status"))
+    #expect(paths.contains("auth agent service restart"))
+    #expect(paths.contains("auth agent service stop"))
+    #expect(paths.contains("auth agent service uninstall"))
     #expect(paths.contains("pr create"))
     #expect(paths.contains("pr edit"))
     #expect(paths.contains("pr resubmit"))
@@ -54,6 +60,15 @@ import Testing
     #expect(paths.contains("repo secret add"))
     #expect(paths.contains("repo secret remove"))
     #expect(!paths.contains("help"))
+  }
+
+  @Test func authAgentServiceCommandsAreMacOSOnly() throws {
+    let document = try CapabilityCatalog.document()
+    let serviceCommands = document.commands.filter {
+      $0.path.starts(with: ["auth", "agent", "service"])
+    }
+    #expect(serviceCommands.count == 6)
+    #expect(serviceCommands.allSatisfy { $0.platforms == ["macos"] })
   }
 
   @Test func documentIncludesArgumentsOptionsAndSafetyMetadata() throws {

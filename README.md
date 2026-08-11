@@ -67,9 +67,17 @@ explicit path and expose it through a private host Unix socket:
 ```sh
 TNG_SESSION_FILE=/absolute/private/path/ci-session.json \
   tng auth login CI_HANDLE --profile ci-reporting
-TNG_SESSION_FILE=/absolute/private/path/ci-session.json \
-  tng auth agent serve --profile ci-reporting --socket /absolute/private/path/ci-agent.sock
+tng auth agent service install \
+  --session-file /absolute/private/path/ci-session.json \
+  --socket /absolute/private/path/ci-agent.sock \
+  --profile ci-reporting \
+  --instance ci-reporting
 ```
+
+The macOS service starts immediately, returns after crashes, and starts again
+when the user logs in after a host restart. Use `service status`, `restart`,
+`stop`, `start`, and `uninstall` with the same instance name. For foreground
+operation or Linux, continue to use `TNG_SESSION_FILE=... tng auth agent serve`.
 
 The socket's parent directory must be owned by the current user and inaccessible
 to group and other users. A trusted VM host bridge binds each connection to one

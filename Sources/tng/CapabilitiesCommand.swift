@@ -70,6 +70,7 @@ enum CapabilityCatalog {
   private struct Metadata {
     let access: CommandCapability.Access
     let authenticationRequired: Bool
+    var platforms: [String] = ["linux", "macos"]
   }
 
   private static let metadata: [String: Metadata] = [
@@ -77,6 +78,36 @@ enum CapabilityCatalog {
     "auth status": Metadata(access: .read, authenticationRequired: false),
     "auth logout": Metadata(access: .write, authenticationRequired: false),
     "auth agent serve": Metadata(access: .write, authenticationRequired: true),
+    "auth agent service install": Metadata(
+      access: .write,
+      authenticationRequired: true,
+      platforms: ["macos"]
+    ),
+    "auth agent service start": Metadata(
+      access: .write,
+      authenticationRequired: true,
+      platforms: ["macos"]
+    ),
+    "auth agent service status": Metadata(
+      access: .read,
+      authenticationRequired: false,
+      platforms: ["macos"]
+    ),
+    "auth agent service restart": Metadata(
+      access: .write,
+      authenticationRequired: true,
+      platforms: ["macos"]
+    ),
+    "auth agent service stop": Metadata(
+      access: .write,
+      authenticationRequired: false,
+      platforms: ["macos"]
+    ),
+    "auth agent service uninstall": Metadata(
+      access: .write,
+      authenticationRequired: false,
+      platforms: ["macos"]
+    ),
     "repo list": Metadata(access: .read, authenticationRequired: false),
     "repo create": Metadata(access: .write, authenticationRequired: true),
     "repo delete": Metadata(access: .write, authenticationRequired: true),
@@ -150,7 +181,7 @@ enum CapabilityCatalog {
         path: path,
         access: metadata.access,
         authenticationRequired: metadata.authenticationRequired,
-        platforms: ["linux", "macos"],
+        platforms: metadata.platforms,
         arguments: visible.compactMap { argument in
           guard argument.kind == "positional" else { return nil }
           return CapabilityArgument(
