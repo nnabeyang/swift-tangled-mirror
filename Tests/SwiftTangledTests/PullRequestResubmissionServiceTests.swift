@@ -183,7 +183,7 @@ import Testing
         == [
           "knot.example",
           "service-token",
-          sourceRepository.uri,
+          sourceRepositoryDID,
           "feature",
           "main",
         ]

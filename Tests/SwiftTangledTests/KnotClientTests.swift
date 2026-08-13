@@ -537,7 +537,7 @@ import Testing
     let reference = try await KnotClient(transport: transport).updateHiddenRef(
       knot: "knot.example",
       token: "service-token",
-      repositoryURI: "at://did:plc:owner/sh.tangled.repo/example",
+      repositoryDID: "did:plc:repository",
       sourceBranch: "feature",
       targetBranch: "main"
     )
@@ -554,7 +554,7 @@ import Testing
       Sh.Tangled.RepoHiddenRef_Input.self,
       from: try #require(request.httpBody)
     )
-    #expect(input.repo.rawValue == "at://did:plc:owner/sh.tangled.repo/example")
+    #expect(input.repo.rawValue == "did:plc:repository")
     #expect(input.forkRef == "feature")
     #expect(input.remoteRef == "main")
   }
@@ -568,12 +568,30 @@ import Testing
     ).updateHiddenRef(
       knot: "knot.example",
       token: "service-token",
-      repositoryURI: "at://did:plc:owner/sh.tangled.repo/example",
+      repositoryDID: "did:plc:repository",
       sourceBranch: "feature",
       targetBranch: "main"
     )
 
     #expect(reference == "refs/hidden/feature/main")
+  }
+
+  @Test func hiddenRefRejectsRepositoryURIWithoutSendingRequest() async {
+    let transport = KnotTransport(
+      statusCode: 200,
+      body: Data(#"{"success":true}"#.utf8)
+    )
+
+    await #expect(throws: TangledError.self) {
+      _ = try await KnotClient(transport: transport).updateHiddenRef(
+        knot: "knot.example",
+        token: "service-token",
+        repositoryDID: "at://did:plc:owner/sh.tangled.repo/example",
+        sourceBranch: "feature",
+        targetBranch: "main"
+      )
+    }
+    #expect(await transport.request() == nil)
   }
 
   @Test func hiddenRefRejectsUnsuccessfulAndEmptyReferences() async {
@@ -588,7 +606,7 @@ import Testing
         ).updateHiddenRef(
           knot: "knot.example",
           token: "service-token",
-          repositoryURI: "at://did:plc:owner/sh.tangled.repo/example",
+          repositoryDID: "did:plc:repository",
           sourceBranch: "feature",
           targetBranch: "main"
         )

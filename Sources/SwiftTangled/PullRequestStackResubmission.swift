@@ -117,7 +117,7 @@ public struct PullRequestStackResubmissionService: Sendable {
         try await knotClient.updateHiddenRef(
           knot: $0,
           token: $1,
-          repositoryURI: $2,
+          repositoryDID: $2,
           sourceBranch: $3,
           targetBranch: $4
         )
@@ -344,7 +344,7 @@ public struct PullRequestStackResubmissionService: Sendable {
     let hidden = try await dependencies.updateHiddenRef(
       sourceRepository.value.knot,
       token,
-      sourceRepository.uri,
+      sourceRepositoryDID,
       source.branch,
       pull.target.branch
     )

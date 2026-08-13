@@ -114,6 +114,87 @@ import Testing
     #expect(commits.map(\.body) == [nil, nil])
   }
 
+  @Test func forkCommitsUsesSourceRepositoryDIDForHiddenRef() async throws {
+    let sourceRepositoryDID = "did:plc:fork"
+    let targetRepositoryDID = "did:plc:repository"
+    let selected = try snapshot(
+      key: "selected",
+      title: "Selected",
+      sourceRepositoryDID: sourceRepositoryDID
+    )
+    let context = PullRequestStackResubmissionContext(
+      selectedURI: selected.record.uri,
+      expectedRepoCommit: "bafyrepo",
+      snapshots: [selected.record.uri: selected],
+      items: [
+        selected.record.uri: .init(record: selected.record, status: .open, commentCount: 0)
+      ],
+      orderedURIs: [selected.record.uri]
+    )
+    let recorder = StackForkRecorder()
+    let service = PullRequestStackResubmissionService(
+      dependencies: .init(
+        snapshot: { _ in throw TangledError.notFound("unused") },
+        latestCommit: { _ in "bafyrepo" },
+        repository: { reference in
+          switch reference {
+          case sourceRepositoryDID:
+            return self.repository(
+              ownerDID: "did:plc:fork-owner",
+              repositoryDID: sourceRepositoryDID,
+              source: targetRepositoryDID
+            )
+          case targetRepositoryDID:
+            return self.repository(
+              ownerDID: "did:plc:owner",
+              repositoryDID: targetRepositoryDID
+            )
+          default:
+            throw TangledError.notFound(reference)
+          }
+        },
+        list: { _, _, _, _ in Page(items: []) },
+        patch: { _ in throw TangledError.notFound("unused") },
+        updateHiddenRef: { knot, token, repositoryDID, source, target in
+          await recorder.recordHiddenRef([knot, token, repositoryDID, source, target])
+          return "refs/hidden/feature/main"
+        },
+        compare: { knot, repositoryDID, base, head in
+          await recorder.recordComparison([knot, repositoryDID, base, head])
+          return GitComparison(
+            baseRevision: "aaaaaaaa",
+            headRevision: "bbbbbbbb",
+            formatPatches: [self.formatPatch()],
+            patch: "",
+            combinedFiles: [],
+            combinedPatch: ""
+          )
+        },
+        nextRecordKey: { "unused" }
+      )
+    )
+
+    let commits = try await service.forkCommits(
+      context,
+      pdsClient: serviceAuthPDSClient()
+    )
+
+    #expect(commits.map(\.changeID) == ["I-selected"])
+    #expect(
+      await recorder.hiddenRefArguments()
+        == ["knot.example", "service-token", sourceRepositoryDID, "feature", "main"]
+    )
+    #expect(
+      await recorder.comparisonArguments()
+        == [
+          "knot.example",
+          sourceRepositoryDID,
+          "refs/hidden/feature/main",
+          "feature",
+        ]
+    )
+  }
+
   private func service(
     patches: [String: Data],
     nextKeys: [String]
@@ -143,7 +224,8 @@ import Testing
   private func snapshot(
     key: String,
     title: String,
-    dependentOn: String? = nil
+    dependentOn: String? = nil,
+    sourceRepositoryDID: String? = nil
   ) throws -> PullRequestRecordSnapshot {
     let pull = PullRequest(
       title: title,
@@ -153,7 +235,7 @@ import Testing
           patchBlob: .init(cid: "bafk\(key)", mimeType: "application/gzip", size: 42)
         )
       ],
-      source: .init(branch: "feature"),
+      source: .init(branch: "feature", repositoryDID: sourceRepositoryDID),
       target: .init(branch: "main", repositoryDID: "did:plc:repository"),
       createdAt: FormatString(rawValue: "2026-07-28T00:00:00Z"),
       dependentOn: dependentOn
@@ -177,7 +259,10 @@ import Testing
           patchBlob: blob
         )
       ],
-      source: .init(branch: "feature"),
+      source: .init(
+        branch: "feature",
+        repo: sourceRepositoryDID.map(FormatString.init(rawValue:))
+      ),
       target: .init(
         branch: "main",
         repo: FormatString(rawValue: "did:plc:repository")
@@ -199,6 +284,50 @@ import Testing
       title: title,
       changeID: changeID,
       patch: patch(changeID: changeID, title: title)
+    )
+  }
+
+  private func repository(
+    ownerDID: String,
+    repositoryDID: String,
+    source: String? = nil
+  ) -> TangledRecord<Repository> {
+    TangledRecord(
+      uri: "at://\(ownerDID)/sh.tangled.repo/example",
+      cid: "bafyrepo",
+      value: Repository(
+        name: "example",
+        knot: "knot.example",
+        source: source,
+        repoDID: repositoryDID,
+        createdAt: FormatString(rawValue: "2026-07-28T00:00:00Z")
+      )
+    )
+  }
+
+  private func formatPatch() -> GitFormatPatch {
+    GitFormatPatch(
+      files: [],
+      sha: "bbbbbbbb",
+      author: GitSignature(
+        name: "Test",
+        email: "test@example.com",
+        when: FormatString(rawValue: "2026-07-28T00:00:00Z")
+      ),
+      title: "Selected",
+      body: "",
+      subjectPrefix: "PATCH",
+      bodyAppendix: "",
+      headers: ["Change-Id": ["I-selected"]],
+      raw: String(decoding: patch(changeID: "I-selected", title: "Selected"), as: UTF8.self)
+    )
+  }
+
+  private func serviceAuthPDSClient() -> PDSClient {
+    PDSClient(
+      client: StackServiceAuthXRPCClient(),
+      repoDID: ownerDID,
+      authorizedScopes: ["rpc:sh.tangled.repo.hiddenRef?aud=*"]
     )
   }
 
@@ -226,6 +355,38 @@ import Testing
 
       """.utf8
     )
+  }
+}
+
+private actor StackForkRecorder {
+  private var hiddenRef: [String]?
+  private var comparison: [String]?
+
+  func recordHiddenRef(_ arguments: [String]) {
+    hiddenRef = arguments
+  }
+
+  func hiddenRefArguments() -> [String]? {
+    hiddenRef
+  }
+
+  func recordComparison(_ arguments: [String]) {
+    comparison = arguments
+  }
+
+  func comparisonArguments() -> [String]? {
+    comparison
+  }
+}
+
+private struct StackServiceAuthXRPCClient: XRPCCallable {
+  func getProxy(nsid _: String) -> String? { nil }
+
+  func response(_ components: XRPCRequestComponents) async throws -> Data {
+    guard components.nsId == "com.atproto.server.getServiceAuth" else {
+      throw TangledError.invalidRequest("unexpected request")
+    }
+    return Data(#"{"token":"service-token"}"#.utf8)
   }
 }
 

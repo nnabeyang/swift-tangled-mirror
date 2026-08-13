@@ -222,17 +222,18 @@ public struct KnotClient: Sendable {
   public func updateHiddenRef(
     knot: String,
     token: String,
-    repositoryURI: String,
+    repositoryDID: String,
     sourceBranch: String,
     targetBranch: String
   ) async throws -> String {
     let sourceBranch = try required(sourceBranch, name: "source branch")
     let targetBranch = try required(targetBranch, name: "target branch")
+    let repositoryDID = try validDID(repositoryDID, name: "repository DID")
     let expectedRef = "hidden/\(sourceBranch)/\(targetBranch)"
     let input = Sh.Tangled.RepoHiddenRef_Input(
       forkRef: sourceBranch,
       remoteRef: targetBranch,
-      repo: FormatString(rawValue: repositoryURI)
+      repo: FormatString(repositoryDID)
     )
     let output = try await client(knot: knot, token: token).RepoHiddenRef(input: input)
     guard output.success else {
