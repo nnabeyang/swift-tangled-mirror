@@ -137,11 +137,11 @@
       ],
       "location" : "https://tangled.org/nnabeyang.tngl.sh/core",
       "state" : {
-        "revision" : "46622987c3bc6f16f1e1234c18c66c7dc432f0ee"
+        "revision" : "cc23952bc105c11c37606ac43b9269c8a08f30e5"
       }
     }
   ],
   "generator" : "0.43.1",
   "module" : "Sources/TangledLexicons",
-  "originHash" : "0e343220cb8bda2d2d39fe297a92bd5b51ade6fca6e6a68a1ba88a86b0680af6"
+  "originHash" : "ad3c485050edc3bb99b3c90a40f5dacd5f1ce52af9830edda9eac3aed4f0c987"
 }

@@ -46,7 +46,7 @@ import Testing
     try await KnotClient(transport: setTransport).setDefaultBranch(
       knot: "knot.example",
       token: "service-token",
-      repositoryURI: "at://did:plc:owner/sh.tangled.repo/core",
+      repositoryDID: "did:plc:repository",
       branch: "release"
     )
     let request = try #require(await setTransport.request())
@@ -60,7 +60,7 @@ import Testing
       Sh.Tangled.RepoSetDefaultBranch_Input.self,
       from: try #require(request.httpBody)
     )
-    #expect(input.repo.rawValue == "at://did:plc:owner/sh.tangled.repo/core")
+    #expect(input.repo.rawValue == "did:plc:repository")
     #expect(input.defaultBranch == "release")
   }
 
@@ -198,6 +198,7 @@ import Testing
     try await KnotClient(transport: deleteTransport).deleteRepository(
       knot: "knot.example",
       token: "delete-token",
+      repositoryDID: "did:plc:repository",
       ownerDID: "did:plc:owner",
       name: "example",
       rkey: "example"
@@ -209,9 +210,10 @@ import Testing
       Sh.Tangled.RepoDelete_Input.self,
       from: try #require(deleteRequest.httpBody)
     )
-    #expect(deleteInput.did.rawValue == "did:plc:owner")
+    #expect(deleteInput.did?.rawValue == "did:plc:owner")
+    #expect(deleteInput.repo.rawValue == "did:plc:repository")
     #expect(deleteInput.name == "example")
-    #expect(deleteInput.rkey.rawValue == "example")
+    #expect(deleteInput.rkey?.rawValue == "example")
     #expect(deleteInput.force == nil)
     let deleteBody = try #require(deleteRequest.httpBody)
     let deleteObject = try #require(
@@ -238,6 +240,7 @@ import Testing
       try await KnotClient(transport: deleteTransport).deleteRepository(
         knot: "knot.example",
         token: "token",
+        repositoryDID: "did:plc:repository",
         ownerDID: "did:plc:owner",
         name: "example",
         rkey: "invalid/key"

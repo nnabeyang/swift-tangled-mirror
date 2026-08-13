@@ -41,6 +41,7 @@ public struct KnotClient: Sendable {
   public func deleteRepository(
     knot: String,
     token: String,
+    repositoryDID: String,
     ownerDID: String,
     name: String,
     rkey: String
@@ -50,6 +51,7 @@ public struct KnotClient: Sendable {
       input: Sh.Tangled.RepoDelete_Input(
         did: FormatString(rawValue: ownerDID),
         name: name,
+        repo: FormatString(rawValue: repositoryDID),
         rkey: FormatString(recordKey)
       )
     )
@@ -95,17 +97,15 @@ public struct KnotClient: Sendable {
   public func setDefaultBranch(
     knot: String,
     token: String,
-    repositoryURI: String,
+    repositoryDID: String,
     branch: String
   ) async throws {
-    guard let repositoryURI = FormatString<ATURI>(rawValue: repositoryURI).typed else {
-      throw TangledError.invalidRequest("repository URI must be a valid AT URI")
-    }
+    let repositoryDID = try validDID(repositoryDID, name: "repository DID")
     let branch = try required(branch, name: "branch")
     _ = try await client(knot: knot, token: token).RepoSetDefaultBranch(
       input: Sh.Tangled.RepoSetDefaultBranch_Input(
         defaultBranch: branch,
-        repo: FormatString(repositoryURI)
+        repo: FormatString(repositoryDID)
       )
     )
   }

@@ -9091,20 +9091,23 @@ extension Sh.Tangled {
   }
 
   public struct RepoDelete_Input: Codable, Hashable, Sendable {
-    /// DID of the repository owner
-    public var did: FormatString<DID>
+    /// DID of the repository owner. A knot without the repo-did-input capability reads this and name in place of repo.
+    public var did: FormatString<DID>?
     /// Admin-only. Delete even though the repository record still exists on the owner's PDS.
     public var force: Swift.Bool?
-    /// Name of the repository to delete
-    public var name: Swift.String
-    /// Rkey of the repository record
-    public var rkey: FormatString<RecordKey>
+    /// Name of the repository to delete. A knot without the repo-did-input capability reads this and DID in place of repo.
+    public var name: Swift.String?
+    /// DID of the repository to delete
+    public var repo: FormatString<DID>
+    /// Rkey of the repository record. A knot without the repo-did-input capability checks this against the owner's PDS.
+    public var rkey: FormatString<RecordKey>?
     public let _unknownValues: [Swift.String: AnyCodable]
 
-    public init(did: FormatString<DID>, force: Swift.Bool? = nil, name: Swift.String, rkey: FormatString<RecordKey>) {
+    public init(did: FormatString<DID>? = nil, force: Swift.Bool? = nil, name: Swift.String? = nil, repo: FormatString<DID>, rkey: FormatString<RecordKey>? = nil) {
       self.did = did
       self.force = force
       self.name = name
+      self.repo = repo
       self.rkey = rkey
       self._unknownValues = [:]
     }
@@ -9113,15 +9116,17 @@ extension Sh.Tangled {
       case did
       case force
       case name
+      case repo
       case rkey
     }
 
     public init(from decoder: any Decoder) throws {
       let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
-      self.did = try keyedContainer.decode(FormatString<DID>.self, forKey: .did)
+      self.did = try keyedContainer.decodeIfPresent(FormatString<DID>.self, forKey: .did)
       self.force = try keyedContainer.decodeIfPresent(Swift.Bool.self, forKey: .force)
-      self.name = try keyedContainer.decode(Swift.String.self, forKey: .name)
-      self.rkey = try keyedContainer.decode(FormatString<RecordKey>.self, forKey: .rkey)
+      self.name = try keyedContainer.decodeIfPresent(Swift.String.self, forKey: .name)
+      self.repo = try keyedContainer.decode(FormatString<DID>.self, forKey: .repo)
+      self.rkey = try keyedContainer.decodeIfPresent(FormatString<RecordKey>.self, forKey: .rkey)
       let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
       var _unknownValues = [Swift.String: AnyCodable]()
       for key in unknownContainer.allKeys {
@@ -9135,10 +9140,11 @@ extension Sh.Tangled {
 
     public func encode(to encoder: any Encoder) throws {
       var container = encoder.container(keyedBy: CodingKeys.self)
-      try container.encode(self.did, forKey: .did)
+      try container.encodeIfPresent(self.did, forKey: .did)
       try container.encodeIfPresent(self.force, forKey: .force)
-      try container.encode(self.name, forKey: .name)
-      try container.encode(self.rkey, forKey: .rkey)
+      try container.encodeIfPresent(self.name, forKey: .name)
+      try container.encode(self.repo, forKey: .repo)
+      try container.encodeIfPresent(self.rkey, forKey: .rkey)
       try _unknownValues.encode(to: encoder)
     }
   }
@@ -10236,11 +10242,11 @@ extension Sh.Tangled {
     public var forkRef: Swift.String
     /// Remote reference name
     public var remoteRef: Swift.String
-    /// AT-URI of the repository
-    public var repo: FormatString<ATURI>
+    /// DID of the fork that the hidden ref belongs to
+    public var repo: FormatString<DID>
     public let _unknownValues: [Swift.String: AnyCodable]
 
-    public init(forkRef: Swift.String, remoteRef: Swift.String, repo: FormatString<ATURI>) {
+    public init(forkRef: Swift.String, remoteRef: Swift.String, repo: FormatString<DID>) {
       self.forkRef = forkRef
       self.remoteRef = remoteRef
       self.repo = repo
@@ -10257,7 +10263,7 @@ extension Sh.Tangled {
       let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
       self.forkRef = try keyedContainer.decode(Swift.String.self, forKey: .forkRef)
       self.remoteRef = try keyedContainer.decode(Swift.String.self, forKey: .remoteRef)
-      self.repo = try keyedContainer.decode(FormatString<ATURI>.self, forKey: .repo)
+      self.repo = try keyedContainer.decode(FormatString<DID>.self, forKey: .repo)
       let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
       var _unknownValues = [Swift.String: AnyCodable]()
       for key in unknownContainer.allKeys {
@@ -12564,17 +12570,17 @@ extension Sh.Tangled {
     public var commitBody: Swift.String?
     /// Merge commit message
     public var commitMessage: Swift.String?
-    /// DID of the repository owner
-    public var did: FormatString<DID>
-    /// Name of the repository
-    public var name: Swift.String
+    /// DID of the repository owner. A knot without the repo-did-input capability reads this and name in place of repo.
+    public var did: FormatString<DID>?
+    /// Name of the repository. A knot without the repo-did-input capability reads this and DID in place of repo.
+    public var name: Swift.String?
     /// Patch content to merge
     public var patch: Swift.String
     /// DID of the repository
-    public var repo: FormatString<DID>?
+    public var repo: FormatString<DID>
     public let _unknownValues: [Swift.String: AnyCodable]
 
-    public init(authorEmail: Swift.String? = nil, authorName: Swift.String? = nil, branch: Swift.String, commitBody: Swift.String? = nil, commitMessage: Swift.String? = nil, did: FormatString<DID>, name: Swift.String, patch: Swift.String, repo: FormatString<DID>? = nil) {
+    public init(authorEmail: Swift.String? = nil, authorName: Swift.String? = nil, branch: Swift.String, commitBody: Swift.String? = nil, commitMessage: Swift.String? = nil, did: FormatString<DID>? = nil, name: Swift.String? = nil, patch: Swift.String, repo: FormatString<DID>) {
       self.authorEmail = authorEmail
       self.authorName = authorName
       self.branch = branch
@@ -12606,10 +12612,10 @@ extension Sh.Tangled {
       self.branch = try keyedContainer.decode(Swift.String.self, forKey: .branch)
       self.commitBody = try keyedContainer.decodeIfPresent(Swift.String.self, forKey: .commitBody)
       self.commitMessage = try keyedContainer.decodeIfPresent(Swift.String.self, forKey: .commitMessage)
-      self.did = try keyedContainer.decode(FormatString<DID>.self, forKey: .did)
-      self.name = try keyedContainer.decode(Swift.String.self, forKey: .name)
+      self.did = try keyedContainer.decodeIfPresent(FormatString<DID>.self, forKey: .did)
+      self.name = try keyedContainer.decodeIfPresent(Swift.String.self, forKey: .name)
       self.patch = try keyedContainer.decode(Swift.String.self, forKey: .patch)
-      self.repo = try keyedContainer.decodeIfPresent(FormatString<DID>.self, forKey: .repo)
+      self.repo = try keyedContainer.decode(FormatString<DID>.self, forKey: .repo)
       let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
       var _unknownValues = [Swift.String: AnyCodable]()
       for key in unknownContainer.allKeys {
@@ -12628,10 +12634,10 @@ extension Sh.Tangled {
       try container.encode(self.branch, forKey: .branch)
       try container.encodeIfPresent(self.commitBody, forKey: .commitBody)
       try container.encodeIfPresent(self.commitMessage, forKey: .commitMessage)
-      try container.encode(self.did, forKey: .did)
-      try container.encode(self.name, forKey: .name)
+      try container.encodeIfPresent(self.did, forKey: .did)
+      try container.encodeIfPresent(self.name, forKey: .name)
       try container.encode(self.patch, forKey: .patch)
-      try container.encodeIfPresent(self.repo, forKey: .repo)
+      try container.encode(self.repo, forKey: .repo)
       try _unknownValues.encode(to: encoder)
     }
   }
@@ -12711,17 +12717,17 @@ extension Sh.Tangled {
   public struct RepoMergeCheck_Input: Codable, Hashable, Sendable {
     /// Target branch to merge into
     public var branch: Swift.String
-    /// DID of the repository owner
-    public var did: FormatString<DID>
-    /// Name of the repository
-    public var name: Swift.String
+    /// DID of the repository owner. A knot without the repo-did-input capability reads this and name in place of repo.
+    public var did: FormatString<DID>?
+    /// Name of the repository. A knot without the repo-did-input capability reads this and DID in place of repo.
+    public var name: Swift.String?
     /// Patch or pull request to check for merge conflicts
     public var patch: Swift.String
     /// DID of the repository
-    public var repo: FormatString<DID>?
+    public var repo: FormatString<DID>
     public let _unknownValues: [Swift.String: AnyCodable]
 
-    public init(branch: Swift.String, did: FormatString<DID>, name: Swift.String, patch: Swift.String, repo: FormatString<DID>? = nil) {
+    public init(branch: Swift.String, did: FormatString<DID>? = nil, name: Swift.String? = nil, patch: Swift.String, repo: FormatString<DID>) {
       self.branch = branch
       self.did = did
       self.name = name
@@ -12741,10 +12747,10 @@ extension Sh.Tangled {
     public init(from decoder: any Decoder) throws {
       let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
       self.branch = try keyedContainer.decode(Swift.String.self, forKey: .branch)
-      self.did = try keyedContainer.decode(FormatString<DID>.self, forKey: .did)
-      self.name = try keyedContainer.decode(Swift.String.self, forKey: .name)
+      self.did = try keyedContainer.decodeIfPresent(FormatString<DID>.self, forKey: .did)
+      self.name = try keyedContainer.decodeIfPresent(Swift.String.self, forKey: .name)
       self.patch = try keyedContainer.decode(Swift.String.self, forKey: .patch)
-      self.repo = try keyedContainer.decodeIfPresent(FormatString<DID>.self, forKey: .repo)
+      self.repo = try keyedContainer.decode(FormatString<DID>.self, forKey: .repo)
       let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
       var _unknownValues = [Swift.String: AnyCodable]()
       for key in unknownContainer.allKeys {
@@ -12759,10 +12765,10 @@ extension Sh.Tangled {
     public func encode(to encoder: any Encoder) throws {
       var container = encoder.container(keyedBy: CodingKeys.self)
       try container.encode(self.branch, forKey: .branch)
-      try container.encode(self.did, forKey: .did)
-      try container.encode(self.name, forKey: .name)
+      try container.encodeIfPresent(self.did, forKey: .did)
+      try container.encodeIfPresent(self.name, forKey: .name)
       try container.encode(self.patch, forKey: .patch)
-      try container.encodeIfPresent(self.repo, forKey: .repo)
+      try container.encode(self.repo, forKey: .repo)
       try _unknownValues.encode(to: encoder)
     }
   }
@@ -13214,10 +13220,11 @@ extension Sh.Tangled {
 
   public struct RepoSetDefaultBranch_Input: Codable, Hashable, Sendable {
     public var defaultBranch: Swift.String
-    public var repo: FormatString<ATURI>
+    /// DID of the repository
+    public var repo: FormatString<DID>
     public let _unknownValues: [Swift.String: AnyCodable]
 
-    public init(defaultBranch: Swift.String, repo: FormatString<ATURI>) {
+    public init(defaultBranch: Swift.String, repo: FormatString<DID>) {
       self.defaultBranch = defaultBranch
       self.repo = repo
       self._unknownValues = [:]
@@ -13231,7 +13238,7 @@ extension Sh.Tangled {
     public init(from decoder: any Decoder) throws {
       let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
       self.defaultBranch = try keyedContainer.decode(Swift.String.self, forKey: .defaultBranch)
-      self.repo = try keyedContainer.decode(FormatString<ATURI>.self, forKey: .repo)
+      self.repo = try keyedContainer.decode(FormatString<DID>.self, forKey: .repo)
       let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
       var _unknownValues = [Swift.String: AnyCodable]()
       for key in unknownContainer.allKeys {

@@ -127,7 +127,7 @@ import Testing
           await recorder.recordCreate(name)
           return repositoryDID
         },
-        deleteOnKnot: { _, _, _, name, _ in
+        deleteOnKnot: { _, _, _, _, name, _ in
           try await recorder.recordDelete(name)
         }
       )

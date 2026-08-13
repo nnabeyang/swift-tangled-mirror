@@ -17,7 +17,7 @@ public struct RepositoryDefaultBranchService: Sendable {
         try await knotClient.setDefaultBranch(
           knot: $0,
           token: $1,
-          repositoryURI: $2,
+          repositoryDID: $2,
           branch: $3
         )
       }
@@ -98,7 +98,7 @@ public struct RepositoryDefaultBranchService: Sendable {
       try await dependencies.setDefaultBranch(
         plan.repository.knot,
         token,
-        plan.repository.uri,
+        plan.repository.did,
         plan.newBranch
       )
       return result(.changed, plan: plan)

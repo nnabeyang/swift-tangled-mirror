@@ -133,7 +133,7 @@ public struct RepositoryLifecycleService: Sendable {
       repository: { try await repositoryLocator.resolve($0) },
       record: { try await pdsRecordClient.repository(uri: $0) },
       createOnKnot: { try await knotClient.createRepository(knot: $0, token: $1, rkey: $2, name: $3, defaultBranch: $4, source: $5, repositoryDID: $6) },
-      deleteOnKnot: { try await knotClient.deleteRepository(knot: $0, token: $1, ownerDID: $2, name: $3, rkey: $4) }
+      deleteOnKnot: { try await knotClient.deleteRepository(knot: $0, token: $1, repositoryDID: $2, ownerDID: $3, name: $4, rkey: $5) }
     )
   }
 
@@ -216,6 +216,7 @@ public struct RepositoryLifecycleService: Sendable {
           try await dependencies.deleteOnKnot(
             target.knot,
             deleteToken,
+            repositoryDID,
             target.ownerDID,
             target.rkey,
             target.rkey
@@ -314,6 +315,7 @@ public struct RepositoryLifecycleService: Sendable {
       try await dependencies.deleteOnKnot(
         plan.target.knot,
         token,
+        plan.target.repositoryDID!,
         plan.target.ownerDID,
         plan.target.rkey,
         plan.target.rkey
@@ -335,7 +337,7 @@ struct RepositoryLifecycleDependencies: Sendable {
   let repository: @Sendable (String) async throws -> TangledRecord<Repository>
   let record: @Sendable (String) async throws -> TangledRecord<Repository>
   let createOnKnot: @Sendable (String, String, String, String, String, String?, String?) async throws -> String
-  let deleteOnKnot: @Sendable (String, String, String, String, String) async throws -> Void
+  let deleteOnKnot: @Sendable (String, String, String, String, String, String) async throws -> Void
 }
 
 extension RepositoryLifecycleService {
