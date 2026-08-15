@@ -61,14 +61,16 @@ DPoP key material in `$XDG_STATE_HOME/tng/session.json`, or
 `$HOME/.local/state/tng/session.json` when `XDG_STATE_HOME` is not usable.
 Protect that file and exclude it from backups and synchronization.
 
-For a self-hosted VM worker, create a dedicated restricted session at an
-explicit path and expose it through a private host Unix socket:
+For a self-hosted VM worker, an enrolled token-mediating backend (TMB) can keep
+authorization and refresh separate from direct PDS requests. After enrollment
+and browser authorization, expose the named TMB session through a private host
+Unix socket:
 
 ```sh
-TNG_SESSION_FILE=/absolute/private/path/ci-session.json \
-  tng auth login CI_HANDLE --profile ci-reporting
+tng auth agent tmb login CI_HANDLE --instance ci-reporting
+tng auth agent tmb verify --refresh --instance ci-reporting
 tng auth agent service install \
-  --session-file /absolute/private/path/ci-session.json \
+  --tmb-instance ci-reporting \
   --socket /absolute/private/path/ci-agent.sock \
   --profile ci-reporting \
   --instance ci-reporting
@@ -77,16 +79,18 @@ tng auth agent service install \
 The macOS service starts immediately, returns after crashes, and starts again
 when the user logs in after a host restart. Use `service status`, `restart`,
 `stop`, `start`, and `uninstall` with the same instance name. For foreground
-operation or Linux, continue to use `TNG_SESSION_FILE=... tng auth agent serve`.
+operation or Linux, use `tng auth agent serve --tmb-instance ci-reporting`.
+The existing native OAuth workflow remains available with a private
+`TNG_SESSION_FILE` and `--session-file`; do not configure both sources.
 
 The socket's parent directory must be owned by the current user and inaccessible
 to group and other users. A trusted VM host bridge binds each connection to one
 job, repository DID, deadline, and the allowed artifact/comment operations.
 Inside the VM, ordinary authenticated commands select the broker through
 `TNG_AUTH_AGENT=vsock://host:10241`; OAuth tokens and the session file remain
-on the host. Use a separate session file and broker socket for each CI account.
-`TNG_AUTH_AGENT` takes precedence over `TNG_SESSION_FILE`; interactive login
-and logout are disabled while the agent variable is set.
+on the host. Use a separate named authentication source and broker socket for
+each CI account. `TNG_AUTH_AGENT` takes precedence over `TNG_SESSION_FILE`;
+interactive login and logout are disabled while the agent variable is set.
 
 Use built-in help for command details:
 

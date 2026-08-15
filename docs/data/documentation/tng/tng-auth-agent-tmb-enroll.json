@@ -1,7 +1,7 @@
 {
   "abstract" : [
     {
-      "text" : "Serve a restricted OAuth session over a Unix socket",
+      "text" : "Enroll this client as a TMB device",
       "type" : "text"
     }
   ],
@@ -11,19 +11,20 @@
         "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng",
         "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/CommandReference",
         "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth",
-        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent"
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-tmb"
       ]
     ]
   },
   "identifier" : {
     "interfaceLanguage" : "swift",
-    "url" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-serve"
+    "url" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-tmb-enroll"
   },
   "kind" : "article",
   "metadata" : {
     "role" : "article",
     "roleHeading" : "Article",
-    "title" : "tng auth agent serve"
+    "title" : "tng auth agent tmb enroll"
   },
   "primaryContentSections" : [
     {
@@ -36,7 +37,7 @@
         },
         {
           "code" : [
-            "tng auth agent serve --socket <socket> --profile <profile> [--tmb-instance <tmb-instance>] [--max-body-bytes <max-body-bytes>] [--max-job-upload-bytes <max-job-upload-bytes>] [--version] [--help]"
+            "tng auth agent tmb enroll --origin <origin> --name <name> [--instance <instance>] [--json] [--version] [--help]"
           ],
           "syntax" : "console",
           "type" : "codeListing"
@@ -48,123 +49,64 @@
           "type" : "heading"
         },
         {
-          "anchor" : "socket-%3Csocket%3E",
+          "anchor" : "origin-%3Corigin%3E",
           "level" : 3,
-          "text" : "–socket <socket>",
+          "text" : "–origin <origin>",
           "type" : "heading"
         },
         {
           "inlineContent" : [
             {
-              "text" : "Absolute Unix domain socket path",
+              "text" : "TMB HTTPS origin",
               "type" : "text"
             }
           ],
           "type" : "paragraph"
         },
         {
-          "anchor" : "profile-%3Cprofile%3E",
+          "anchor" : "name-%3Cname%3E",
           "level" : 3,
-          "text" : "–profile <profile>",
+          "text" : "–name <name>",
           "type" : "heading"
         },
         {
           "inlineContent" : [
             {
-              "text" : "Required authentication profile",
+              "text" : "Device name shown to the TMB administrator",
               "type" : "text"
             }
           ],
           "type" : "paragraph"
         },
         {
-          "anchor" : "tmb-instance-%3Ctmb-instance%3E",
+          "anchor" : "instance-%3Cinstance%3E",
           "level" : 3,
-          "text" : "–tmb-instance <tmb-instance>",
+          "text" : "–instance <instance>",
           "type" : "heading"
         },
         {
           "inlineContent" : [
             {
-              "text" : "Named TMB instance used instead of TNG_SESSION_FILE",
+              "text" : "Named TMB instance",
               "type" : "text"
             }
           ],
           "type" : "paragraph"
         },
         {
-          "anchor" : "max-body-bytes-%3Cmax-body-bytes%3E",
+          "anchor" : "json",
           "level" : 3,
-          "text" : "–max-body-bytes <max-body-bytes>",
+          "text" : "–json",
           "type" : "heading"
         },
         {
           "inlineContent" : [
             {
-              "text" : "Maximum request or response body size in bytes",
+              "text" : "Output a versioned result as JSON",
               "type" : "text"
             }
           ],
           "type" : "paragraph"
-        },
-        {
-          "items" : [
-            {
-              "content" : [
-                {
-                  "inlineContent" : [
-                    {
-                      "text" : "Default: ",
-                      "type" : "text"
-                    },
-                    {
-                      "code" : "134217728",
-                      "type" : "codeVoice"
-                    }
-                  ],
-                  "type" : "paragraph"
-                }
-              ]
-            }
-          ],
-          "type" : "unorderedList"
-        },
-        {
-          "anchor" : "max-job-upload-bytes-%3Cmax-job-upload-bytes%3E",
-          "level" : 3,
-          "text" : "–max-job-upload-bytes <max-job-upload-bytes>",
-          "type" : "heading"
-        },
-        {
-          "inlineContent" : [
-            {
-              "text" : "Maximum attempted blob upload bytes per job",
-              "type" : "text"
-            }
-          ],
-          "type" : "paragraph"
-        },
-        {
-          "items" : [
-            {
-              "content" : [
-                {
-                  "inlineContent" : [
-                    {
-                      "text" : "Default: ",
-                      "type" : "text"
-                    },
-                    {
-                      "code" : "536870912",
-                      "type" : "codeVoice"
-                    }
-                  ],
-                  "type" : "paragraph"
-                }
-              ]
-            }
-          ],
-          "type" : "unorderedList"
         },
         {
           "anchor" : "version",
@@ -212,7 +154,7 @@
     {
       "anchor" : "Related-Documentation",
       "identifiers" : [
-        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent"
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-tmb"
       ],
       "title" : "Related Documentation"
     },
@@ -220,8 +162,11 @@
       "anchor" : "Subcommands",
       "generated" : true,
       "identifiers" : [
-        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service",
-        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-tmb"
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-tmb-login",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-tmb-verify",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-tmb-logout",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-tmb-status",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-tmb-revoke"
       ],
       "title" : "Subcommands"
     }
@@ -300,20 +245,6 @@
   "type" : "topic",
   "url" : "\/documentation\/tng\/tng-auth-agent"
 },
-"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-agent-service": {
-  "abstract" : [
-    {
-      "text" : "Manage the macOS auth-agent LaunchAgent",
-      "type" : "text"
-    }
-  ],
-  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service",
-  "kind" : "article",
-  "role" : "collectionGroup",
-  "title" : "tng auth agent service",
-  "type" : "topic",
-  "url" : "\/documentation\/tng\/tng-auth-agent-service"
-},
 "doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-agent-tmb": {
   "abstract" : [
     {
@@ -327,6 +258,76 @@
   "title" : "tng auth agent tmb",
   "type" : "topic",
   "url" : "\/documentation\/tng\/tng-auth-agent-tmb"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-agent-tmb-login": {
+  "abstract" : [
+    {
+      "text" : "Sign in through an enrolled TMB device",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-tmb-login",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng auth agent tmb login",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-auth-agent-tmb-login"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-agent-tmb-logout": {
+  "abstract" : [
+    {
+      "text" : "Revoke and clear one TMB OAuth session",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-tmb-logout",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng auth agent tmb logout",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-auth-agent-tmb-logout"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-agent-tmb-revoke": {
+  "abstract" : [
+    {
+      "text" : "Revoke a TMB device and all sessions it owns",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-tmb-revoke",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng auth agent tmb revoke",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-auth-agent-tmb-revoke"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-agent-tmb-status": {
+  "abstract" : [
+    {
+      "text" : "Show locally stored TMB device state",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-tmb-status",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng auth agent tmb status",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-auth-agent-tmb-status"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-agent-tmb-verify": {
+  "abstract" : [
+    {
+      "text" : "Verify direct PDS authentication with the stored TMB session",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-tmb-verify",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng auth agent tmb verify",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-auth-agent-tmb-verify"
 }
 }
 }

@@ -111,7 +111,8 @@
       "anchor" : "Subcommands",
       "identifiers" : [
         "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-serve",
-        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service"
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-service",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-tmb"
       ],
       "title" : "Subcommands"
     }
@@ -203,6 +204,20 @@
   "title" : "tng auth agent service",
   "type" : "topic",
   "url" : "\/documentation\/tng\/tng-auth-agent-service"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-agent-tmb": {
+  "abstract" : [
+    {
+      "text" : "Manage a token-mediating backend device",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent-tmb",
+  "kind" : "article",
+  "role" : "collectionGroup",
+  "title" : "tng auth agent tmb",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-auth-agent-tmb"
 },
 "doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-login": {
   "abstract" : [

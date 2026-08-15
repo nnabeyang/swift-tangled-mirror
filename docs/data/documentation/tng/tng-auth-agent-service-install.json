@@ -37,7 +37,7 @@
         },
         {
           "code" : [
-            "tng auth agent service install --session-file <session-file> --socket <socket> --profile <profile> [--executable <executable>] [--instance <instance>] [--max-body-bytes <max-body-bytes>] [--max-job-upload-bytes <max-job-upload-bytes>] [--json] [--version] [--help]"
+            "tng auth agent service install [--session-file <session-file>] [--tmb-instance <tmb-instance>] --socket <socket> --profile <profile> [--executable <executable>] [--instance <instance>] [--max-body-bytes <max-body-bytes>] [--max-job-upload-bytes <max-job-upload-bytes>] [--json] [--version] [--help]"
           ],
           "syntax" : "console",
           "type" : "codeListing"
@@ -58,6 +58,21 @@
           "inlineContent" : [
             {
               "text" : "Absolute ci-reporting session file path",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "tmb-instance-%3Ctmb-instance%3E",
+          "level" : 3,
+          "text" : "–tmb-instance <tmb-instance>",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Named TMB instance used instead of a native session file",
               "type" : "text"
             }
           ],

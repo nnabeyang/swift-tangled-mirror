@@ -107,6 +107,47 @@
                         "path" : "\/documentation\/tng\/tng-auth-agent-service",
                         "title" : "tng auth agent service",
                         "type" : "symbol"
+                      },
+                      {
+                        "children" : [
+                          {
+                            "title" : "Subcommands",
+                            "type" : "groupMarker"
+                          },
+                          {
+                            "path" : "\/documentation\/tng\/tng-auth-agent-tmb-enroll",
+                            "title" : "tng auth agent tmb enroll",
+                            "type" : "article"
+                          },
+                          {
+                            "path" : "\/documentation\/tng\/tng-auth-agent-tmb-login",
+                            "title" : "tng auth agent tmb login",
+                            "type" : "article"
+                          },
+                          {
+                            "path" : "\/documentation\/tng\/tng-auth-agent-tmb-verify",
+                            "title" : "tng auth agent tmb verify",
+                            "type" : "article"
+                          },
+                          {
+                            "path" : "\/documentation\/tng\/tng-auth-agent-tmb-logout",
+                            "title" : "tng auth agent tmb logout",
+                            "type" : "article"
+                          },
+                          {
+                            "path" : "\/documentation\/tng\/tng-auth-agent-tmb-status",
+                            "title" : "tng auth agent tmb status",
+                            "type" : "article"
+                          },
+                          {
+                            "path" : "\/documentation\/tng\/tng-auth-agent-tmb-revoke",
+                            "title" : "tng auth agent tmb revoke",
+                            "type" : "article"
+                          }
+                        ],
+                        "path" : "\/documentation\/tng\/tng-auth-agent-tmb",
+                        "title" : "tng auth agent tmb",
+                        "type" : "symbol"
                       }
                     ],
                     "path" : "\/documentation\/tng\/tng-auth-agent",

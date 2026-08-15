@@ -250,7 +250,31 @@
       "type" : "text"
     },
     {
-      "text" : "workers without copying its OAuth session into a guest.",
+      "text" : "workers without copying its OAuth tokens into a guest. The agent supports a",
+      "type" : "text"
+    },
+    {
+      "text" : " ",
+      "type" : "text"
+    },
+    {
+      "text" : "native ",
+      "type" : "text"
+    },
+    {
+      "code" : "tng",
+      "type" : "codeVoice"
+    },
+    {
+      "text" : " OAuth session or a session issued through an enrolled token-",
+      "type" : "text"
+    },
+    {
+      "text" : " ",
+      "type" : "text"
+    },
+    {
+      "text" : "mediating backend (TMB). Configure exactly one source for each service.",
       "type" : "text"
     }
   ],

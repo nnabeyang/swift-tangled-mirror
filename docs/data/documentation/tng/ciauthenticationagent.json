@@ -9,7 +9,31 @@
       "type" : "text"
     },
     {
-      "text" : "workers without copying its OAuth session into a guest.",
+      "text" : "workers without copying its OAuth tokens into a guest. The agent supports a",
+      "type" : "text"
+    },
+    {
+      "text" : " ",
+      "type" : "text"
+    },
+    {
+      "text" : "native ",
+      "type" : "text"
+    },
+    {
+      "code" : "tng",
+      "type" : "codeVoice"
+    },
+    {
+      "text" : " OAuth session or a session issued through an enrolled token-",
+      "type" : "text"
+    },
+    {
+      "text" : " ",
+      "type" : "text"
+    },
+    {
+      "text" : "mediating backend (TMB). Configure exactly one source for each service.",
       "type" : "text"
     }
   ],
@@ -34,15 +58,15 @@
     {
       "content" : [
         {
-          "anchor" : "Create-a-restricted-session",
+          "anchor" : "Enroll-and-sign-in-through-a-TMB",
           "level" : 2,
-          "text" : "Create a restricted session",
+          "text" : "Enroll and sign in through a TMB",
           "type" : "heading"
         },
         {
           "inlineContent" : [
             {
-              "text" : "Choose a private absolute path for each CI identity and sign in with the",
+              "text" : "Obtain a one-time enrollment credential from the TMB administrator and transfer",
               "type" : "text"
             },
             {
@@ -50,11 +74,23 @@
               "type" : "text"
             },
             {
-              "code" : "ci-reporting",
+              "text" : "it over a protected channel. On the Mac that runs ",
+              "type" : "text"
+            },
+            {
+              "code" : "tng",
               "type" : "codeVoice"
             },
             {
-              "text" : " profile:",
+              "text" : ", pass the credential on",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "standard input without placing it in a command argument:",
               "type" : "text"
             }
           ],
@@ -62,8 +98,12 @@
         },
         {
           "code" : [
-            "TNG_SESSION_FILE=\"\/Users\/ci\/Library\/Application Support\/tng\/ci-reporting.json\" \\",
-            "  tng auth login CI_HANDLE --profile ci-reporting"
+            "read -rs TMB_ENROLLMENT",
+            "printf '%s' \"$TMB_ENROLLMENT\" | tng auth agent tmb enroll \\",
+            "  --origin https:\/\/tmb.example \\",
+            "  --name ci-worker \\",
+            "  --instance ci-reporting",
+            "unset TMB_ENROLLMENT"
           ],
           "syntax" : "sh",
           "type" : "codeListing"
@@ -71,7 +111,7 @@
         {
           "inlineContent" : [
             {
-              "text" : "The session file and its parent directory must be owned by the current user and",
+              "text" : "Delete every transferred copy after enrollment succeeds. The named instance is",
               "type" : "text"
             },
             {
@@ -79,7 +119,90 @@
               "type" : "text"
             },
             {
-              "text" : "inaccessible to group and other users.",
+              "text" : "stored below ",
+              "type" : "text"
+            },
+            {
+              "code" : "~\/Library\/Application Support\/tng\/tmb\/ci-reporting",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : "; its directory",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "and files must remain accessible only to their owner.",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Authorize the Tangled account in a browser, then verify a direct authenticated",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "request to its PDS:",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "code" : [
+            "tng auth agent tmb login CI_HANDLE --instance ci-reporting",
+            "tng auth agent tmb status --instance ci-reporting",
+            "tng auth agent tmb verify --refresh --instance ci-reporting"
+          ],
+          "syntax" : "sh",
+          "type" : "codeListing"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "The TMB participates in authorization and refresh. Normal XRPC requests go",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "directly from ",
+              "type" : "text"
+            },
+            {
+              "code" : "tng",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : " to the account’s PDS with DPoP. The stored access token,",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "refresh proof, and DPoP private key never belong in a VM image, job environment,",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "log, or LaunchAgent property list.",
               "type" : "text"
             }
           ],
@@ -94,7 +217,15 @@
         {
           "inlineContent" : [
             {
-              "text" : "Install a named per-user LaunchAgent with explicit session and socket paths:",
+              "text" : "Install a named per-user LaunchAgent that opens a private Unix socket and uses",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "the same TMB instance:",
               "type" : "text"
             }
           ],
@@ -103,7 +234,7 @@
         {
           "code" : [
             "tng auth agent service install \\",
-            "  --session-file \"\/Users\/ci\/Library\/Application Support\/tng\/ci-reporting.json\" \\",
+            "  --tmb-instance ci-reporting \\",
             "  --socket \"\/Users\/ci\/Library\/Application Support\/tng\/ci-agent.sock\" \\",
             "  --profile ci-reporting \\",
             "  --instance ci-reporting"
@@ -130,7 +261,15 @@
               "type" : "text"
             },
             {
-              "text" : "login before the LaunchAgent can run. The property list contains the session",
+              "text" : "login before a per-user LaunchAgent can run. Pass ",
+              "type" : "text"
+            },
+            {
+              "code" : "--executable",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : " during",
               "type" : "text"
             },
             {
@@ -138,7 +277,23 @@
               "type" : "text"
             },
             {
-              "text" : "file path but never its OAuth tokens, refresh token, or DPoP key.",
+              "text" : "installation when ",
+              "type" : "text"
+            },
+            {
+              "code" : "tng",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : " is not installed at a stable path, and reinstall after",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "moving the executable.",
               "type" : "text"
             }
           ],
@@ -147,23 +302,7 @@
         {
           "inlineContent" : [
             {
-              "text" : "Pass ",
-              "type" : "text"
-            },
-            {
-              "code" : "--executable",
-              "type" : "codeVoice"
-            },
-            {
-              "text" : " during installation when ",
-              "type" : "text"
-            },
-            {
-              "code" : "tng",
-              "type" : "codeVoice"
-            },
-            {
-              "text" : " is not installed at a stable",
+              "text" : "For a native OAuth session instead, sign in at a private absolute path and use",
               "type" : "text"
             },
             {
@@ -171,7 +310,65 @@
               "type" : "text"
             },
             {
-              "text" : "path. Reinstall the instance after moving the executable.",
+              "code" : "--session-file",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : " in place of ",
+              "type" : "text"
+            },
+            {
+              "code" : "--tmb-instance",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : ":",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "code" : [
+            "TNG_SESSION_FILE=\"\/Users\/ci\/Library\/Application Support\/tng\/ci-reporting.json\" \\",
+            "  tng auth login CI_HANDLE --profile ci-reporting",
+            "tng auth agent service install \\",
+            "  --session-file \"\/Users\/ci\/Library\/Application Support\/tng\/ci-reporting.json\" \\",
+            "  --socket \"\/Users\/ci\/Library\/Application Support\/tng\/ci-agent.sock\" \\",
+            "  --profile ci-reporting \\",
+            "  --instance ci-reporting"
+          ],
+          "syntax" : "sh",
+          "type" : "codeListing"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Do not combine ",
+              "type" : "text"
+            },
+            {
+              "code" : "--session-file",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : " and ",
+              "type" : "text"
+            },
+            {
+              "code" : "--tmb-instance",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : ". A TMB instance must match",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "the service instance when both names are written explicitly.",
               "type" : "text"
             }
           ],
@@ -214,7 +411,7 @@
               "type" : "codeVoice"
             },
             {
-              "text" : " for structured state. Status distinguishes an uninstalled or",
+              "text" : " for structured state. Status reports whether the authentication",
               "type" : "text"
             },
             {
@@ -222,7 +419,23 @@
               "type" : "text"
             },
             {
-              "text" : "stopped service, an invalid or expired session, an unavailable socket, and an",
+              "text" : "source is ",
+              "type" : "text"
+            },
+            {
+              "code" : "native",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : " or ",
+              "type" : "text"
+            },
+            {
+              "code" : "tmb",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : " and distinguishes an uninstalled or stopped service,",
               "type" : "text"
             },
             {
@@ -230,7 +443,7 @@
               "type" : "text"
             },
             {
-              "text" : "incompatible protocol. It includes account metadata only after a successful",
+              "text" : "an invalid or expired session, an unavailable socket, and an incompatible",
               "type" : "text"
             },
             {
@@ -238,14 +451,13 @@
               "type" : "text"
             },
             {
-              "text" : "private-socket probe.",
+              "text" : "protocol. Account metadata appears only after a successful private-socket probe.",
               "type" : "text"
-            }
-          ],
-          "type" : "paragraph"
-        },
-        {
-          "inlineContent" : [
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
             {
               "text" : "Standard output and error are stored in",
               "type" : "text"
@@ -275,7 +487,7 @@
               "type" : "text"
             },
             {
-              "text" : "Uninstalling preserves these logs and the session file.",
+              "text" : "Uninstalling preserves these logs and the authentication state.",
               "type" : "text"
             }
           ],
@@ -284,7 +496,7 @@
         {
           "inlineContent" : [
             {
-              "text" : "Run one named instance with a distinct session file and socket for each CI",
+              "text" : "If TMB verification fails, stop the service before replacing local state. Check",
               "type" : "text"
             },
             {
@@ -292,7 +504,72 @@
               "type" : "text"
             },
             {
-              "text" : "identity. The trusted VM host bridge selects the correct socket and exposes only",
+              "text" : "the public TMB health endpoint and the named instance with ",
+              "type" : "text"
+            },
+            {
+              "code" : "tmb status",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : "; then",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "repeat ",
+              "type" : "text"
+            },
+            {
+              "code" : "tmb login",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : " if only the OAuth session is absent or revoked. Use ",
+              "type" : "text"
+            },
+            {
+              "code" : "tmb logout",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : " to revoke one session and keep the device enrollment. Use ",
+              "type" : "text"
+            },
+            {
+              "code" : "tmb revoke --yes",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : " only when retiring or replacing the device, because it revokes every",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "session owned by that device and removes both device and session state.",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Run one named instance with a distinct authentication source and socket for each",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "CI identity. The trusted VM host bridge selects that socket and exposes only",
               "type" : "text"
             },
             {
@@ -304,7 +581,23 @@
               "type" : "codeVoice"
             },
             {
-              "text" : " inside its guest.",
+              "text" : " inside its guest. The agent binds each",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "connection to one job, repository DID, deadline, byte quota, and operation",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "allowlist. The guest never receives the host’s OAuth or TMB state.",
               "type" : "text"
             }
           ],
@@ -313,7 +606,7 @@
         {
           "inlineContent" : [
             {
-              "text" : "On Linux or when debugging interactively, run the foreground ",
+              "text" : "On Linux or when debugging interactively, run ",
               "type" : "text"
             },
             {
@@ -321,7 +614,35 @@
               "type" : "codeVoice"
             },
             {
-              "text" : " command instead of the macOS service commands.",
+              "text" : " with",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "code" : "--tmb-instance ci-reporting",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : ", or set ",
+              "type" : "text"
+            },
+            {
+              "code" : "TNG_SESSION_FILE",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : " for a native session,",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "instead of using the macOS service commands.",
               "type" : "text"
             }
           ],
