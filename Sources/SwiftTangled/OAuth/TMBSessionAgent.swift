@@ -95,6 +95,7 @@ public actor TMBSessionAgent: XRPCCallable {
   public func snapshot() -> TMBSession { session }
 
   private func usableSession(forceRefresh: Bool) async throws -> TMBSession {
+    try synchronizeFromStore()
     if !forceRefresh, session.expiresAt.timeIntervalSince(now()) > 30 { return session }
     if let refreshTask { return try await refreshTask.value }
     let current = session
@@ -102,37 +103,43 @@ public actor TMBSessionAgent: XRPCCallable {
     let store = self.store
     let now = self.now
     let task = Task<TMBSession, Error> {
-      var proof = current.refreshProof
-      for _ in 0 ..< 3 {
-        let output = try await tmb.refresh(
-          try .make(
-            dpopProof: current.proofKey.dpopProof(method: "POST", proofRequest: proof),
-            sessionId: current.sessionID
-          ))
-        if output.status == .proofrequired, let next = output.proof {
-          proof = next
-          continue
+      do {
+        var proof = current.refreshProof
+        for _ in 0 ..< 3 {
+          let output = try await tmb.refresh(
+            try .make(
+              dpopProof: current.proofKey.dpopProof(method: "POST", proofRequest: proof),
+              sessionId: current.sessionID
+            ))
+          if output.status == .proofrequired, let next = output.proof {
+            proof = next
+            continue
+          }
+          guard output.status == .complete, let result = output.session,
+            let nextProof = output.proof, result.expiresIn > 0
+          else { throw TMBSessionAgentError.sessionRevoked }
+          let updated = try TMBSession(
+            instance: current.instance,
+            origin: current.origin,
+            accountDID: current.accountDID,
+            handle: current.handle,
+            accessToken: result.accessToken,
+            tokenType: result.tokenType,
+            expiresAt: now().addingTimeInterval(TimeInterval(result.expiresIn)),
+            sessionID: result.sessionId,
+            proofKey: current.proofKey,
+            refreshProof: nextProof,
+            pdsNonce: current.pdsNonce
+          )
+          if try store.replace(updated, ifCurrentRevision: current.revision) { return updated }
+          guard let latest = try store.load() else { throw TMBSessionAgentError.sessionMissing }
+          return latest
         }
-        guard output.status == .complete, let result = output.session,
-          let nextProof = output.proof, result.expiresIn > 0
-        else { throw TMBSessionAgentError.sessionRevoked }
-        let updated = try TMBSession(
-          instance: current.instance,
-          origin: current.origin,
-          accountDID: current.accountDID,
-          handle: current.handle,
-          accessToken: result.accessToken,
-          tokenType: result.tokenType,
-          expiresAt: now().addingTimeInterval(TimeInterval(result.expiresIn)),
-          sessionID: result.sessionId,
-          proofKey: current.proofKey,
-          refreshProof: nextProof,
-          pdsNonce: current.pdsNonce
-        )
-        try store.write(updated)
-        return updated
+        throw TMBSessionAgentError.sessionRevoked
+      } catch {
+        if let latest = try store.load(), latest.revision != current.revision { return latest }
+        throw error
       }
-      throw TMBSessionAgentError.sessionRevoked
     }
     refreshTask = task
     do {
@@ -181,9 +188,20 @@ public actor TMBSessionAgent: XRPCCallable {
       let responseNonce = response.value(forHTTPHeaderField: "DPoP-Nonce")
         .flatMap { $0.isEmpty ? nil : $0 }
       if let responseNonce, responseNonce != active.pdsNonce {
-        session.pdsNonce = responseNonce
-        try store.write(session)
-        active = session
+        let updated = try TMBSession(
+          instance: active.instance, origin: active.origin,
+          accountDID: active.accountDID, handle: active.handle,
+          accessToken: active.accessToken, tokenType: active.tokenType,
+          expiresAt: active.expiresAt, sessionID: active.sessionID,
+          proofKey: active.proofKey, refreshProof: active.refreshProof,
+          pdsNonce: responseNonce)
+        if try store.replace(updated, ifCurrentRevision: active.revision) {
+          session = updated
+          active = updated
+        } else if let latest = try store.load() {
+          session = latest
+          active = latest
+        }
         if nonceAttempt == 0, response.statusCode == 400 || response.statusCode == 401 {
           continue
         }
@@ -191,6 +209,11 @@ public actor TMBSessionAgent: XRPCCallable {
       return (data, response)
     }
     throw TMBSessionAgentError.invalidResponse
+  }
+
+  private func synchronizeFromStore() throws {
+    guard let latest = try store.load() else { return }
+    if latest.revision != session.revision { session = latest }
   }
 
   private func endpoint(for components: XRPCRequestComponents) async throws -> URL {

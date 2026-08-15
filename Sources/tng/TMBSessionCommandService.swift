@@ -28,9 +28,9 @@ struct TMBLogoutResult: Codable, Equatable, Sendable {
   let instance: String
   let accountDID: String
 
-  init(instance: String, accountDID: String) {
+  init(instance: String, accountDID: String, localOnly: Bool = false) {
     schemaVersion = 1
-    action = "signed-out"
+    action = localOnly ? "local-session-cleared" : "signed-out"
     self.instance = instance
     self.accountDID = accountDID
   }
@@ -62,24 +62,31 @@ struct TMBSessionCommandService: Sendable {
     )
   }
 
-  func logout(instance: String, json: Bool) async throws -> CLICommandOutput {
+  func logout(instance: String, localOnly: Bool = false, json: Bool) async throws
+    -> CLICommandOutput
+  {
     let sessionStore = FileTMBSessionStore(
       fileURL: try CLITMBDeviceStore.sessionFileURL(instance: instance))
     guard let session = try sessionStore.load() else { throw TMBSessionAgentError.sessionMissing }
-    let deviceStore = FileTMBDeviceCredentialStore(
-      fileURL: try CLITMBDeviceStore.fileURL(instance: instance))
-    guard let registration = try deviceStore.load() else {
-      throw TMBClientError.missingDeviceCredentials
-    }
-    let client = CLITMBSessionContext.makeClient(registration: registration, store: deviceStore)
-    guard try await client.revoke(sessionID: session.sessionID) else {
-      throw TMBSessionAgentError.sessionRevoked
+    if !localOnly {
+      let deviceStore = FileTMBDeviceCredentialStore(
+        fileURL: try CLITMBDeviceStore.fileURL(instance: instance))
+      guard let registration = try deviceStore.load() else {
+        throw TMBClientError.missingDeviceCredentials
+      }
+      let client = CLITMBSessionContext.makeClient(registration: registration, store: deviceStore)
+      guard try await client.revoke(sessionID: session.sessionID) else {
+        throw TMBSessionAgentError.sessionRevoked
+      }
     }
     try sessionStore.clear()
-    let result = TMBLogoutResult(instance: instance, accountDID: session.accountDID)
+    let result = TMBLogoutResult(
+      instance: instance, accountDID: session.accountDID, localOnly: localOnly)
     if json { return CLICommandOutput(stdout: try formatter.json(result)) }
     return CLICommandOutput(
-      stdout: "Signed out @\(session.handle) from TMB instance '\(instance)'.\n")
+      stdout: localOnly
+        ? "Cleared the local OAuth session for TMB instance '\(instance)'.\n"
+        : "Signed out @\(session.handle) from TMB instance '\(instance)'.\n")
   }
 
 }

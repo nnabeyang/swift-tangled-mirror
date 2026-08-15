@@ -50,16 +50,23 @@ struct AuthAgentTMBLogoutCommand: AsyncParsableCommand {
 
   @OptionGroup var options: TMBInstanceOptions
 
+  @Flag(help: "Clear only the local session when remote revocation cannot complete")
+  var localOnly = false
+
+  @Flag(help: "Confirm local-only session removal")
+  var yes = false
+
   mutating func validate() throws {
     guard TMBDeviceRegistration.validInstance(options.resolvedInstance) else {
       throw ValidationError(TMBDeviceCredentialStoreError.invalidInstance.localizedDescription)
     }
+    if localOnly, !yes { throw ValidationError("--local-only requires --yes") }
   }
 
   func run() async throws {
     try await runCLICommand(jsonErrors: options.json) {
       try await TMBSessionCommandService().logout(
-        instance: options.resolvedInstance, json: options.json)
+        instance: options.resolvedInstance, localOnly: localOnly, json: options.json)
     }
   }
 }

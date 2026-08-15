@@ -32,13 +32,14 @@ import Testing
 
   @Test func nonceChallengeRetriesPDSAndPersistsNonceWithoutRefreshing() async throws {
     let control = RecordingTMBSessionControl()
-    let store = MemoryTMBSessionStore()
+    let initial = try tmbSession(expiresAt: Date(timeIntervalSince1970: 2_000))
+    let store = MemoryTMBSessionStore(session: initial)
     let transport = RecordingTMBPDSTransport(responses: [
       .init(status: 401, body: #"{"error":"use_dpop_nonce"}"#, nonce: "pds-nonce"),
       .init(status: 200, body: #"{"did":"did:plc:alice"}"#),
     ])
     let agent = TMBSessionAgent(
-      session: try tmbSession(expiresAt: Date(timeIntervalSince1970: 2_000)),
+      session: initial,
       store: store, tmb: control, resolver: TMBSessionResolver(), transport: transport,
       now: { Date(timeIntervalSince1970: 1_000) })
 
@@ -50,13 +51,14 @@ import Testing
 
   @Test func concurrentExpiredRequestsShareOneRefresh() async throws {
     let control = RecordingTMBSessionControl(delay: .milliseconds(20))
-    let store = MemoryTMBSessionStore()
+    let initial = try tmbSession(expiresAt: Date(timeIntervalSince1970: 900))
+    let store = MemoryTMBSessionStore(session: initial)
     let transport = RecordingTMBPDSTransport(
       responses: (0 ..< 20).map { _ in
         .init(status: 200, body: #"{"did":"did:plc:alice"}"#)
       })
     let agent = TMBSessionAgent(
-      session: try tmbSession(expiresAt: Date(timeIntervalSince1970: 900)),
+      session: initial,
       store: store, tmb: control, resolver: TMBSessionResolver(), transport: transport,
       now: { Date(timeIntervalSince1970: 1_000) })
 
@@ -70,6 +72,32 @@ import Testing
     #expect(await control.refreshCount == 1)
     #expect(store.session?.accessToken == "access-two")
     #expect(await transport.requests.count == 20)
+  }
+
+  @Test func requestReloadsASessionRotatedByAnotherProcess() async throws {
+    let initial = try tmbSession(expiresAt: Date(timeIntervalSince1970: 2_000))
+    let store = MemoryTMBSessionStore()
+    try store.write(initial)
+    let rotated = try TMBSession(
+      instance: initial.instance, origin: initial.origin,
+      accountDID: initial.accountDID, handle: initial.handle,
+      accessToken: "access-rotated", tokenType: initial.tokenType,
+      expiresAt: initial.expiresAt, sessionID: initial.sessionID,
+      proofKey: initial.proofKey, refreshProof: initial.refreshProof)
+    let transport = RecordingTMBPDSTransport(responses: [
+      .init(status: 200, body: #"{"did":"did:plc:alice"}"#)
+    ])
+    let agent = TMBSessionAgent(
+      session: initial, store: store, tmb: RecordingTMBSessionControl(),
+      resolver: TMBSessionResolver(), transport: transport,
+      now: { Date(timeIntervalSince1970: 1_000) })
+
+    try store.write(rotated)
+    _ = try await agent.response(tmbGetSessionComponents())
+
+    #expect(
+      try #require(await transport.requests.first)
+        .value(forHTTPHeaderField: "Authorization") == "DPoP access-rotated")
   }
 }
 
@@ -92,6 +120,7 @@ private func tmbGetSessionComponents() -> XRPCRequestComponents {
 private final class MemoryTMBSessionStore: TMBSessionStoring, @unchecked Sendable {
   private let lock = NSLock()
   private var value: TMBSession?
+  init(session: TMBSession? = nil) { value = session }
   var session: TMBSession? { lock.withLock { value } }
   func load() throws -> TMBSession? { session }
   func write(_ session: TMBSession) throws { lock.withLock { value = session } }

@@ -37,7 +37,7 @@
         },
         {
           "code" : [
-            "tng auth agent tmb logout [--instance <instance>] [--json] [--version] [--help]"
+            "tng auth agent tmb logout [--instance <instance>] [--json] [--local-only] [--yes] [--version] [--help]"
           ],
           "syntax" : "console",
           "type" : "codeListing"
@@ -73,6 +73,36 @@
           "inlineContent" : [
             {
               "text" : "Output a versioned result as JSON",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "local-only",
+          "level" : 3,
+          "text" : "–local-only",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Clear only the local session when remote revocation cannot complete",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "yes",
+          "level" : 3,
+          "text" : "–yes",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Confirm local-only session removal",
               "type" : "text"
             }
           ],

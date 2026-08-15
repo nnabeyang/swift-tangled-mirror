@@ -51,6 +51,19 @@ import Testing
       at: hardLink.fileURL, to: hardLink.rootURL.appendingPathComponent("linked-session"))
     #expect(throws: TMBSessionStoreError.self) { _ = try hardLink.store.load() }
   }
+
+  @Test func conditionalReplacementRejectsAStaleProcessSnapshot() throws {
+    let fixture = try TMBSessionFixture()
+    defer { fixture.remove() }
+    let first = try fixture.session(token: "token-one")
+    let second = try fixture.session(token: "token-two")
+    let stale = try fixture.session(token: "stale-token")
+    try fixture.store.write(first)
+
+    #expect(try fixture.store.replace(second, ifCurrentRevision: first.revision))
+    #expect(try !fixture.store.replace(stale, ifCurrentRevision: first.revision))
+    #expect(try fixture.store.load()?.accessToken == "token-two")
+  }
 }
 
 private struct TMBSessionFixture {

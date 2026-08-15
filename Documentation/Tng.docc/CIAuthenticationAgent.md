@@ -100,6 +100,20 @@ logout` to revoke one session and keep the device enrollment. Use `tmb revoke
 --yes` only when retiring or replacing the device, because it revokes every
 session owned by that device and removes both device and session state.
 
+If remote logout cannot complete because the authorization server can no
+longer be discovered, stop the auth-agent first and explicitly discard only
+the unusable local session:
+
+```sh
+tng auth agent tmb logout --instance ci-reporting --local-only --yes
+```
+
+This recovery operation does not revoke the remote session. Use it only for a
+session that can no longer authenticate, then run `tmb login` again. A running
+auth-agent and an interactive command may share one instance: each request
+reloads externally rotated state, and conditional replacement prevents a stale
+process from overwriting a newer refresh or PDS nonce.
+
 Run one named instance with a distinct authentication source and socket for each
 CI identity. The trusted VM host bridge selects that socket and exposes only
 `TNG_AUTH_AGENT=vsock://host:10241` inside its guest. The agent binds each

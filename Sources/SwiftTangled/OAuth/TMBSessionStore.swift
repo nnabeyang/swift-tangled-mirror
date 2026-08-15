@@ -37,6 +37,7 @@ public struct TMBSession: Sendable {
   public let proofKey: TMBProofKey
   public var refreshProof: Org.Nnabeyang.TmbDefs_ProofRequest
   public var pdsNonce: String?
+  let revision: String
 
   public init(
     instance: String,
@@ -49,7 +50,8 @@ public struct TMBSession: Sendable {
     sessionID: String,
     proofKey: TMBProofKey,
     refreshProof: Org.Nnabeyang.TmbDefs_ProofRequest,
-    pdsNonce: String? = nil
+    pdsNonce: String? = nil,
+    revision: String = UUID().uuidString
   ) throws {
     guard TMBDeviceRegistration.validInstance(instance), accountDID.hasPrefix("did:"),
       !handle.isEmpty, !accessToken.isEmpty, tokenType.lowercased() == "dpop",
@@ -66,13 +68,23 @@ public struct TMBSession: Sendable {
     self.proofKey = proofKey
     self.refreshProof = refreshProof
     self.pdsNonce = pdsNonce
+    self.revision = revision
   }
 }
 
 public protocol TMBSessionStoring: Sendable {
   func load() throws -> TMBSession?
   func write(_ session: TMBSession) throws
+  func replace(_ session: TMBSession, ifCurrentRevision revision: String) throws -> Bool
   func clear() throws
+}
+
+extension TMBSessionStoring {
+  public func replace(_ session: TMBSession, ifCurrentRevision revision: String) throws -> Bool {
+    guard try load()?.revision == revision else { return false }
+    try write(session)
+    return true
+  }
 }
 
 public final class FileTMBSessionStore: TMBSessionStoring, @unchecked Sendable {
@@ -106,7 +118,8 @@ public final class FileTMBSessionStore: TMBSessionStoring, @unchecked Sendable {
         sessionID: stored.sessionID,
         proofKey: TMBProofKey(rawRepresentation: stored.proofKey),
         refreshProof: stored.refreshProof,
-        pdsNonce: stored.pdsNonce
+        pdsNonce: stored.pdsNonce,
+        revision: stored.revision ?? stored.accessToken
       )
     } catch let error as TMBSessionStoreError {
       throw error
@@ -129,7 +142,8 @@ public final class FileTMBSessionStore: TMBSessionStoring, @unchecked Sendable {
       sessionID: session.sessionID,
       proofKey: session.proofKey.rawRepresentation,
       refreshProof: session.refreshProof,
-      pdsNonce: session.pdsNonce
+      pdsNonce: session.pdsNonce,
+      revision: session.revision
     )
     let encoder = JSONEncoder()
     encoder.dateEncodingStrategy = .iso8601
@@ -167,6 +181,24 @@ public final class FileTMBSessionStore: TMBSessionStoring, @unchecked Sendable {
     guard directoryDescriptor >= 0 else { throw posixFailure("could not open session directory") }
     defer { _ = close(directoryDescriptor) }
     guard fsync(directoryDescriptor) == 0 else { throw posixFailure("could not flush session directory") }
+  }
+
+  public func replace(_ session: TMBSession, ifCurrentRevision revision: String) throws -> Bool {
+    let lockURL = fileURL.deletingLastPathComponent()
+      .appendingPathComponent(".\(fileURL.lastPathComponent).lock")
+    try prepareDirectory(lockURL.deletingLastPathComponent())
+    let descriptor = open(lockURL.path, O_RDWR | O_CREAT | O_NOFOLLOW | O_CLOEXEC, mode_t(0o600))
+    guard descriptor >= 0 else { throw posixFailure("could not open session lock") }
+    defer {
+      _ = flock(descriptor, LOCK_UN)
+      _ = close(descriptor)
+    }
+    guard fchmod(descriptor, mode_t(0o600)) == 0, flock(descriptor, LOCK_EX) == 0 else {
+      throw posixFailure("could not lock session state")
+    }
+    guard try load()?.revision == revision else { return false }
+    try write(session)
+    return true
   }
 
   public func clear() throws {
@@ -263,11 +295,12 @@ private struct StoredTMBSession: Codable {
   let proofKey: Data
   let refreshProof: Org.Nnabeyang.TmbDefs_ProofRequest
   let pdsNonce: String?
+  let revision: String?
 
   init(
     schemaVersion: Int, instance: String, origin: String, accountDID: String, handle: String,
     accessToken: String, tokenType: String, expiresAt: Date, sessionID: String, proofKey: Data,
-    refreshProof: Org.Nnabeyang.TmbDefs_ProofRequest, pdsNonce: String?
+    refreshProof: Org.Nnabeyang.TmbDefs_ProofRequest, pdsNonce: String?, revision: String?
   ) {
     self.schemaVersion = schemaVersion
     self.instance = instance
@@ -281,6 +314,7 @@ private struct StoredTMBSession: Codable {
     self.proofKey = proofKey
     self.refreshProof = refreshProof
     self.pdsNonce = pdsNonce
+    self.revision = revision
   }
 
   init(from decoder: any Decoder) throws {
@@ -301,6 +335,7 @@ private struct StoredTMBSession: Codable {
     proofKey = try container.decode(Data.self, forKey: .proofKey)
     refreshProof = try container.decode(Org.Nnabeyang.TmbDefs_ProofRequest.self, forKey: .refreshProof)
     pdsNonce = try container.decodeIfPresent(String.self, forKey: .pdsNonce)
+    revision = try container.decodeIfPresent(String.self, forKey: .revision)
   }
 }
 

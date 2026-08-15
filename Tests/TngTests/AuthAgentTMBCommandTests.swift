@@ -30,6 +30,11 @@ import Testing
   #expect(verify.refresh)
   let logout = try AuthAgentTMBLogoutCommand.parse(["--instance", "reporting", "--json"])
   #expect(logout.options.json)
+  var localLogout = try AuthAgentTMBLogoutCommand.parse([
+    "--instance", "reporting", "--local-only", "--yes",
+  ])
+  try localLogout.validate()
+  #expect(localLogout.localOnly)
 
   let status = try AuthAgentTMBStatusCommand.parse([])
   #expect(status.options.resolvedInstance == "default")
@@ -47,6 +52,10 @@ import Testing
   }
   #expect(throws: (any Error).self) {
     var command = try AuthAgentTMBStatusCommand.parse(["--instance", "CI_report"])
+    try command.validate()
+  }
+  #expect(throws: (any Error).self) {
+    var command = try AuthAgentTMBLogoutCommand.parse(["--local-only"])
     try command.validate()
   }
 }

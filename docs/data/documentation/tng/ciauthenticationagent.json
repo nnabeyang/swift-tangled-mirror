@@ -561,6 +561,87 @@
         {
           "inlineContent" : [
             {
+              "text" : "If remote logout cannot complete because the authorization server can no",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "longer be discovered, stop the auth-agent first and explicitly discard only",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "the unusable local session:",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "code" : [
+            "tng auth agent tmb logout --instance ci-reporting --local-only --yes"
+          ],
+          "syntax" : "sh",
+          "type" : "codeListing"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "This recovery operation does not revoke the remote session. Use it only for a",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "session that can no longer authenticate, then run ",
+              "type" : "text"
+            },
+            {
+              "code" : "tmb login",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : " again. A running",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "auth-agent and an interactive command may share one instance: each request",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "reloads externally rotated state, and conditional replacement prevents a stale",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "process from overwriting a newer refresh or PDS nonce.",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "inlineContent" : [
+            {
               "text" : "Run one named instance with a distinct authentication source and socket for each",
               "type" : "text"
             },
