@@ -8,7 +8,8 @@ import SwiftTangled
 #endif
 
 struct AuthAgentServiceConfiguration: Equatable, Sendable {
-  var sessionFile: String
+  var sessionFile: String?
+  var tmbInstance: String?
   var socketPath: String
   var profile: AuthenticationProfile
   var maximumBodyBytes: UInt64
@@ -45,6 +46,7 @@ struct AuthAgentServiceStatus: Codable, Equatable, Sendable {
   var handle: String?
   var profile: String?
   var protocolVersion: Int?
+  var authenticationSource: String? = nil
 }
 
 enum AuthAgentLaunchAgentServiceError: Error, LocalizedError, Equatable, Sendable {
@@ -218,14 +220,16 @@ struct AuthAgentLaunchAgentService: Sendable {
         accountDID: nil, handle: nil, profile: nil, protocolVersion: nil
       )
     }
-    let sessionState = Self.sessionState(path: parsedConfiguration.sessionFile)
+    let sessionState = Self.sessionState(configuration: parsedConfiguration, homeDirectory: homeDirectory)
+    let authenticationSource = parsedConfiguration.tmbInstance == nil ? "native" : "tmb"
     let launchState = try? launchctl(["print", domain + "/" + identity.label])
     guard let launchState, launchState.status == 0 else {
       return AuthAgentServiceStatus(
         label: identity.label, instance: instance, state: .stopped, pid: nil,
         socketPath: parsedConfiguration.socketPath, sessionState: sessionState,
         socketState: .unavailable, accountDID: nil, handle: nil,
-        profile: parsedConfiguration.profile.rawValue, protocolVersion: nil
+        profile: parsedConfiguration.profile.rawValue, protocolVersion: nil,
+        authenticationSource: authenticationSource
       )
     }
     let pid = Self.value(named: "pid", in: launchState.stdout).flatMap(Int.init)
@@ -235,21 +239,24 @@ struct AuthAgentLaunchAgentService: Sendable {
         label: identity.label, instance: instance, state: .running, pid: pid,
         socketPath: parsedConfiguration.socketPath, sessionState: sessionState,
         socketState: .available, accountDID: value.accountDID, handle: value.handle,
-        profile: value.profile.rawValue, protocolVersion: value.protocolVersion
+        profile: value.profile.rawValue, protocolVersion: value.protocolVersion,
+        authenticationSource: authenticationSource
       )
     } catch AuthAgentError.incompatibleVersion {
       return AuthAgentServiceStatus(
         label: identity.label, instance: instance, state: .degraded, pid: pid,
         socketPath: parsedConfiguration.socketPath, sessionState: sessionState,
         socketState: .incompatible, accountDID: nil, handle: nil,
-        profile: parsedConfiguration.profile.rawValue, protocolVersion: nil
+        profile: parsedConfiguration.profile.rawValue, protocolVersion: nil,
+        authenticationSource: authenticationSource
       )
     } catch {
       return AuthAgentServiceStatus(
         label: identity.label, instance: instance, state: .degraded, pid: pid,
         socketPath: parsedConfiguration.socketPath, sessionState: sessionState,
         socketState: .unavailable, accountDID: nil, handle: nil,
-        profile: parsedConfiguration.profile.rawValue, protocolVersion: nil
+        profile: parsedConfiguration.profile.rawValue, protocolVersion: nil,
+        authenticationSource: authenticationSource
       )
     }
   }
@@ -259,16 +266,19 @@ struct AuthAgentLaunchAgentService: Sendable {
     configuration: AuthAgentServiceConfiguration,
     identity: Identity
   ) -> [String: Any] {
-    [
+    var arguments = [
+      executable, "auth", "agent", "serve",
+      "--profile", configuration.profile.rawValue,
+      "--socket", configuration.socketPath,
+      "--max-body-bytes", String(configuration.maximumBodyBytes),
+      "--max-job-upload-bytes", String(configuration.maximumJobUploadBytes),
+    ]
+    if let tmbInstance = configuration.tmbInstance {
+      arguments.append(contentsOf: ["--tmb-instance", tmbInstance])
+    }
+    var propertyList: [String: Any] = [
       "Label": identity.label,
-      "ProgramArguments": [
-        executable, "auth", "agent", "serve",
-        "--profile", configuration.profile.rawValue,
-        "--socket", configuration.socketPath,
-        "--max-body-bytes", String(configuration.maximumBodyBytes),
-        "--max-job-upload-bytes", String(configuration.maximumJobUploadBytes),
-      ],
-      "EnvironmentVariables": ["TNG_SESSION_FILE": configuration.sessionFile],
+      "ProgramArguments": arguments,
       "RunAtLoad": true,
       "KeepAlive": ["SuccessfulExit": false],
       "ThrottleInterval": 10,
@@ -278,6 +288,10 @@ struct AuthAgentLaunchAgentService: Sendable {
       "StandardOutPath": identity.logDirectory + "/stdout.log",
       "StandardErrorPath": identity.logDirectory + "/stderr.log",
     ]
+    if let sessionFile = configuration.sessionFile {
+      propertyList["EnvironmentVariables"] = ["TNG_SESSION_FILE": sessionFile]
+    }
+    return propertyList
   }
 
   static func label(instance: String?) throws -> String {
@@ -319,18 +333,40 @@ struct AuthAgentLaunchAgentService: Sendable {
   }
 
   private func validate(_ configuration: AuthAgentServiceConfiguration) throws {
-    guard configuration.sessionFile.hasPrefix("/"), configuration.socketPath.hasPrefix("/") else {
+    guard configuration.socketPath.hasPrefix("/") else {
       throw AuthAgentLaunchAgentServiceError.invalidConfiguration("service paths must be absolute")
     }
     guard configuration.profile == .ciReporting else {
       throw AuthAgentLaunchAgentServiceError.invalidConfiguration("service profile must be ci-reporting")
     }
-    let store = FileSessionStore(fileURL: URL(fileURLWithPath: configuration.sessionFile))
-    guard let session = try store.load() else {
-      throw AuthAgentLaunchAgentServiceError.invalidConfiguration("ci-reporting session file is missing")
+    guard (configuration.sessionFile == nil) != (configuration.tmbInstance == nil) else {
+      throw AuthAgentLaunchAgentServiceError.invalidConfiguration(
+        "service must configure exactly one authentication source")
     }
-    guard session.profile == .ciReporting else {
-      throw AuthAgentLaunchAgentServiceError.invalidConfiguration("session profile must be ci-reporting")
+    if let sessionFile = configuration.sessionFile {
+      guard sessionFile.hasPrefix("/") else {
+        throw AuthAgentLaunchAgentServiceError.invalidConfiguration("service paths must be absolute")
+      }
+      let store = FileSessionStore(fileURL: URL(fileURLWithPath: sessionFile))
+      guard let session = try store.load() else {
+        throw AuthAgentLaunchAgentServiceError.invalidConfiguration("ci-reporting session file is missing")
+      }
+      guard session.profile == .ciReporting else {
+        throw AuthAgentLaunchAgentServiceError.invalidConfiguration("session profile must be ci-reporting")
+      }
+    } else if let tmbInstance = configuration.tmbInstance {
+      guard TMBDeviceRegistration.validInstance(tmbInstance) else {
+        throw AuthAgentLaunchAgentServiceError.invalidConfiguration("TMB instance is invalid")
+      }
+      let directory = homeDirectory + "/Library/Application Support/tng/tmb/\(tmbInstance)"
+      let device = FileTMBDeviceCredentialStore(
+        fileURL: URL(fileURLWithPath: directory + "/device.json"))
+      let session = FileTMBSessionStore(
+        fileURL: URL(fileURLWithPath: directory + "/session.json"))
+      guard try device.load() != nil, try session.load() != nil else {
+        throw AuthAgentLaunchAgentServiceError.invalidConfiguration(
+          "TMB device and OAuth session state are required")
+      }
     }
     let socketParent = URL(fileURLWithPath: configuration.socketPath).deletingLastPathComponent().path
     try Self.ensureDirectory(socketParent, permissions: 0o700)
@@ -348,8 +384,6 @@ struct AuthAgentLaunchAgentService: Sendable {
     let data = try Data(contentsOf: URL(fileURLWithPath: path))
     let value = try PropertyListSerialization.propertyList(from: data, format: nil)
     guard let plist = value as? [String: Any],
-      let environment = plist["EnvironmentVariables"] as? [String: String],
-      let session = environment["TNG_SESSION_FILE"],
       let arguments = plist["ProgramArguments"] as? [String],
       let socket = Self.option("--socket", in: arguments),
       let profileValue = Self.option("--profile", in: arguments),
@@ -357,8 +391,15 @@ struct AuthAgentLaunchAgentService: Sendable {
       let body = Self.option("--max-body-bytes", in: arguments).flatMap(UInt64.init),
       let uploads = Self.option("--max-job-upload-bytes", in: arguments).flatMap(UInt64.init)
     else { throw AuthAgentLaunchAgentServiceError.invalidConfiguration("installed service configuration is invalid") }
+    let environment = plist["EnvironmentVariables"] as? [String: String]
+    let session = environment?["TNG_SESSION_FILE"]
+    let tmbInstance = Self.option("--tmb-instance", in: arguments)
+    guard (session == nil) != (tmbInstance == nil) else {
+      throw AuthAgentLaunchAgentServiceError.invalidConfiguration(
+        "installed service authentication source is invalid")
+    }
     return AuthAgentServiceConfiguration(
-      sessionFile: session, socketPath: socket, profile: profile,
+      sessionFile: session, tmbInstance: tmbInstance, socketPath: socket, profile: profile,
       maximumBodyBytes: body, maximumJobUploadBytes: uploads
     )
   }
@@ -368,13 +409,25 @@ struct AuthAgentLaunchAgentService: Sendable {
     return arguments[index + 1]
   }
 
-  private static func sessionState(path: String) -> AuthAgentServiceStatus.SessionState {
+  private static func sessionState(
+    configuration: AuthAgentServiceConfiguration,
+    homeDirectory: String
+  ) -> AuthAgentServiceStatus.SessionState {
     do {
-      let store = FileSessionStore(fileURL: URL(fileURLWithPath: path))
-      guard let session = try store.load() else { return .missing }
-      guard session.profile == .ciReporting else { return .invalid }
-      if let expiry = session.archive.tokenState.accessToken.expiry, expiry <= Date() {
-        return .accessTokenExpired
+      if let path = configuration.sessionFile {
+        let store = FileSessionStore(fileURL: URL(fileURLWithPath: path))
+        guard let session = try store.load() else { return .missing }
+        guard session.profile == .ciReporting else { return .invalid }
+        if let expiry = session.archive.tokenState.accessToken.expiry, expiry <= Date() {
+          return .accessTokenExpired
+        }
+      } else if let instance = configuration.tmbInstance {
+        let path = homeDirectory + "/Library/Application Support/tng/tmb/\(instance)/session.json"
+        guard let session = try FileTMBSessionStore(fileURL: URL(fileURLWithPath: path)).load()
+        else { return .missing }
+        if session.expiresAt <= Date() { return .accessTokenExpired }
+      } else {
+        return .invalid
       }
       return .valid
     } catch { return .invalid }

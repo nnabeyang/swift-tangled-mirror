@@ -33,10 +33,31 @@ public struct AuthAgentServerConfiguration: Sendable {
   }
 }
 
+public struct AuthAgentAuthentication: Sendable {
+  public let accountDID: String
+  public let handle: String
+  public let profile: AuthenticationProfile
+  public let authorizedScopes: [String]
+  public let client: any XRPCCallable
+
+  public init(
+    accountDID: String,
+    handle: String,
+    profile: AuthenticationProfile,
+    authorizedScopes: [String],
+    client: any XRPCCallable
+  ) {
+    self.accountDID = accountDID
+    self.handle = handle
+    self.profile = profile
+    self.authorizedScopes = authorizedScopes
+    self.client = client
+  }
+}
+
 public struct AuthAgentServer: Sendable {
   private let configuration: AuthAgentServerConfiguration
-  private let session: StoredSession
-  private let agent: AtprotoOAuthAgent
+  private let authentication: AuthAgentAuthentication
   private let brokerState: AuthAgentBrokerState
   private let recordClient: PDSRecordClient
 
@@ -59,15 +80,43 @@ public struct AuthAgentServer: Sendable {
         "stored session profile does not match \(configuration.profile.rawValue)"
       )
     }
-    self.configuration = configuration
-    self.session = stored
-    self.agent = try AtprotoOAuthAgent(
+    let agent = try AtprotoOAuthAgent(
       archive: .init(did: stored.did, session: stored.archive),
       clientId: OAuth.ClientInfo.tangledCLI.clientId,
       authFetcher: URLSession.manualRedirect(),
       atprotoResolver: URLSessionATPResolver(),
       delegate: sessionStore
     )
+    try self.init(
+      configuration: configuration,
+      authentication: AuthAgentAuthentication(
+        accountDID: stored.did,
+        handle: stored.handle,
+        profile: stored.profile ?? .ciReporting,
+        authorizedScopes: stored.archive.tokenState.authorizedScopes,
+        client: agent
+      ),
+      recordClient: recordClient
+    )
+  }
+
+  public init(
+    configuration: AuthAgentServerConfiguration,
+    authentication: AuthAgentAuthentication,
+    recordClient: PDSRecordClient = PDSRecordClient()
+  ) throws {
+    guard configuration.profile == .ciReporting,
+      authentication.profile == configuration.profile
+    else { throw AuthAgentError.policyDenied("unsupported authentication profile") }
+    guard authentication.accountDID.hasPrefix("did:"),
+      !authentication.handle.isEmpty,
+      !authentication.authorizedScopes.isEmpty
+    else { throw AuthAgentError.protocolViolation("authentication identity is incomplete") }
+    guard configuration.maximumBodyBytes > 0, configuration.maximumJobUploadBytes > 0 else {
+      throw AuthAgentError.protocolViolation("body and job upload limits must be positive")
+    }
+    self.configuration = configuration
+    self.authentication = authentication
     self.brokerState = AuthAgentBrokerState(maximumJobUploadBytes: configuration.maximumJobUploadBytes)
     self.recordClient = recordClient
   }
@@ -159,7 +208,7 @@ public struct AuthAgentServer: Sendable {
       let components = try await validateXRPC(frame, binding: binding)
       let body: Data
       do {
-        body = try await agent.response(components)
+        body = try await authentication.client.response(components)
       } catch {
         throw AuthAgentError.upstream("request failed")
       }
@@ -259,7 +308,7 @@ public struct AuthAgentServer: Sendable {
 
   private func validateRecordRead(_ query: [AuthAgentQueryItem]) throws {
     let values = try authAgentQueryValues(query)
-    guard values["repo"] == session.did,
+    guard values["repo"] == authentication.accountDID,
       values["collection"] == Sh.Tangled.RepoArtifact.nsId
     else {
       throw AuthAgentError.policyDenied("record read must target the bot artifact collection")
@@ -273,7 +322,7 @@ public struct AuthAgentServer: Sendable {
     } catch {
       throw AuthAgentError.malformedFrame("putRecord body is not a JSON object")
     }
-    guard object["repo"] as? String == session.did,
+    guard object["repo"] as? String == authentication.accountDID,
       let collection = object["collection"] as? String,
       let record = object["record"] as? [String: Any]
     else {
@@ -336,15 +385,15 @@ public struct AuthAgentServer: Sendable {
   private func statusFrame(binding: AuthAgentBinding?, requestID: String?) async -> AuthAgentFrame {
     var metadata = AuthAgentFrameMetadata(kind: .response, requestID: requestID)
     metadata.statusCode = 200
-    metadata.accountDID = session.did
-    metadata.handle = session.handle
-    metadata.profile = session.profile
+    metadata.accountDID = authentication.accountDID
+    metadata.handle = authentication.handle
+    metadata.profile = authentication.profile
     metadata.repositoryDID = binding?.repositoryDID
     metadata.operations =
       binding.map { Array($0.operations).sorted { $0.rawValue < $1.rawValue } }
       ?? AuthAgentOperation.allCases
     metadata.deadlineUnixMilliseconds = binding?.deadlineUnixMilliseconds
-    metadata.authorizedScopes = session.archive.tokenState.authorizedScopes.sorted()
+    metadata.authorizedScopes = authentication.authorizedScopes.sorted()
     metadata.maxBodyBytes = configuration.maximumBodyBytes
     metadata.remainingJobUploadBytes = await brokerState.remainingUploadBytes(
       jobID: binding?.jobID

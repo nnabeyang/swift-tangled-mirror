@@ -32,7 +32,10 @@ struct AuthAgentServiceInstallCommand: AsyncParsableCommand {
   )
 
   @Option(name: .long, help: "Absolute ci-reporting session file path")
-  var sessionFile: String
+  var sessionFile: String?
+
+  @Option(name: .long, help: "Named TMB instance used instead of a native session file")
+  var tmbInstance: String?
 
   @Option(name: .long, help: "Absolute Unix domain socket path")
   var socket: String
@@ -56,8 +59,19 @@ struct AuthAgentServiceInstallCommand: AsyncParsableCommand {
   var json = false
 
   mutating func validate() throws {
-    guard sessionFile.hasPrefix("/") else {
+    guard (sessionFile == nil) != (tmbInstance == nil) else {
+      throw ValidationError("specify exactly one of --session-file or --tmb-instance")
+    }
+    if let sessionFile, !sessionFile.hasPrefix("/") {
       throw ValidationError("--session-file must be an absolute path")
+    }
+    if let tmbInstance {
+      guard TMBDeviceRegistration.validInstance(tmbInstance) else {
+        throw ValidationError(TMBDeviceCredentialStoreError.invalidInstance.localizedDescription)
+      }
+      if let instance, instance != tmbInstance {
+        throw ValidationError("--instance must match --tmb-instance when both are specified")
+      }
     }
     guard socket.hasPrefix("/") else {
       throw ValidationError("--socket must be an absolute path")
@@ -78,13 +92,14 @@ struct AuthAgentServiceInstallCommand: AsyncParsableCommand {
       let status = try await AuthAgentLaunchAgentService().install(
         configuration: AuthAgentServiceConfiguration(
           sessionFile: sessionFile,
+          tmbInstance: tmbInstance,
           socketPath: socket,
           profile: .ciReporting,
           maximumBodyBytes: maxBodyBytes,
           maximumJobUploadBytes: maxJobUploadBytes
         ),
         executablePath: executable,
-        instance: instance
+        instance: instance ?? tmbInstance
       )
       return try serviceOutput(status, json: json, action: "installed")
     }
@@ -168,5 +183,6 @@ private func serviceOutput(
   ]
   if let pid = status.pid { fields.append("pid=\(pid)") }
   if let handle = status.handle { fields.append("handle=\(handle)") }
+  if let source = status.authenticationSource { fields.append("source=\(source)") }
   return CLICommandOutput(stdout: prefix + fields.joined(separator: " ") + "\n")
 }

@@ -19,9 +19,38 @@ import Testing
   #expect(install.instance == "reporting")
   #expect(install.json)
 
+  var tmbInstall = try AuthAgentServiceInstallCommand.parse([
+    "--tmb-instance", "validation",
+    "--socket", "/Users/worker/tmb-agent.sock",
+    "--profile", "ci-reporting",
+  ])
+  try tmbInstall.validate()
+  #expect(tmbInstall.tmbInstance == "validation")
+
   let status = try AuthAgentServiceStatusCommand.parse(["--instance", "reporting", "--json"])
   #expect(status.options.instance == "reporting")
   #expect(status.options.json)
+}
+
+@Test func authAgentServiceRejectsAmbiguousAuthenticationSourcesAndInstances() {
+  #expect(throws: (any Error).self) {
+    var command = try AuthAgentServiceInstallCommand.parse([
+      "--session-file", "/Users/worker/session.json",
+      "--tmb-instance", "validation",
+      "--socket", "/Users/worker/agent.sock",
+      "--profile", "ci-reporting",
+    ])
+    try command.validate()
+  }
+  #expect(throws: (any Error).self) {
+    var command = try AuthAgentServiceInstallCommand.parse([
+      "--tmb-instance", "validation",
+      "--instance", "different",
+      "--socket", "/Users/worker/agent.sock",
+      "--profile", "ci-reporting",
+    ])
+    try command.validate()
+  }
 }
 
 @Test func authAgentServiceInstallRejectsRelativePathsAndProfiles() {
@@ -75,6 +104,23 @@ import Testing
   #expect(!text.contains("access-token"))
   #expect(!text.contains("refresh-token"))
   #expect(!text.contains("dpop"))
+
+  let tmbPlist = AuthAgentLaunchAgentService.propertyList(
+    executable: "/Applications/tng",
+    configuration: AuthAgentServiceConfiguration(
+      sessionFile: nil,
+      tmbInstance: "validation",
+      socketPath: "/Users/worker/tmb-agent.sock",
+      profile: .ciReporting,
+      maximumBodyBytes: 1024,
+      maximumJobUploadBytes: 2048
+    ),
+    identity: identity
+  )
+  #expect(tmbPlist["EnvironmentVariables"] == nil)
+  #expect(
+    (tmbPlist["ProgramArguments"] as? [String])?.suffix(2)
+      == ["--tmb-instance", "validation"])
 }
 
 #if os(macOS)

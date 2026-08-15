@@ -40,7 +40,7 @@ struct TMBSessionCommandService: Sendable {
   var formatter: CLIFormatter = .live
 
   func verify(instance: String, refresh: Bool, json: Bool) async throws -> CLICommandOutput {
-    let context = try liveContext(instance: instance)
+    let context = try CLITMBSessionContext.make(instance: instance)
     if refresh { try await context.agent.forceRefresh() }
     let data = try await context.agent.response(
       XRPCRequestComponents(
@@ -71,7 +71,7 @@ struct TMBSessionCommandService: Sendable {
     guard let registration = try deviceStore.load() else {
       throw TMBClientError.missingDeviceCredentials
     }
-    let client = liveTMBClient(registration: registration, store: deviceStore)
+    let client = CLITMBSessionContext.makeClient(registration: registration, store: deviceStore)
     guard try await client.revoke(sessionID: session.sessionID) else {
       throw TMBSessionAgentError.sessionRevoked
     }
@@ -82,7 +82,10 @@ struct TMBSessionCommandService: Sendable {
       stdout: "Signed out @\(session.handle) from TMB instance '\(instance)'.\n")
   }
 
-  private func liveContext(instance: String) throws -> (
+}
+
+enum CLITMBSessionContext {
+  static func make(instance: String) throws -> (
     session: TMBSession, agent: TMBSessionAgent
   ) {
     let sessionStore = FileTMBSessionStore(
@@ -93,14 +96,14 @@ struct TMBSessionCommandService: Sendable {
     guard let registration = try deviceStore.load(), registration.origin == session.origin else {
       throw TMBClientError.missingDeviceCredentials
     }
-    let client = liveTMBClient(registration: registration, store: deviceStore)
+    let client = makeClient(registration: registration, store: deviceStore)
     return (
       session,
       TMBSessionAgent(session: session, store: sessionStore, tmb: client)
     )
   }
 
-  private func liveTMBClient(
+  static func makeClient(
     registration: TMBDeviceRegistration,
     store: FileTMBDeviceCredentialStore
   ) -> TMBClient {

@@ -1,4 +1,6 @@
 import Foundation
+import SwiftAtproto
+import TangledLexicons
 import Testing
 
 @testable import SwiftTangled
@@ -148,6 +150,37 @@ import Testing
     #expect(failure.errorCode == "policy_denied")
   }
 
+  @Test func serverUsesInjectedTMBSessionClientForAllowedXRPC() async throws {
+    let upstream = RecordingAuthAgentUpstream()
+    let fixture = try await makeServerFixture(client: upstream)
+    defer { fixture.task.cancel() }
+    let socket = try AuthAgentSocket.connectUnix(
+      path: fixture.socketPath,
+      maximumBodyBytes: AuthAgentProtocol.defaultMaximumBodyBytes
+    )
+    var bind = AuthAgentFrameMetadata(kind: .bind, requestID: "bind")
+    bind.jobID = "job-1"
+    bind.repositoryDID = "did:plc:repository"
+    bind.operations = [.artifactUpload]
+    bind.deadlineUnixMilliseconds = Int64(Date().timeIntervalSince1970 * 1_000) + 60_000
+    try socket.send(AuthAgentFrame(metadata: bind))
+    #expect(try socket.receive().metadata.kind == .response)
+
+    var request = AuthAgentFrameMetadata(kind: .xrpc, requestID: "allowed")
+    request.method = "GET"
+    request.nsid = "com.atproto.repo.listRecords"
+    request.query = [
+      .init(name: "repo", value: "did:plc:testalice"),
+      .init(name: "collection", value: "sh.tangled.repo.artifact"),
+    ]
+    try socket.send(AuthAgentFrame(metadata: request))
+    let response = try socket.receive()
+    #expect(response.metadata.kind == .response)
+    #expect(response.metadata.statusCode == 200)
+    #expect(response.body == Data(#"{"records":[]}"#.utf8))
+    #expect(await upstream.requestCount() == 1)
+  }
+
   private func makeServerFixture() async throws -> (
     socketPath: String,
     task: Task<Void, Error>
@@ -184,4 +217,51 @@ import Testing
     }
     return (socketPath, task)
   }
+
+  private func makeServerFixture(client: any XRPCCallable) async throws -> (
+    socketPath: String,
+    task: Task<Void, Error>
+  ) {
+    let directory = URL(fileURLWithPath: "/tmp").appendingPathComponent(
+      "tng-agent-\(UUID().uuidString.prefix(8))",
+      isDirectory: true
+    )
+    try FileManager.default.createDirectory(
+      at: directory,
+      withIntermediateDirectories: false,
+      attributes: [.posixPermissions: 0o700]
+    )
+    let socketPath = directory.appendingPathComponent("agent.sock").path
+    let server = try AuthAgentServer(
+      configuration: .init(socketPath: socketPath, profile: .ciReporting),
+      authentication: AuthAgentAuthentication(
+        accountDID: "did:plc:testalice",
+        handle: "alice.example",
+        profile: .ciReporting,
+        authorizedScopes: ["atproto", "transition:generic"],
+        client: client
+      )
+    )
+    let task = Task {
+      defer { try? FileManager.default.removeItem(at: directory) }
+      try await server.serve()
+    }
+    for _ in 0 ..< 100 where !FileManager.default.fileExists(atPath: socketPath) {
+      try await Task.sleep(for: .milliseconds(10))
+    }
+    return (socketPath, task)
+  }
+}
+
+private actor RecordingAuthAgentUpstream: XRPCCallable {
+  private var requests: [XRPCRequestComponents] = []
+
+  nonisolated func getProxy(nsid _: String) -> String? { nil }
+
+  func response(_ components: XRPCRequestComponents) async throws -> Data {
+    requests.append(components)
+    return Data(#"{"records":[]}"#.utf8)
+  }
+
+  func requestCount() -> Int { requests.count }
 }
