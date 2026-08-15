@@ -139,6 +139,29 @@
       "state": {
         "revision": "cc23952bc105c11c37606ac43b9269c8a08f30e5"
       }
+    },
+    {
+      "location": "https://github.com/nnabeyang/atproto-oauth-tmb.git",
+      "lexicons": [
+        {
+          "prefix": "org.nnabeyang.tmb",
+          "path": "lexicons/org/nnabeyang/tmb",
+          "nsIds": [
+            "org.nnabeyang.tmb.defs",
+            "org.nnabeyang.tmb.enrollDevice",
+            "org.nnabeyang.tmb.exchangeAuthorization",
+            "org.nnabeyang.tmb.getAuthorization",
+            "org.nnabeyang.tmb.prepareAuthorization",
+            "org.nnabeyang.tmb.refreshSession",
+            "org.nnabeyang.tmb.revokeDevice",
+            "org.nnabeyang.tmb.revokeSession",
+            "org.nnabeyang.tmb.submitAuthorization"
+          ]
+        }
+      ],
+      "state": {
+        "revision": "a1f32ea62362f209bf9c10f66b61c937a7ebfc5d"
+      }
     }
   ],
   "generate": "client",

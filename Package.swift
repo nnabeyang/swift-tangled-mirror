@@ -87,6 +87,7 @@ let package = Package(
         "SwiftTangled",
         "TangledLexicons",
         .product(name: "SwiftAtproto", package: "swift-atproto"),
+        .product(name: "Crypto", package: "swift-crypto"),
       ],
       resources: [.copy("Fixtures")],
       swiftSettings: [

@@ -13,6 +13,11 @@ public enum Com {
   }
 }
 
+public enum Org {
+  public enum Nnabeyang {
+  }
+}
+
 public enum Sh {
   public enum Tangled {
   }
@@ -1874,6 +1879,1772 @@ extension Com.Atproto {
       try container.encode(self.cid, forKey: .cid)
       try container.encode(self.rev, forKey: .rev)
       try _unknownValues.encode(to: encoder)
+    }
+  }
+}
+
+extension Org.Nnabeyang {
+  /// Information needed by a device to create an endpoint-bound DPoP proof.
+  public struct TmbDefs_ProofRequest: Codable, Hashable, Sendable {
+    public var endpoint: FormatString<URI>
+    public var nonce: Swift.String?
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(endpoint: FormatString<URI>, nonce: Swift.String? = nil) {
+      self.endpoint = endpoint
+      self.nonce = nonce
+      self._unknownValues = [:]
+    }
+
+    public static func make(endpoint: FormatString<URI>, nonce: Swift.String? = nil) throws -> Self {
+      guard endpoint.rawValue.utf8.count <= 2048 else {
+        throw LexiconConstraintError.stringTooLong("endpoint", limit: 2048)
+      }
+      if let nonce {
+        guard nonce.utf8.count <= 512 else {
+          throw LexiconConstraintError.stringTooLong("nonce", limit: 512)
+        }
+      }
+      return Self.init(endpoint: endpoint, nonce: nonce)
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case endpoint
+      case nonce
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      let endpoint = try keyedContainer.decode(FormatString<URI>.self, forKey: .endpoint)
+      let nonce = try keyedContainer.decodeIfPresent(Swift.String.self, forKey: .nonce)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      if !LexiconDecodingMode.shouldValidateConstraints(in: decoder) {
+        self = Self.init(endpoint: endpoint, nonce: nonce)
+        return
+      }
+      do {
+        self = try Self.make(endpoint: endpoint, nonce: nonce)
+      } catch let error as LexiconConstraintError {
+        throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "\(error)", underlyingError: error))
+      }
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encode(self.endpoint, forKey: .endpoint)
+      try container.encodeIfPresent(self.nonce, forKey: .nonce)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
+
+  /// Public ES256 JSON Web Key. Private key members are rejected.
+  public struct TmbDefs_PublicJwk: Codable, Hashable, Sendable {
+    public var crv: Swift.String
+    public var kty: Swift.String
+    public var x: Swift.String
+    public var y: Swift.String
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(crv: Swift.String, kty: Swift.String, x: Swift.String, y: Swift.String) {
+      self.crv = crv
+      self.kty = kty
+      self.x = x
+      self.y = y
+      self._unknownValues = [:]
+    }
+
+    public static func make(crv: Swift.String, kty: Swift.String, x: Swift.String, y: Swift.String) throws -> Self {
+      guard crv.utf8.count <= 16 else {
+        throw LexiconConstraintError.stringTooLong("crv", limit: 16)
+      }
+      guard kty.utf8.count <= 16 else {
+        throw LexiconConstraintError.stringTooLong("kty", limit: 16)
+      }
+      guard x.utf8.count <= 128 else {
+        throw LexiconConstraintError.stringTooLong("x", limit: 128)
+      }
+      guard y.utf8.count <= 128 else {
+        throw LexiconConstraintError.stringTooLong("y", limit: 128)
+      }
+      return Self.init(crv: crv, kty: kty, x: x, y: y)
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case crv
+      case kty
+      case x
+      case y
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      let crv = try keyedContainer.decode(Swift.String.self, forKey: .crv)
+      let kty = try keyedContainer.decode(Swift.String.self, forKey: .kty)
+      let x = try keyedContainer.decode(Swift.String.self, forKey: .x)
+      let y = try keyedContainer.decode(Swift.String.self, forKey: .y)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      if !LexiconDecodingMode.shouldValidateConstraints(in: decoder) {
+        self = Self.init(crv: crv, kty: kty, x: x, y: y)
+        return
+      }
+      do {
+        self = try Self.make(crv: crv, kty: kty, x: x, y: y)
+      } catch let error as LexiconConstraintError {
+        throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "\(error)", underlyingError: error))
+      }
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encode(self.crv, forKey: .crv)
+      try container.encode(self.kty, forKey: .kty)
+      try container.encode(self.x, forKey: .x)
+      try container.encode(self.y, forKey: .y)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
+
+  /// Short-lived access material returned to the device and never persisted by the TMB.
+  public struct TmbDefs_SessionResult: Codable, Hashable, Sendable {
+    public var accessToken: Swift.String
+    public var expiresIn: Swift.Int
+    public var sessionId: Swift.String
+    public var tokenType: Swift.String
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(accessToken: Swift.String, expiresIn: Swift.Int, sessionId: Swift.String, tokenType: Swift.String) {
+      self.accessToken = accessToken
+      self.expiresIn = expiresIn
+      self.sessionId = sessionId
+      self.tokenType = tokenType
+      self._unknownValues = [:]
+    }
+
+    public static func make(accessToken: Swift.String, expiresIn: Swift.Int, sessionId: Swift.String, tokenType: Swift.String) throws -> Self {
+      guard accessToken.utf8.count <= 8192 else {
+        throw LexiconConstraintError.stringTooLong("accessToken", limit: 8192)
+      }
+      guard expiresIn >= 1 else {
+        throw LexiconConstraintError.integerBelowMinimum("expiresIn", minimum: 1)
+      }
+      guard tokenType.utf8.count <= 32 else {
+        throw LexiconConstraintError.stringTooLong("tokenType", limit: 32)
+      }
+      return Self.init(accessToken: accessToken, expiresIn: expiresIn, sessionId: sessionId, tokenType: tokenType)
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case accessToken
+      case expiresIn
+      case sessionId
+      case tokenType
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      let accessToken = try keyedContainer.decode(Swift.String.self, forKey: .accessToken)
+      let expiresIn = try keyedContainer.decode(Swift.Int.self, forKey: .expiresIn)
+      let sessionId = try keyedContainer.decode(Swift.String.self, forKey: .sessionId)
+      let tokenType = try keyedContainer.decode(Swift.String.self, forKey: .tokenType)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      if !LexiconDecodingMode.shouldValidateConstraints(in: decoder) {
+        self = Self.init(accessToken: accessToken, expiresIn: expiresIn, sessionId: sessionId, tokenType: tokenType)
+        return
+      }
+      do {
+        self = try Self.make(accessToken: accessToken, expiresIn: expiresIn, sessionId: sessionId, tokenType: tokenType)
+      } catch let error as LexiconConstraintError {
+        throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "\(error)", underlyingError: error))
+      }
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encode(self.accessToken, forKey: .accessToken)
+      try container.encode(self.expiresIn, forKey: .expiresIn)
+      try container.encode(self.sessionId, forKey: .sessionId)
+      try container.encode(self.tokenType, forKey: .tokenType)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
+  /// Registers one device public key using a one-time administrator enrollment secret.
+  public enum TmbEnrollDevice: XRPCProcedure {
+    public static let id = "org.nnabeyang.tmb.enrollDevice"
+    public static let contentType = "application/json"
+    public typealias RequestBody = TmbEnrollDevice_Input
+    public typealias ResponseBody = TmbEnrollDevice_Output
+    public indirect enum Error: XRPCError {
+      /// The enrollment credential is absent, invalid, expired, or already consumed.
+      case invalidenrollment(Swift.String?)
+      /// The supplied key is not an acceptable public ES256 JWK.
+      case invalidpublickey(Swift.String?)
+      /// The TMB state store is not initialized or temporarily unavailable.
+      case serviceunavailable(Swift.String?)
+      case unexpected(error: Swift.String?, message: Swift.String?)
+
+      public init(error: UnExpectedError) {
+        switch error.error {
+        case "InvalidEnrollment":
+          self = .invalidenrollment(error.message)
+        case "InvalidPublicKey":
+          self = .invalidpublickey(error.message)
+        case "ServiceUnavailable":
+          self = .serviceunavailable(error.message)
+        default:
+          self = .unexpected(error: error.error, message: error.message)
+        }
+      }
+
+      public var error: Swift.String? {
+        switch self {
+        case .invalidenrollment:
+          return "InvalidEnrollment"
+        case .invalidpublickey:
+          return "InvalidPublicKey"
+        case .serviceunavailable:
+          return "ServiceUnavailable"
+        case .unexpected(let error, _):
+          return error
+        }
+      }
+
+      public var message: Swift.String? {
+        switch self {
+        case .invalidenrollment(let message):
+          return message
+        case .invalidpublickey(let message):
+          return message
+        case .serviceunavailable(let message):
+          return message
+        case .unexpected(_, let message):
+          return message
+        }
+      }
+    }
+  }
+
+  public struct TmbEnrollDevice_Input: Codable, Hashable, Sendable {
+    public var name: Swift.String
+    public var publicKey: TmbDefs_PublicJwk
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(name: Swift.String, publicKey: TmbDefs_PublicJwk) {
+      self.name = name
+      self.publicKey = publicKey
+      self._unknownValues = [:]
+    }
+
+    public static func make(name: Swift.String, publicKey: TmbDefs_PublicJwk) throws -> Self {
+      guard name.utf8.count <= 80 else {
+        throw LexiconConstraintError.stringTooLong("name", limit: 80)
+      }
+      guard name.utf8.count >= 1 else {
+        throw LexiconConstraintError.stringTooShort("name", minimum: 1)
+      }
+      return Self.init(name: name, publicKey: publicKey)
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case name
+      case publicKey
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      let name = try keyedContainer.decode(Swift.String.self, forKey: .name)
+      let publicKey = try keyedContainer.decode(TmbDefs_PublicJwk.self, forKey: .publicKey)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      if !LexiconDecodingMode.shouldValidateConstraints(in: decoder) {
+        self = Self.init(name: name, publicKey: publicKey)
+        return
+      }
+      do {
+        self = try Self.make(name: name, publicKey: publicKey)
+      } catch let error as LexiconConstraintError {
+        throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "\(error)", underlyingError: error))
+      }
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encode(self.name, forKey: .name)
+      try container.encode(self.publicKey, forKey: .publicKey)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
+
+  public struct TmbEnrollDevice_Output: Codable, Hashable, Sendable {
+    public var deviceId: Swift.String
+    public var nonce: Swift.String
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(deviceId: Swift.String, nonce: Swift.String) {
+      self.deviceId = deviceId
+      self.nonce = nonce
+      self._unknownValues = [:]
+    }
+
+    public static func make(deviceId: Swift.String, nonce: Swift.String) throws -> Self {
+      guard nonce.utf8.count <= 512 else {
+        throw LexiconConstraintError.stringTooLong("nonce", limit: 512)
+      }
+      return Self.init(deviceId: deviceId, nonce: nonce)
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case deviceId
+      case nonce
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      let deviceId = try keyedContainer.decode(Swift.String.self, forKey: .deviceId)
+      let nonce = try keyedContainer.decode(Swift.String.self, forKey: .nonce)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      if !LexiconDecodingMode.shouldValidateConstraints(in: decoder) {
+        self = Self.init(deviceId: deviceId, nonce: nonce)
+        return
+      }
+      do {
+        self = try Self.make(deviceId: deviceId, nonce: nonce)
+      } catch let error as LexiconConstraintError {
+        throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "\(error)", underlyingError: error))
+      }
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encode(self.deviceId, forKey: .deviceId)
+      try container.encode(self.nonce, forKey: .nonce)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
+  /// Exchanges a successful callback code and stores the resulting refresh token.
+  public enum TmbExchangeAuthorization: XRPCProcedure {
+    public static let id = "org.nnabeyang.tmb.exchangeAuthorization"
+    public static let contentType = "application/json"
+    public typealias RequestBody = TmbExchangeAuthorization_Input
+    public typealias ResponseBody = TmbExchangeAuthorization_Output
+    public indirect enum Error: XRPCError {
+      case authenticationrequired(Swift.String?)
+      case authorizationserverfailed(Swift.String?)
+      case flowalreadyconsumed(Swift.String?)
+      case flownotcomplete(Swift.String?)
+      case flownotfound(Swift.String?)
+      case invaliddpopproof(Swift.String?)
+      case replaydetected(Swift.String?)
+      case serviceunavailable(Swift.String?)
+      case usedevicenonce(Swift.String?)
+      case unexpected(error: Swift.String?, message: Swift.String?)
+
+      public init(error: UnExpectedError) {
+        switch error.error {
+        case "FlowNotFound":
+          self = .flownotfound(error.message)
+        case "FlowNotComplete":
+          self = .flownotcomplete(error.message)
+        case "FlowAlreadyConsumed":
+          self = .flowalreadyconsumed(error.message)
+        case "InvalidDPoPProof":
+          self = .invaliddpopproof(error.message)
+        case "AuthorizationServerFailed":
+          self = .authorizationserverfailed(error.message)
+        case "AuthenticationRequired":
+          self = .authenticationrequired(error.message)
+        case "UseDeviceNonce":
+          self = .usedevicenonce(error.message)
+        case "ReplayDetected":
+          self = .replaydetected(error.message)
+        case "ServiceUnavailable":
+          self = .serviceunavailable(error.message)
+        default:
+          self = .unexpected(error: error.error, message: error.message)
+        }
+      }
+
+      public var error: Swift.String? {
+        switch self {
+        case .flownotfound:
+          return "FlowNotFound"
+        case .flownotcomplete:
+          return "FlowNotComplete"
+        case .flowalreadyconsumed:
+          return "FlowAlreadyConsumed"
+        case .invaliddpopproof:
+          return "InvalidDPoPProof"
+        case .authorizationserverfailed:
+          return "AuthorizationServerFailed"
+        case .authenticationrequired:
+          return "AuthenticationRequired"
+        case .usedevicenonce:
+          return "UseDeviceNonce"
+        case .replaydetected:
+          return "ReplayDetected"
+        case .serviceunavailable:
+          return "ServiceUnavailable"
+        case .unexpected(let error, _):
+          return error
+        }
+      }
+
+      public var message: Swift.String? {
+        switch self {
+        case .flownotfound(let message):
+          return message
+        case .flownotcomplete(let message):
+          return message
+        case .flowalreadyconsumed(let message):
+          return message
+        case .invaliddpopproof(let message):
+          return message
+        case .authorizationserverfailed(let message):
+          return message
+        case .authenticationrequired(let message):
+          return message
+        case .usedevicenonce(let message):
+          return message
+        case .replaydetected(let message):
+          return message
+        case .serviceunavailable(let message):
+          return message
+        case .unexpected(_, let message):
+          return message
+        }
+      }
+    }
+  }
+
+  public struct TmbExchangeAuthorization_Input: Codable, Hashable, Sendable {
+    public var dpopProof: Swift.String
+    public var flowId: Swift.String
+    public var pkceVerifier: Swift.String
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(dpopProof: Swift.String, flowId: Swift.String, pkceVerifier: Swift.String) {
+      self.dpopProof = dpopProof
+      self.flowId = flowId
+      self.pkceVerifier = pkceVerifier
+      self._unknownValues = [:]
+    }
+
+    public static func make(dpopProof: Swift.String, flowId: Swift.String, pkceVerifier: Swift.String) throws -> Self {
+      guard dpopProof.utf8.count <= 8192 else {
+        throw LexiconConstraintError.stringTooLong("dpopProof", limit: 8192)
+      }
+      guard dpopProof.utf8.count >= 1 else {
+        throw LexiconConstraintError.stringTooShort("dpopProof", minimum: 1)
+      }
+      guard pkceVerifier.utf8.count <= 128 else {
+        throw LexiconConstraintError.stringTooLong("pkceVerifier", limit: 128)
+      }
+      guard pkceVerifier.utf8.count >= 43 else {
+        throw LexiconConstraintError.stringTooShort("pkceVerifier", minimum: 43)
+      }
+      return Self.init(dpopProof: dpopProof, flowId: flowId, pkceVerifier: pkceVerifier)
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case dpopProof
+      case flowId
+      case pkceVerifier
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      let dpopProof = try keyedContainer.decode(Swift.String.self, forKey: .dpopProof)
+      let flowId = try keyedContainer.decode(Swift.String.self, forKey: .flowId)
+      let pkceVerifier = try keyedContainer.decode(Swift.String.self, forKey: .pkceVerifier)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      if !LexiconDecodingMode.shouldValidateConstraints(in: decoder) {
+        self = Self.init(dpopProof: dpopProof, flowId: flowId, pkceVerifier: pkceVerifier)
+        return
+      }
+      do {
+        self = try Self.make(dpopProof: dpopProof, flowId: flowId, pkceVerifier: pkceVerifier)
+      } catch let error as LexiconConstraintError {
+        throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "\(error)", underlyingError: error))
+      }
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encode(self.dpopProof, forKey: .dpopProof)
+      try container.encode(self.flowId, forKey: .flowId)
+      try container.encode(self.pkceVerifier, forKey: .pkceVerifier)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
+
+  public struct TmbExchangeAuthorization_Output: Codable, Hashable, Sendable {
+    public var proof: TmbDefs_ProofRequest?
+    public var session: TmbDefs_SessionResult?
+    public var status: TmbExchangeAuthorization_Output_Status
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(proof: TmbDefs_ProofRequest? = nil, session: TmbDefs_SessionResult? = nil, status: TmbExchangeAuthorization_Output_Status) {
+      self.proof = proof
+      self.session = session
+      self.status = status
+      self._unknownValues = [:]
+    }
+
+    public static func make(proof: TmbDefs_ProofRequest? = nil, session: TmbDefs_SessionResult? = nil, status: TmbExchangeAuthorization_Output_Status) throws -> Self {
+      guard status.rawValue.utf8.count <= 32 else {
+        throw LexiconConstraintError.stringTooLong("status", limit: 32)
+      }
+      return Self.init(proof: proof, session: session, status: status)
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case proof
+      case session
+      case status
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      let proof = try keyedContainer.decodeIfPresent(TmbDefs_ProofRequest.self, forKey: .proof)
+      let session = try keyedContainer.decodeIfPresent(TmbDefs_SessionResult.self, forKey: .session)
+      let status = try keyedContainer.decode(Org.Nnabeyang.TmbExchangeAuthorization_Output_Status.self, forKey: .status)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      if !LexiconDecodingMode.shouldValidateConstraints(in: decoder) {
+        self = Self.init(proof: proof, session: session, status: status)
+        return
+      }
+      do {
+        self = try Self.make(proof: proof, session: session, status: status)
+      } catch let error as LexiconConstraintError {
+        throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "\(error)", underlyingError: error))
+      }
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encodeIfPresent(self.proof, forKey: .proof)
+      try container.encodeIfPresent(self.session, forKey: .session)
+      try container.encode(self.status, forKey: .status)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
+
+  public indirect enum TmbExchangeAuthorization_Output_Status: RawRepresentable, Codable, Hashable, Sendable {
+    case complete
+    case proofrequired
+    case _other(Swift.String)
+
+    public init(rawValue: Swift.String) {
+      switch rawValue {
+      case "complete":
+        self = .complete
+      case "proofRequired":
+        self = .proofrequired
+      default:
+        self = ._other(rawValue)
+      }
+    }
+
+    public var rawValue: Swift.String {
+      switch self {
+      case .complete:
+        "complete"
+      case .proofrequired:
+        "proofRequired"
+      case ._other(let value):
+        value
+      }
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let rawValue = try Swift.String(from: decoder)
+      self = Self(rawValue: rawValue)
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      try rawValue.encode(to: encoder)
+    }
+  }
+  /// Returns the callback state for an authorization flow owned by the device.
+  public enum TmbGetAuthorization: XRPCQuery {
+    public static let id = "org.nnabeyang.tmb.getAuthorization"
+    public typealias ResponseBody = Org.Nnabeyang.TmbGetAuthorization_Output
+    public struct Input: XRPCQueryInput {
+      public struct Query: XRPCInputQuery {
+        public var flowId: Swift.String
+
+        public init(flowId: Swift.String) {
+          self.flowId = flowId
+        }
+
+        public static func make(flowId: Swift.String) throws -> Self {
+          guard flowId.utf8.count <= 128 else {
+            throw LexiconConstraintError.stringTooLong("flowId", limit: 128)
+          }
+          return Self.init(flowId: flowId)
+        }
+        public var asParameters: Parameters? {
+          ["flowId": .string(flowId)]
+        }
+      }
+      public var query: Input.Query
+    }
+    public indirect enum Error: XRPCError {
+      case authenticationrequired(Swift.String?)
+      case flownotfound(Swift.String?)
+      case replaydetected(Swift.String?)
+      case serviceunavailable(Swift.String?)
+      case usedevicenonce(Swift.String?)
+      case unexpected(error: Swift.String?, message: Swift.String?)
+
+      public init(error: UnExpectedError) {
+        switch error.error {
+        case "FlowNotFound":
+          self = .flownotfound(error.message)
+        case "AuthenticationRequired":
+          self = .authenticationrequired(error.message)
+        case "UseDeviceNonce":
+          self = .usedevicenonce(error.message)
+        case "ReplayDetected":
+          self = .replaydetected(error.message)
+        case "ServiceUnavailable":
+          self = .serviceunavailable(error.message)
+        default:
+          self = .unexpected(error: error.error, message: error.message)
+        }
+      }
+
+      public var error: Swift.String? {
+        switch self {
+        case .flownotfound:
+          return "FlowNotFound"
+        case .authenticationrequired:
+          return "AuthenticationRequired"
+        case .usedevicenonce:
+          return "UseDeviceNonce"
+        case .replaydetected:
+          return "ReplayDetected"
+        case .serviceunavailable:
+          return "ServiceUnavailable"
+        case .unexpected(let error, _):
+          return error
+        }
+      }
+
+      public var message: Swift.String? {
+        switch self {
+        case .flownotfound(let message):
+          return message
+        case .authenticationrequired(let message):
+          return message
+        case .usedevicenonce(let message):
+          return message
+        case .replaydetected(let message):
+          return message
+        case .serviceunavailable(let message):
+          return message
+        case .unexpected(_, let message):
+          return message
+        }
+      }
+    }
+  }
+
+  public struct TmbGetAuthorization_Output: Codable, Hashable, Sendable {
+    public var error: Swift.String?
+    public var status: TmbGetAuthorization_Output_Status
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(error: Swift.String? = nil, status: TmbGetAuthorization_Output_Status) {
+      self.error = error
+      self.status = status
+      self._unknownValues = [:]
+    }
+
+    public static func make(error: Swift.String? = nil, status: TmbGetAuthorization_Output_Status) throws -> Self {
+      if let error {
+        guard error.utf8.count <= 128 else {
+          throw LexiconConstraintError.stringTooLong("error", limit: 128)
+        }
+      }
+      guard status.rawValue.utf8.count <= 32 else {
+        throw LexiconConstraintError.stringTooLong("status", limit: 32)
+      }
+      return Self.init(error: error, status: status)
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case error
+      case status
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      let error = try keyedContainer.decodeIfPresent(Swift.String.self, forKey: .error)
+      let status = try keyedContainer.decode(Org.Nnabeyang.TmbGetAuthorization_Output_Status.self, forKey: .status)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      if !LexiconDecodingMode.shouldValidateConstraints(in: decoder) {
+        self = Self.init(error: error, status: status)
+        return
+      }
+      do {
+        self = try Self.make(error: error, status: status)
+      } catch let error as LexiconConstraintError {
+        throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "\(error)", underlyingError: error))
+      }
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encodeIfPresent(self.error, forKey: .error)
+      try container.encode(self.status, forKey: .status)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
+
+  public indirect enum TmbGetAuthorization_Output_Status: RawRepresentable, Codable, Hashable, Sendable {
+    case pending
+    case succeeded
+    case failed
+    case expired
+    case _other(Swift.String)
+
+    public init(rawValue: Swift.String) {
+      switch rawValue {
+      case "pending":
+        self = .pending
+      case "succeeded":
+        self = .succeeded
+      case "failed":
+        self = .failed
+      case "expired":
+        self = .expired
+      default:
+        self = ._other(rawValue)
+      }
+    }
+
+    public var rawValue: Swift.String {
+      switch self {
+      case .pending:
+        "pending"
+      case .succeeded:
+        "succeeded"
+      case .failed:
+        "failed"
+      case .expired:
+        "expired"
+      case ._other(let value):
+        value
+      }
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let rawValue = try Swift.String(from: decoder)
+      self = Self(rawValue: rawValue)
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      try rawValue.encode(to: encoder)
+    }
+  }
+  /// Discovers an authorization server and creates a pending authorization flow.
+  public enum TmbPrepareAuthorization: XRPCProcedure {
+    public static let id = "org.nnabeyang.tmb.prepareAuthorization"
+    public static let contentType = "application/json"
+    public typealias RequestBody = TmbPrepareAuthorization_Input
+    public typealias ResponseBody = TmbPrepareAuthorization_Output
+    public indirect enum Error: XRPCError {
+      case authenticationrequired(Swift.String?)
+      case discoveryfailed(Swift.String?)
+      case invalididentifier(Swift.String?)
+      case invalidscope(Swift.String?)
+      case replaydetected(Swift.String?)
+      case serviceunavailable(Swift.String?)
+      case unsafeauthorizationserver(Swift.String?)
+      case usedevicenonce(Swift.String?)
+      case unexpected(error: Swift.String?, message: Swift.String?)
+
+      public init(error: UnExpectedError) {
+        switch error.error {
+        case "InvalidIdentifier":
+          self = .invalididentifier(error.message)
+        case "InvalidScope":
+          self = .invalidscope(error.message)
+        case "DiscoveryFailed":
+          self = .discoveryfailed(error.message)
+        case "UnsafeAuthorizationServer":
+          self = .unsafeauthorizationserver(error.message)
+        case "AuthenticationRequired":
+          self = .authenticationrequired(error.message)
+        case "UseDeviceNonce":
+          self = .usedevicenonce(error.message)
+        case "ReplayDetected":
+          self = .replaydetected(error.message)
+        case "ServiceUnavailable":
+          self = .serviceunavailable(error.message)
+        default:
+          self = .unexpected(error: error.error, message: error.message)
+        }
+      }
+
+      public var error: Swift.String? {
+        switch self {
+        case .invalididentifier:
+          return "InvalidIdentifier"
+        case .invalidscope:
+          return "InvalidScope"
+        case .discoveryfailed:
+          return "DiscoveryFailed"
+        case .unsafeauthorizationserver:
+          return "UnsafeAuthorizationServer"
+        case .authenticationrequired:
+          return "AuthenticationRequired"
+        case .usedevicenonce:
+          return "UseDeviceNonce"
+        case .replaydetected:
+          return "ReplayDetected"
+        case .serviceunavailable:
+          return "ServiceUnavailable"
+        case .unexpected(let error, _):
+          return error
+        }
+      }
+
+      public var message: Swift.String? {
+        switch self {
+        case .invalididentifier(let message):
+          return message
+        case .invalidscope(let message):
+          return message
+        case .discoveryfailed(let message):
+          return message
+        case .unsafeauthorizationserver(let message):
+          return message
+        case .authenticationrequired(let message):
+          return message
+        case .usedevicenonce(let message):
+          return message
+        case .replaydetected(let message):
+          return message
+        case .serviceunavailable(let message):
+          return message
+        case .unexpected(_, let message):
+          return message
+        }
+      }
+    }
+  }
+
+  public struct TmbPrepareAuthorization_Input: Codable, Hashable, Sendable {
+    public var dpopPublicKey: TmbDefs_PublicJwk
+    public var identifier: Swift.String
+    public var pkceChallenge: Swift.String
+    public var scope: Swift.String
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(dpopPublicKey: TmbDefs_PublicJwk, identifier: Swift.String, pkceChallenge: Swift.String, scope: Swift.String) {
+      self.dpopPublicKey = dpopPublicKey
+      self.identifier = identifier
+      self.pkceChallenge = pkceChallenge
+      self.scope = scope
+      self._unknownValues = [:]
+    }
+
+    public static func make(dpopPublicKey: TmbDefs_PublicJwk, identifier: Swift.String, pkceChallenge: Swift.String, scope: Swift.String) throws -> Self {
+      guard identifier.utf8.count <= 2048 else {
+        throw LexiconConstraintError.stringTooLong("identifier", limit: 2048)
+      }
+      guard identifier.utf8.count >= 1 else {
+        throw LexiconConstraintError.stringTooShort("identifier", minimum: 1)
+      }
+      guard pkceChallenge.utf8.count <= 128 else {
+        throw LexiconConstraintError.stringTooLong("pkceChallenge", limit: 128)
+      }
+      guard pkceChallenge.utf8.count >= 43 else {
+        throw LexiconConstraintError.stringTooShort("pkceChallenge", minimum: 43)
+      }
+      guard scope.utf8.count <= 1024 else {
+        throw LexiconConstraintError.stringTooLong("scope", limit: 1024)
+      }
+      guard scope.utf8.count >= 1 else {
+        throw LexiconConstraintError.stringTooShort("scope", minimum: 1)
+      }
+      return Self.init(dpopPublicKey: dpopPublicKey, identifier: identifier, pkceChallenge: pkceChallenge, scope: scope)
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case dpopPublicKey
+      case identifier
+      case pkceChallenge
+      case scope
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      let dpopPublicKey = try keyedContainer.decode(TmbDefs_PublicJwk.self, forKey: .dpopPublicKey)
+      let identifier = try keyedContainer.decode(Swift.String.self, forKey: .identifier)
+      let pkceChallenge = try keyedContainer.decode(Swift.String.self, forKey: .pkceChallenge)
+      let scope = try keyedContainer.decode(Swift.String.self, forKey: .scope)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      if !LexiconDecodingMode.shouldValidateConstraints(in: decoder) {
+        self = Self.init(dpopPublicKey: dpopPublicKey, identifier: identifier, pkceChallenge: pkceChallenge, scope: scope)
+        return
+      }
+      do {
+        self = try Self.make(dpopPublicKey: dpopPublicKey, identifier: identifier, pkceChallenge: pkceChallenge, scope: scope)
+      } catch let error as LexiconConstraintError {
+        throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "\(error)", underlyingError: error))
+      }
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encode(self.dpopPublicKey, forKey: .dpopPublicKey)
+      try container.encode(self.identifier, forKey: .identifier)
+      try container.encode(self.pkceChallenge, forKey: .pkceChallenge)
+      try container.encode(self.scope, forKey: .scope)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
+
+  public struct TmbPrepareAuthorization_Output: Codable, Hashable, Sendable {
+    public var flowId: Swift.String
+    public var proof: TmbDefs_ProofRequest
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(flowId: Swift.String, proof: TmbDefs_ProofRequest) {
+      self.flowId = flowId
+      self.proof = proof
+      self._unknownValues = [:]
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case flowId
+      case proof
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      self.flowId = try keyedContainer.decode(Swift.String.self, forKey: .flowId)
+      self.proof = try keyedContainer.decode(TmbDefs_ProofRequest.self, forKey: .proof)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      self._unknownValues = _unknownValues
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encode(self.flowId, forKey: .flowId)
+      try container.encode(self.proof, forKey: .proof)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
+  /// Rotates the stored refresh token and returns new short-lived access material.
+  public enum TmbRefreshSession: XRPCProcedure {
+    public static let id = "org.nnabeyang.tmb.refreshSession"
+    public static let contentType = "application/json"
+    public typealias RequestBody = TmbRefreshSession_Input
+    public typealias ResponseBody = TmbRefreshSession_Output
+    public indirect enum Error: XRPCError {
+      case authenticationrequired(Swift.String?)
+      case authorizationserverfailed(Swift.String?)
+      case invaliddpopproof(Swift.String?)
+      case replaydetected(Swift.String?)
+      case serviceunavailable(Swift.String?)
+      case sessionexpired(Swift.String?)
+      case sessionnotfound(Swift.String?)
+      case sessionrevoked(Swift.String?)
+      case usedevicenonce(Swift.String?)
+      case unexpected(error: Swift.String?, message: Swift.String?)
+
+      public init(error: UnExpectedError) {
+        switch error.error {
+        case "SessionNotFound":
+          self = .sessionnotfound(error.message)
+        case "SessionRevoked":
+          self = .sessionrevoked(error.message)
+        case "SessionExpired":
+          self = .sessionexpired(error.message)
+        case "InvalidDPoPProof":
+          self = .invaliddpopproof(error.message)
+        case "AuthorizationServerFailed":
+          self = .authorizationserverfailed(error.message)
+        case "AuthenticationRequired":
+          self = .authenticationrequired(error.message)
+        case "UseDeviceNonce":
+          self = .usedevicenonce(error.message)
+        case "ReplayDetected":
+          self = .replaydetected(error.message)
+        case "ServiceUnavailable":
+          self = .serviceunavailable(error.message)
+        default:
+          self = .unexpected(error: error.error, message: error.message)
+        }
+      }
+
+      public var error: Swift.String? {
+        switch self {
+        case .sessionnotfound:
+          return "SessionNotFound"
+        case .sessionrevoked:
+          return "SessionRevoked"
+        case .sessionexpired:
+          return "SessionExpired"
+        case .invaliddpopproof:
+          return "InvalidDPoPProof"
+        case .authorizationserverfailed:
+          return "AuthorizationServerFailed"
+        case .authenticationrequired:
+          return "AuthenticationRequired"
+        case .usedevicenonce:
+          return "UseDeviceNonce"
+        case .replaydetected:
+          return "ReplayDetected"
+        case .serviceunavailable:
+          return "ServiceUnavailable"
+        case .unexpected(let error, _):
+          return error
+        }
+      }
+
+      public var message: Swift.String? {
+        switch self {
+        case .sessionnotfound(let message):
+          return message
+        case .sessionrevoked(let message):
+          return message
+        case .sessionexpired(let message):
+          return message
+        case .invaliddpopproof(let message):
+          return message
+        case .authorizationserverfailed(let message):
+          return message
+        case .authenticationrequired(let message):
+          return message
+        case .usedevicenonce(let message):
+          return message
+        case .replaydetected(let message):
+          return message
+        case .serviceunavailable(let message):
+          return message
+        case .unexpected(_, let message):
+          return message
+        }
+      }
+    }
+  }
+
+  public struct TmbRefreshSession_Input: Codable, Hashable, Sendable {
+    public var dpopProof: Swift.String
+    public var sessionId: Swift.String
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(dpopProof: Swift.String, sessionId: Swift.String) {
+      self.dpopProof = dpopProof
+      self.sessionId = sessionId
+      self._unknownValues = [:]
+    }
+
+    public static func make(dpopProof: Swift.String, sessionId: Swift.String) throws -> Self {
+      guard dpopProof.utf8.count <= 8192 else {
+        throw LexiconConstraintError.stringTooLong("dpopProof", limit: 8192)
+      }
+      guard dpopProof.utf8.count >= 1 else {
+        throw LexiconConstraintError.stringTooShort("dpopProof", minimum: 1)
+      }
+      return Self.init(dpopProof: dpopProof, sessionId: sessionId)
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case dpopProof
+      case sessionId
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      let dpopProof = try keyedContainer.decode(Swift.String.self, forKey: .dpopProof)
+      let sessionId = try keyedContainer.decode(Swift.String.self, forKey: .sessionId)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      if !LexiconDecodingMode.shouldValidateConstraints(in: decoder) {
+        self = Self.init(dpopProof: dpopProof, sessionId: sessionId)
+        return
+      }
+      do {
+        self = try Self.make(dpopProof: dpopProof, sessionId: sessionId)
+      } catch let error as LexiconConstraintError {
+        throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "\(error)", underlyingError: error))
+      }
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encode(self.dpopProof, forKey: .dpopProof)
+      try container.encode(self.sessionId, forKey: .sessionId)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
+
+  public struct TmbRefreshSession_Output: Codable, Hashable, Sendable {
+    public var proof: TmbDefs_ProofRequest?
+    public var session: TmbDefs_SessionResult?
+    public var status: TmbRefreshSession_Output_Status
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(proof: TmbDefs_ProofRequest? = nil, session: TmbDefs_SessionResult? = nil, status: TmbRefreshSession_Output_Status) {
+      self.proof = proof
+      self.session = session
+      self.status = status
+      self._unknownValues = [:]
+    }
+
+    public static func make(proof: TmbDefs_ProofRequest? = nil, session: TmbDefs_SessionResult? = nil, status: TmbRefreshSession_Output_Status) throws -> Self {
+      guard status.rawValue.utf8.count <= 32 else {
+        throw LexiconConstraintError.stringTooLong("status", limit: 32)
+      }
+      return Self.init(proof: proof, session: session, status: status)
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case proof
+      case session
+      case status
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      let proof = try keyedContainer.decodeIfPresent(TmbDefs_ProofRequest.self, forKey: .proof)
+      let session = try keyedContainer.decodeIfPresent(TmbDefs_SessionResult.self, forKey: .session)
+      let status = try keyedContainer.decode(Org.Nnabeyang.TmbRefreshSession_Output_Status.self, forKey: .status)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      if !LexiconDecodingMode.shouldValidateConstraints(in: decoder) {
+        self = Self.init(proof: proof, session: session, status: status)
+        return
+      }
+      do {
+        self = try Self.make(proof: proof, session: session, status: status)
+      } catch let error as LexiconConstraintError {
+        throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "\(error)", underlyingError: error))
+      }
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encodeIfPresent(self.proof, forKey: .proof)
+      try container.encodeIfPresent(self.session, forKey: .session)
+      try container.encode(self.status, forKey: .status)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
+
+  public indirect enum TmbRefreshSession_Output_Status: RawRepresentable, Codable, Hashable, Sendable {
+    case complete
+    case proofrequired
+    case _other(Swift.String)
+
+    public init(rawValue: Swift.String) {
+      switch rawValue {
+      case "complete":
+        self = .complete
+      case "proofRequired":
+        self = .proofrequired
+      default:
+        self = ._other(rawValue)
+      }
+    }
+
+    public var rawValue: Swift.String {
+      switch self {
+      case .complete:
+        "complete"
+      case .proofrequired:
+        "proofRequired"
+      case ._other(let value):
+        value
+      }
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let rawValue = try Swift.String(from: decoder)
+      self = Self(rawValue: rawValue)
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      try rawValue.encode(to: encoder)
+    }
+  }
+  /// Revokes the authenticated device and all sessions it owns.
+  public enum TmbRevokeDevice: XRPCProcedure {
+    public static let id = "org.nnabeyang.tmb.revokeDevice"
+    public static let contentType = "application/json"
+    public typealias RequestBody = TmbRevokeDevice_Input
+    public typealias ResponseBody = TmbRevokeDevice_Output
+    public indirect enum Error: XRPCError {
+      case authenticationrequired(Swift.String?)
+      case replaydetected(Swift.String?)
+      case serviceunavailable(Swift.String?)
+      case usedevicenonce(Swift.String?)
+      case unexpected(error: Swift.String?, message: Swift.String?)
+
+      public init(error: UnExpectedError) {
+        switch error.error {
+        case "AuthenticationRequired":
+          self = .authenticationrequired(error.message)
+        case "UseDeviceNonce":
+          self = .usedevicenonce(error.message)
+        case "ReplayDetected":
+          self = .replaydetected(error.message)
+        case "ServiceUnavailable":
+          self = .serviceunavailable(error.message)
+        default:
+          self = .unexpected(error: error.error, message: error.message)
+        }
+      }
+
+      public var error: Swift.String? {
+        switch self {
+        case .authenticationrequired:
+          return "AuthenticationRequired"
+        case .usedevicenonce:
+          return "UseDeviceNonce"
+        case .replaydetected:
+          return "ReplayDetected"
+        case .serviceunavailable:
+          return "ServiceUnavailable"
+        case .unexpected(let error, _):
+          return error
+        }
+      }
+
+      public var message: Swift.String? {
+        switch self {
+        case .authenticationrequired(let message):
+          return message
+        case .usedevicenonce(let message):
+          return message
+        case .replaydetected(let message):
+          return message
+        case .serviceunavailable(let message):
+          return message
+        case .unexpected(_, let message):
+          return message
+        }
+      }
+    }
+  }
+
+  public struct TmbRevokeDevice_Input: Codable, Hashable, Sendable {
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init() {
+      self._unknownValues = [:]
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      self._unknownValues = _unknownValues
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      try _unknownValues.encode(to: encoder)
+    }
+  }
+
+  public struct TmbRevokeDevice_Output: Codable, Hashable, Sendable {
+    public var revoked: Swift.Bool
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(revoked: Swift.Bool) {
+      self.revoked = revoked
+      self._unknownValues = [:]
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case revoked
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      self.revoked = try keyedContainer.decode(Swift.Bool.self, forKey: .revoked)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      self._unknownValues = _unknownValues
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encode(self.revoked, forKey: .revoked)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
+  /// Revokes one OAuth session owned by the authenticated device.
+  public enum TmbRevokeSession: XRPCProcedure {
+    public static let id = "org.nnabeyang.tmb.revokeSession"
+    public static let contentType = "application/json"
+    public typealias RequestBody = TmbRevokeSession_Input
+    public typealias ResponseBody = TmbRevokeSession_Output
+    public indirect enum Error: XRPCError {
+      case authenticationrequired(Swift.String?)
+      case replaydetected(Swift.String?)
+      case serviceunavailable(Swift.String?)
+      case sessionnotfound(Swift.String?)
+      case usedevicenonce(Swift.String?)
+      case unexpected(error: Swift.String?, message: Swift.String?)
+
+      public init(error: UnExpectedError) {
+        switch error.error {
+        case "SessionNotFound":
+          self = .sessionnotfound(error.message)
+        case "AuthenticationRequired":
+          self = .authenticationrequired(error.message)
+        case "UseDeviceNonce":
+          self = .usedevicenonce(error.message)
+        case "ReplayDetected":
+          self = .replaydetected(error.message)
+        case "ServiceUnavailable":
+          self = .serviceunavailable(error.message)
+        default:
+          self = .unexpected(error: error.error, message: error.message)
+        }
+      }
+
+      public var error: Swift.String? {
+        switch self {
+        case .sessionnotfound:
+          return "SessionNotFound"
+        case .authenticationrequired:
+          return "AuthenticationRequired"
+        case .usedevicenonce:
+          return "UseDeviceNonce"
+        case .replaydetected:
+          return "ReplayDetected"
+        case .serviceunavailable:
+          return "ServiceUnavailable"
+        case .unexpected(let error, _):
+          return error
+        }
+      }
+
+      public var message: Swift.String? {
+        switch self {
+        case .sessionnotfound(let message):
+          return message
+        case .authenticationrequired(let message):
+          return message
+        case .usedevicenonce(let message):
+          return message
+        case .replaydetected(let message):
+          return message
+        case .serviceunavailable(let message):
+          return message
+        case .unexpected(_, let message):
+          return message
+        }
+      }
+    }
+  }
+
+  public struct TmbRevokeSession_Input: Codable, Hashable, Sendable {
+    public var sessionId: Swift.String
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(sessionId: Swift.String) {
+      self.sessionId = sessionId
+      self._unknownValues = [:]
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case sessionId
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      self.sessionId = try keyedContainer.decode(Swift.String.self, forKey: .sessionId)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      self._unknownValues = _unknownValues
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encode(self.sessionId, forKey: .sessionId)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
+
+  public struct TmbRevokeSession_Output: Codable, Hashable, Sendable {
+    public var revoked: Swift.Bool
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(revoked: Swift.Bool) {
+      self.revoked = revoked
+      self._unknownValues = [:]
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case revoked
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      self.revoked = try keyedContainer.decode(Swift.Bool.self, forKey: .revoked)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      self._unknownValues = _unknownValues
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encode(self.revoked, forKey: .revoked)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
+  /// Submits a pushed authorization request with a device-created DPoP proof.
+  public enum TmbSubmitAuthorization: XRPCProcedure {
+    public static let id = "org.nnabeyang.tmb.submitAuthorization"
+    public static let contentType = "application/json"
+    public typealias RequestBody = TmbSubmitAuthorization_Input
+    public typealias ResponseBody = TmbSubmitAuthorization_Output
+    public indirect enum Error: XRPCError {
+      case authenticationrequired(Swift.String?)
+      case authorizationserverfailed(Swift.String?)
+      case flownotfound(Swift.String?)
+      case flownotpending(Swift.String?)
+      case invaliddpopproof(Swift.String?)
+      case replaydetected(Swift.String?)
+      case serviceunavailable(Swift.String?)
+      case usedevicenonce(Swift.String?)
+      case unexpected(error: Swift.String?, message: Swift.String?)
+
+      public init(error: UnExpectedError) {
+        switch error.error {
+        case "FlowNotFound":
+          self = .flownotfound(error.message)
+        case "FlowNotPending":
+          self = .flownotpending(error.message)
+        case "InvalidDPoPProof":
+          self = .invaliddpopproof(error.message)
+        case "AuthorizationServerFailed":
+          self = .authorizationserverfailed(error.message)
+        case "AuthenticationRequired":
+          self = .authenticationrequired(error.message)
+        case "UseDeviceNonce":
+          self = .usedevicenonce(error.message)
+        case "ReplayDetected":
+          self = .replaydetected(error.message)
+        case "ServiceUnavailable":
+          self = .serviceunavailable(error.message)
+        default:
+          self = .unexpected(error: error.error, message: error.message)
+        }
+      }
+
+      public var error: Swift.String? {
+        switch self {
+        case .flownotfound:
+          return "FlowNotFound"
+        case .flownotpending:
+          return "FlowNotPending"
+        case .invaliddpopproof:
+          return "InvalidDPoPProof"
+        case .authorizationserverfailed:
+          return "AuthorizationServerFailed"
+        case .authenticationrequired:
+          return "AuthenticationRequired"
+        case .usedevicenonce:
+          return "UseDeviceNonce"
+        case .replaydetected:
+          return "ReplayDetected"
+        case .serviceunavailable:
+          return "ServiceUnavailable"
+        case .unexpected(let error, _):
+          return error
+        }
+      }
+
+      public var message: Swift.String? {
+        switch self {
+        case .flownotfound(let message):
+          return message
+        case .flownotpending(let message):
+          return message
+        case .invaliddpopproof(let message):
+          return message
+        case .authorizationserverfailed(let message):
+          return message
+        case .authenticationrequired(let message):
+          return message
+        case .usedevicenonce(let message):
+          return message
+        case .replaydetected(let message):
+          return message
+        case .serviceunavailable(let message):
+          return message
+        case .unexpected(_, let message):
+          return message
+        }
+      }
+    }
+  }
+
+  public struct TmbSubmitAuthorization_Input: Codable, Hashable, Sendable {
+    public var dpopProof: Swift.String
+    public var flowId: Swift.String
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(dpopProof: Swift.String, flowId: Swift.String) {
+      self.dpopProof = dpopProof
+      self.flowId = flowId
+      self._unknownValues = [:]
+    }
+
+    public static func make(dpopProof: Swift.String, flowId: Swift.String) throws -> Self {
+      guard dpopProof.utf8.count <= 8192 else {
+        throw LexiconConstraintError.stringTooLong("dpopProof", limit: 8192)
+      }
+      guard dpopProof.utf8.count >= 1 else {
+        throw LexiconConstraintError.stringTooShort("dpopProof", minimum: 1)
+      }
+      return Self.init(dpopProof: dpopProof, flowId: flowId)
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case dpopProof
+      case flowId
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      let dpopProof = try keyedContainer.decode(Swift.String.self, forKey: .dpopProof)
+      let flowId = try keyedContainer.decode(Swift.String.self, forKey: .flowId)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      if !LexiconDecodingMode.shouldValidateConstraints(in: decoder) {
+        self = Self.init(dpopProof: dpopProof, flowId: flowId)
+        return
+      }
+      do {
+        self = try Self.make(dpopProof: dpopProof, flowId: flowId)
+      } catch let error as LexiconConstraintError {
+        throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "\(error)", underlyingError: error))
+      }
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encode(self.dpopProof, forKey: .dpopProof)
+      try container.encode(self.flowId, forKey: .flowId)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
+
+  public struct TmbSubmitAuthorization_Output: Codable, Hashable, Sendable {
+    public var authorizationUrl: FormatString<URI>?
+    public var proof: TmbDefs_ProofRequest?
+    public var status: TmbSubmitAuthorization_Output_Status
+    public let _unknownValues: [Swift.String: AnyCodable]
+
+    public init(authorizationUrl: FormatString<URI>? = nil, proof: TmbDefs_ProofRequest? = nil, status: TmbSubmitAuthorization_Output_Status) {
+      self.authorizationUrl = authorizationUrl
+      self.proof = proof
+      self.status = status
+      self._unknownValues = [:]
+    }
+
+    public static func make(authorizationUrl: FormatString<URI>? = nil, proof: TmbDefs_ProofRequest? = nil, status: TmbSubmitAuthorization_Output_Status) throws -> Self {
+      if let authorizationUrl {
+        guard authorizationUrl.rawValue.utf8.count <= 4096 else {
+          throw LexiconConstraintError.stringTooLong("authorizationUrl", limit: 4096)
+        }
+      }
+      guard status.rawValue.utf8.count <= 32 else {
+        throw LexiconConstraintError.stringTooLong("status", limit: 32)
+      }
+      return Self.init(authorizationUrl: authorizationUrl, proof: proof, status: status)
+    }
+
+    enum CodingKeys: Swift.String, CodingKey {
+      case authorizationUrl
+      case proof
+      case status
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let keyedContainer = try decoder.container(keyedBy: CodingKeys.self)
+      let authorizationUrl = try keyedContainer.decodeIfPresent(FormatString<URI>.self, forKey: .authorizationUrl)
+      let proof = try keyedContainer.decodeIfPresent(TmbDefs_ProofRequest.self, forKey: .proof)
+      let status = try keyedContainer.decode(Org.Nnabeyang.TmbSubmitAuthorization_Output_Status.self, forKey: .status)
+      let unknownContainer = try decoder.container(keyedBy: AnyCodingKeys.self)
+      var _unknownValues = [Swift.String: AnyCodable]()
+      for key in unknownContainer.allKeys {
+        guard CodingKeys(rawValue: key.stringValue) == nil else {
+          continue
+        }
+        _unknownValues[key.stringValue] = try unknownContainer.decode(AnyCodable.self, forKey: key)
+      }
+      if !LexiconDecodingMode.shouldValidateConstraints(in: decoder) {
+        self = Self.init(authorizationUrl: authorizationUrl, proof: proof, status: status)
+        return
+      }
+      do {
+        self = try Self.make(authorizationUrl: authorizationUrl, proof: proof, status: status)
+      } catch let error as LexiconConstraintError {
+        throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "\(error)", underlyingError: error))
+      }
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encodeIfPresent(self.authorizationUrl, forKey: .authorizationUrl)
+      try container.encodeIfPresent(self.proof, forKey: .proof)
+      try container.encode(self.status, forKey: .status)
+      try _unknownValues.encode(to: encoder)
+    }
+  }
+
+  public indirect enum TmbSubmitAuthorization_Output_Status: RawRepresentable, Codable, Hashable, Sendable {
+    case ready
+    case proofrequired
+    case _other(Swift.String)
+
+    public init(rawValue: Swift.String) {
+      switch rawValue {
+      case "ready":
+        self = .ready
+      case "proofRequired":
+        self = .proofrequired
+      default:
+        self = ._other(rawValue)
+      }
+    }
+
+    public var rawValue: Swift.String {
+      switch self {
+      case .ready:
+        "ready"
+      case .proofrequired:
+        "proofRequired"
+      case ._other(let value):
+        value
+      }
+    }
+
+    public init(from decoder: any Decoder) throws {
+      let rawValue = try Swift.String(from: decoder)
+      self = Self(rawValue: rawValue)
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+      try rawValue.encode(to: encoder)
     }
   }
 }
@@ -15132,6 +16903,22 @@ public protocol XRPCCallable: _XRPCCallable {
   func SyncGetBlob(cid: FormatString<LexLink>, did: FormatString<DID>) async throws -> Com.Atproto.SyncGetBlob.ResponseBody
   /// Get the current commit CID & revision of the specified repo. Does not require auth.
   func SyncGetLatestCommit(did: FormatString<DID>) async throws -> Com.Atproto.SyncGetLatestCommit.ResponseBody
+  /// Registers one device public key using a one-time administrator enrollment secret.
+  func TmbEnrollDevice(input: Org.Nnabeyang.TmbEnrollDevice_Input) async throws -> Org.Nnabeyang.TmbEnrollDevice.ResponseBody
+  /// Exchanges a successful callback code and stores the resulting refresh token.
+  func TmbExchangeAuthorization(input: Org.Nnabeyang.TmbExchangeAuthorization_Input) async throws -> Org.Nnabeyang.TmbExchangeAuthorization.ResponseBody
+  /// Returns the callback state for an authorization flow owned by the device.
+  func TmbGetAuthorization(flowId: Swift.String) async throws -> Org.Nnabeyang.TmbGetAuthorization.ResponseBody
+  /// Discovers an authorization server and creates a pending authorization flow.
+  func TmbPrepareAuthorization(input: Org.Nnabeyang.TmbPrepareAuthorization_Input) async throws -> Org.Nnabeyang.TmbPrepareAuthorization.ResponseBody
+  /// Rotates the stored refresh token and returns new short-lived access material.
+  func TmbRefreshSession(input: Org.Nnabeyang.TmbRefreshSession_Input) async throws -> Org.Nnabeyang.TmbRefreshSession.ResponseBody
+  /// Revokes the authenticated device and all sessions it owns.
+  func TmbRevokeDevice(input: Org.Nnabeyang.TmbRevokeDevice_Input) async throws -> Org.Nnabeyang.TmbRevokeDevice.ResponseBody
+  /// Revokes one OAuth session owned by the authenticated device.
+  func TmbRevokeSession(input: Org.Nnabeyang.TmbRevokeSession_Input) async throws -> Org.Nnabeyang.TmbRevokeSession.ResponseBody
+  /// Submits a pushed authorization request with a device-created DPoP proof.
+  func TmbSubmitAuthorization(input: Org.Nnabeyang.TmbSubmitAuthorization_Input) async throws -> Org.Nnabeyang.TmbSubmitAuthorization.ResponseBody
   func ActorGetProfile(actor: FormatString<ATURI>) async throws -> Sh.Tangled.ActorGetProfile.ResponseBody
   func ActorGetProfiles(actors: [FormatString<ATURI>]) async throws -> Sh.Tangled.ActorGetProfiles.ResponseBody
   /// Cancel running pipeline or specific workflows
@@ -15276,6 +17063,38 @@ extension XRPCCallable {
   /// Get the current commit CID & revision of the specified repo. Does not require auth.
   public func SyncGetLatestCommit(did: FormatString<DID>) async throws -> Com.Atproto.SyncGetLatestCommit.ResponseBody {
     try await call(Com.Atproto.SyncGetLatestCommit.self, input: .init(did: did))
+  }
+  /// Registers one device public key using a one-time administrator enrollment secret.
+  public func TmbEnrollDevice(input: Org.Nnabeyang.TmbEnrollDevice_Input) async throws -> Org.Nnabeyang.TmbEnrollDevice.ResponseBody {
+    try await call(Org.Nnabeyang.TmbEnrollDevice.self, input: input)
+  }
+  /// Exchanges a successful callback code and stores the resulting refresh token.
+  public func TmbExchangeAuthorization(input: Org.Nnabeyang.TmbExchangeAuthorization_Input) async throws -> Org.Nnabeyang.TmbExchangeAuthorization.ResponseBody {
+    try await call(Org.Nnabeyang.TmbExchangeAuthorization.self, input: input)
+  }
+  /// Returns the callback state for an authorization flow owned by the device.
+  public func TmbGetAuthorization(flowId: Swift.String) async throws -> Org.Nnabeyang.TmbGetAuthorization.ResponseBody {
+    try await call(Org.Nnabeyang.TmbGetAuthorization.self, input: try Org.Nnabeyang.TmbGetAuthorization.Input.Query.make(flowId: flowId))
+  }
+  /// Discovers an authorization server and creates a pending authorization flow.
+  public func TmbPrepareAuthorization(input: Org.Nnabeyang.TmbPrepareAuthorization_Input) async throws -> Org.Nnabeyang.TmbPrepareAuthorization.ResponseBody {
+    try await call(Org.Nnabeyang.TmbPrepareAuthorization.self, input: input)
+  }
+  /// Rotates the stored refresh token and returns new short-lived access material.
+  public func TmbRefreshSession(input: Org.Nnabeyang.TmbRefreshSession_Input) async throws -> Org.Nnabeyang.TmbRefreshSession.ResponseBody {
+    try await call(Org.Nnabeyang.TmbRefreshSession.self, input: input)
+  }
+  /// Revokes the authenticated device and all sessions it owns.
+  public func TmbRevokeDevice(input: Org.Nnabeyang.TmbRevokeDevice_Input) async throws -> Org.Nnabeyang.TmbRevokeDevice.ResponseBody {
+    try await call(Org.Nnabeyang.TmbRevokeDevice.self, input: input)
+  }
+  /// Revokes one OAuth session owned by the authenticated device.
+  public func TmbRevokeSession(input: Org.Nnabeyang.TmbRevokeSession_Input) async throws -> Org.Nnabeyang.TmbRevokeSession.ResponseBody {
+    try await call(Org.Nnabeyang.TmbRevokeSession.self, input: input)
+  }
+  /// Submits a pushed authorization request with a device-created DPoP proof.
+  public func TmbSubmitAuthorization(input: Org.Nnabeyang.TmbSubmitAuthorization_Input) async throws -> Org.Nnabeyang.TmbSubmitAuthorization.ResponseBody {
+    try await call(Org.Nnabeyang.TmbSubmitAuthorization.self, input: input)
   }
   public func ActorGetProfile(actor: FormatString<ATURI>) async throws -> Sh.Tangled.ActorGetProfile.ResponseBody {
     try await call(Sh.Tangled.ActorGetProfile.self, input: .init(actor: actor))
