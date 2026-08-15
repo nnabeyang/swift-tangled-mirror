@@ -3,5 +3,5 @@ import Testing
 @testable import SwiftTangled
 
 @Test func versionAlignsWithSDK() {
-  #expect(SwiftTangled.version == "0.6.1")
+  #expect(SwiftTangled.version == "0.7.0")
 }
