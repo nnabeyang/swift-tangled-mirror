@@ -9,10 +9,59 @@ struct AuthAgentTMBCommand: AsyncParsableCommand {
     subcommands: [
       AuthAgentTMBEnrollCommand.self,
       AuthAgentTMBLoginCommand.self,
+      AuthAgentTMBVerifyCommand.self,
+      AuthAgentTMBLogoutCommand.self,
       AuthAgentTMBStatusCommand.self,
       AuthAgentTMBRevokeCommand.self,
     ]
   )
+}
+
+struct AuthAgentTMBVerifyCommand: AsyncParsableCommand {
+  static let configuration = CommandConfiguration(
+    commandName: "verify",
+    abstract: "Verify direct PDS authentication with the stored TMB session"
+  )
+
+  @OptionGroup var options: TMBInstanceOptions
+
+  @Flag(help: "Refresh the OAuth session before verifying the PDS request")
+  var refresh = false
+
+  mutating func validate() throws {
+    guard TMBDeviceRegistration.validInstance(options.resolvedInstance) else {
+      throw ValidationError(TMBDeviceCredentialStoreError.invalidInstance.localizedDescription)
+    }
+  }
+
+  func run() async throws {
+    try await runCLICommand(jsonErrors: options.json) {
+      try await TMBSessionCommandService().verify(
+        instance: options.resolvedInstance, refresh: refresh, json: options.json)
+    }
+  }
+}
+
+struct AuthAgentTMBLogoutCommand: AsyncParsableCommand {
+  static let configuration = CommandConfiguration(
+    commandName: "logout",
+    abstract: "Revoke and clear one TMB OAuth session"
+  )
+
+  @OptionGroup var options: TMBInstanceOptions
+
+  mutating func validate() throws {
+    guard TMBDeviceRegistration.validInstance(options.resolvedInstance) else {
+      throw ValidationError(TMBDeviceCredentialStoreError.invalidInstance.localizedDescription)
+    }
+  }
+
+  func run() async throws {
+    try await runCLICommand(jsonErrors: options.json) {
+      try await TMBSessionCommandService().logout(
+        instance: options.resolvedInstance, json: options.json)
+    }
+  }
 }
 
 struct AuthAgentTMBLoginCommand: AsyncParsableCommand {

@@ -247,6 +247,14 @@ func errorReport(for error: any Error) -> CLIErrorReport {
         "\(authenticationFailure ? "Authentication error" : "API error"): \(error.localizedDescription)\n"
     )
   }
+  if let error = error as? TMBSessionAgentError {
+    let authenticationFailure = error == .sessionMissing || error == .sessionRevoked
+    return CLIErrorReport(
+      exitCode: authenticationFailure ? .authentication : .api,
+      diagnostic:
+        "\(authenticationFailure ? "Authentication error" : "API error"): \(error.localizedDescription)\n"
+    )
+  }
   if let error = error as? TMBClientError {
     let authenticationFailure =
       error == .missingDeviceCredentials || error == .authenticationRequired
@@ -346,6 +354,14 @@ private func jsonErrorCode(for error: any Error) -> String {
     case .authorizationExpired: return "tmb_authorization_expired"
     case .authorizationTimedOut: return "tmb_authorization_timed_out"
     case .sessionAlreadyExists: return "tmb_session_exists"
+    }
+  }
+  if let error = error as? TMBSessionAgentError {
+    switch error {
+    case .sessionMissing: return "tmb_session_missing"
+    case .sessionRevoked: return "tmb_session_revoked"
+    case .pdsUnavailable: return "tmb_pds_unavailable"
+    case .invalidResponse: return "tmb_pds_invalid_response"
     }
   }
   if let error = error as? TMBClientError {

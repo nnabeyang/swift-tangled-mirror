@@ -88,7 +88,7 @@ public struct TMBProofKey: Sendable {
     )
   }
 
-  private func dpopProof(
+  public func dpopProof(
     method: String,
     endpoint: URL,
     nonce: String?,

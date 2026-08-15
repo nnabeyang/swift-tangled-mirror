@@ -110,6 +110,8 @@ enum CapabilityCatalog {
     ),
     "auth agent tmb enroll": Metadata(access: .write, authenticationRequired: false),
     "auth agent tmb login": Metadata(access: .write, authenticationRequired: false),
+    "auth agent tmb verify": Metadata(access: .read, authenticationRequired: true),
+    "auth agent tmb logout": Metadata(access: .write, authenticationRequired: true),
     "auth agent tmb status": Metadata(access: .read, authenticationRequired: false),
     "auth agent tmb revoke": Metadata(access: .write, authenticationRequired: false),
     "repo list": Metadata(access: .read, authenticationRequired: false),

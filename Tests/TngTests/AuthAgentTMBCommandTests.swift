@@ -24,6 +24,13 @@ import Testing
   #expect(login.options.instance == "reporting")
   #expect(login.noBrowser)
 
+  let verify = try AuthAgentTMBVerifyCommand.parse([
+    "--instance", "reporting", "--refresh", "--json",
+  ])
+  #expect(verify.refresh)
+  let logout = try AuthAgentTMBLogoutCommand.parse(["--instance", "reporting", "--json"])
+  #expect(logout.options.json)
+
   let status = try AuthAgentTMBStatusCommand.parse([])
   #expect(status.options.resolvedInstance == "default")
   let revoke = try AuthAgentTMBRevokeCommand.parse(["--instance", "reporting", "--yes"])
