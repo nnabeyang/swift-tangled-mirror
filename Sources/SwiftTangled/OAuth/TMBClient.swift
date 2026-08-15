@@ -49,15 +49,18 @@ public struct TMBDeviceCredentials: Sendable {
 public actor TMBClient: XRPCCallable {
   public let origin: TMBOrigin
   private let transport: any HTTPTransport
+  private let credentialsDidChange: @Sendable (TMBDeviceCredentials) throws -> Void
   private var deviceCredentials: TMBDeviceCredentials?
 
   public init(
     origin: TMBOrigin,
     credentials: TMBDeviceCredentials? = nil,
+    credentialsDidChange: @escaping @Sendable (TMBDeviceCredentials) throws -> Void = { _ in },
     transport: any HTTPTransport = URLSessionTransport()
   ) {
     self.origin = origin
     deviceCredentials = credentials
+    self.credentialsDidChange = credentialsDidChange
     self.transport = transport
   }
 
@@ -107,7 +110,13 @@ public actor TMBClient: XRPCCallable {
       proofKey: proofKey
     )
     deviceCredentials = credentials
+    try credentialsDidChange(credentials)
     return credentials
+  }
+
+  public func revokeDevice() async throws -> Bool {
+    let output = try await TmbRevokeDevice(input: .init())
+    return output.revoked
   }
 
   public func response(_ components: XRPCRequestComponents) async throws -> Data {
@@ -124,6 +133,9 @@ public actor TMBClient: XRPCCallable {
         .flatMap { $0.isEmpty ? nil : $0 }
       if let responseNonce {
         deviceCredentials?.nonce = responseNonce
+        if let updatedCredentials = deviceCredentials {
+          try credentialsDidChange(updatedCredentials)
+        }
       }
       guard !(200 ... 299).contains(response.statusCode) else {
         return data

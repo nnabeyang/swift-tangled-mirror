@@ -108,6 +108,9 @@ enum CapabilityCatalog {
       authenticationRequired: false,
       platforms: ["macos"]
     ),
+    "auth agent tmb enroll": Metadata(access: .write, authenticationRequired: false),
+    "auth agent tmb status": Metadata(access: .read, authenticationRequired: false),
+    "auth agent tmb revoke": Metadata(access: .write, authenticationRequired: false),
     "repo list": Metadata(access: .read, authenticationRequired: false),
     "repo create": Metadata(access: .write, authenticationRequired: true),
     "repo delete": Metadata(access: .write, authenticationRequired: true),

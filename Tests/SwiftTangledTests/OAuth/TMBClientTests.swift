@@ -106,6 +106,36 @@ import Testing
 }
 
 @Suite struct TMBClientTests {
+  @Test func reportsEnrolledAndRotatedCredentialsToPersistence() async throws {
+    let recorder = TMBRequestRecorder(
+      responses: [
+        .json(status: 200, body: #"{"deviceId":"device-1","nonce":"nonce-1"}"#),
+        .json(status: 200, body: "{}", headers: ["TMB-Device-Nonce": "nonce-2"]),
+      ]
+    )
+    let changes = TMBChangeRecorder()
+    let client = TMBClient(
+      origin: try TMBOrigin("https://tmb.example"),
+      credentialsDidChange: { credentials in
+        changes.record(credentials)
+      },
+      transport: TMBRecordingTransport(recorder: recorder)
+    )
+
+    _ = try await client.enroll(name: "device", credential: "credential")
+    _ = try await client.response(
+      XRPCRequestComponents(
+        nsId: "org.nnabeyang.tmb.revokeDevice",
+        queryItems: [],
+        headers: [:],
+        method: .post,
+        body: Data("{}".utf8)
+      )
+    )
+
+    #expect(changes.nonces == ["nonce-1", "nonce-2"])
+  }
+
   @Test func enrollmentUsesOneTimeCredentialAndStoresReturnedDevice() async throws {
     let recorder = TMBRequestRecorder(
       responses: [
@@ -283,6 +313,21 @@ private struct TMBMockResponse {
     headers: [String: String] = [:]
   ) -> TMBMockResponse {
     TMBMockResponse(status: status, data: Data(body.utf8), headers: headers)
+  }
+}
+
+private final class TMBChangeRecorder: @unchecked Sendable {
+  private let lock = NSLock()
+  private var values: [String?] = []
+
+  var nonces: [String?] {
+    lock.withLock { values }
+  }
+
+  func record(_ credentials: TMBDeviceCredentials) {
+    lock.withLock {
+      values.append(credentials.nonce)
+    }
   }
 }
 

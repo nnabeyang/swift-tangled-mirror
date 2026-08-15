@@ -20,7 +20,7 @@ import Testing
 
     #expect(document.schemaVersion == 1)
     #expect(document.cliVersion == SwiftTangled.version)
-    #expect(paths.count == 65)
+    #expect(paths.count == 68)
     #expect(paths.contains("capabilities"))
     #expect(paths.contains("auth agent serve"))
     #expect(paths.contains("auth agent service install"))
@@ -29,6 +29,9 @@ import Testing
     #expect(paths.contains("auth agent service restart"))
     #expect(paths.contains("auth agent service stop"))
     #expect(paths.contains("auth agent service uninstall"))
+    #expect(paths.contains("auth agent tmb enroll"))
+    #expect(paths.contains("auth agent tmb status"))
+    #expect(paths.contains("auth agent tmb revoke"))
     #expect(paths.contains("pr create"))
     #expect(paths.contains("pr edit"))
     #expect(paths.contains("pr resubmit"))
@@ -292,5 +295,23 @@ import Testing
     #expect(remove.access == .write)
     #expect(remove.authenticationRequired)
     #expect(remove.options.contains { $0.names == ["--yes"] })
+  }
+
+  @Test func tmbEnrollmentCapabilitiesNeverAcceptASecretOption() throws {
+    let document = try CapabilityCatalog.document()
+    let enroll = try #require(
+      document.commands.first { $0.path == ["auth", "agent", "tmb", "enroll"] }
+    )
+    let revoke = try #require(
+      document.commands.first { $0.path == ["auth", "agent", "tmb", "revoke"] }
+    )
+
+    #expect(enroll.access == .write)
+    #expect(!enroll.authenticationRequired)
+    #expect(enroll.options.flatMap(\.names).contains("--origin"))
+    #expect(enroll.options.flatMap(\.names).contains("--name"))
+    #expect(!enroll.options.flatMap(\.names).contains("--secret"))
+    #expect(!enroll.options.flatMap(\.names).contains("--credential"))
+    #expect(revoke.options.flatMap(\.names).contains("--yes"))
   }
 }

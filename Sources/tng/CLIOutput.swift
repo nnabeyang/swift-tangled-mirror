@@ -227,6 +227,21 @@ func errorReport(for error: any Error) -> CLIErrorReport {
       diagnostic: "\(category): \(describeTangledError(error))\n"
     )
   }
+  if let error = error as? TMBDeviceCredentialStoreError {
+    return CLIErrorReport(
+      exitCode: .authentication,
+      diagnostic: "Authentication error: \(error.localizedDescription)\n"
+    )
+  }
+  if let error = error as? TMBClientError {
+    let authenticationFailure =
+      error == .missingDeviceCredentials || error == .authenticationRequired
+    return CLIErrorReport(
+      exitCode: authenticationFailure ? .authentication : .api,
+      diagnostic:
+        "\(authenticationFailure ? "Authentication error" : "API error"): \(error.localizedDescription)\n"
+    )
+  }
   if let error = error as? ArtifactError {
     return CLIErrorReport(
       exitCode: .api,
@@ -301,6 +316,22 @@ private func jsonErrorCode(for error: any Error) -> String {
     case .notImplemented: return "not_implemented"
     case .keychainFailure: return "keychain_failure"
     case .sessionStoreFailure: return "session_store_failure"
+    }
+  }
+  if error is TMBDeviceCredentialStoreError {
+    return "tmb_device_state"
+  }
+  if let error = error as? TMBClientError {
+    switch error {
+    case .invalidOrigin: return "tmb_invalid_origin"
+    case .invalidKey: return "tmb_invalid_key"
+    case .invalidProofEndpoint: return "tmb_invalid_proof_endpoint"
+    case .missingDeviceCredentials: return "tmb_credentials_missing"
+    case .authenticationRequired: return "tmb_authentication_required"
+    case .replayDetected: return "tmb_replay_detected"
+    case .serviceUnavailable: return "tmb_service_unavailable"
+    case .invalidResponse: return "tmb_invalid_response"
+    case .transport: return "tmb_transport"
     }
   }
   if let error = error as? ArtifactError {

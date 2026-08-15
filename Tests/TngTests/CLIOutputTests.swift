@@ -105,6 +105,18 @@ import Testing
     #expect(json.exitCode == CLIExitCode.api.rawValue)
   }
 
+  @Test func reportsTMBStateAndProtocolFailuresWithoutSecretMaterial() {
+    let state = errorReport(for: TMBDeviceCredentialStoreError.invalidState)
+    let unavailable = errorReport(for: TMBClientError.serviceUnavailable)
+
+    #expect(state.exitCode == .authentication)
+    #expect(state.diagnostic == "Authentication error: TMB device state is invalid\n")
+    #expect(jsonErrorReport(for: TMBDeviceCredentialStoreError.invalidState).code == "tmb_device_state")
+    #expect(unavailable.exitCode == .api)
+    #expect(unavailable.diagnostic == "API error: TMB is unavailable\n")
+    #expect(jsonErrorReport(for: TMBClientError.serviceUnavailable).code == "tmb_service_unavailable")
+  }
+
   @Test func reportsUsageAndUnexpectedErrors() {
     let usage = errorReport(for: ValidationError("invalid option"))
     let unexpected = errorReport(for: UnexpectedTestError())
