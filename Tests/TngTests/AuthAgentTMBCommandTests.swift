@@ -17,6 +17,13 @@ import Testing
   #expect(enroll.options.instance == "reporting")
   #expect(enroll.options.json)
 
+  let login = try AuthAgentTMBLoginCommand.parse([
+    "alice.example", "--instance", "reporting", "--no-browser", "--json",
+  ])
+  #expect(login.identifier == "alice.example")
+  #expect(login.options.instance == "reporting")
+  #expect(login.noBrowser)
+
   let status = try AuthAgentTMBStatusCommand.parse([])
   #expect(status.options.resolvedInstance == "default")
   let revoke = try AuthAgentTMBRevokeCommand.parse(["--instance", "reporting", "--yes"])
@@ -153,6 +160,7 @@ import Testing
 
 private func makeService(
   store: MemoryTMBDeviceStore,
+  sessionStore: MemoryTMBSessionStore = MemoryTMBSessionStore(),
   recorder: TMBCommandRecorder = TMBCommandRecorder(),
   revokeResult: Bool = true,
   inputIsTerminal: Bool = true,
@@ -162,6 +170,7 @@ private func makeService(
     formatter: .plain,
     dependencies: TMBDeviceCommandDependencies(
       store: { _ in store },
+      sessionStore: { _ in sessionStore },
       enroll: { _, _, secret in
         await recorder.record(secret: secret)
         return TMBDeviceCredentials(
@@ -175,6 +184,13 @@ private func makeService(
       confirmRevocation: { _ in confirmation }
     )
   )
+}
+
+private final class MemoryTMBSessionStore: TMBSessionStoring, @unchecked Sendable {
+  var session: TMBSession?
+  func load() throws -> TMBSession? { session }
+  func write(_ session: TMBSession) throws { self.session = session }
+  func clear() throws { session = nil }
 }
 
 private func registration() throws -> TMBDeviceRegistration {

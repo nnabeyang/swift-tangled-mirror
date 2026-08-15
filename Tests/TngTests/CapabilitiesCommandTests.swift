@@ -20,7 +20,7 @@ import Testing
 
     #expect(document.schemaVersion == 1)
     #expect(document.cliVersion == SwiftTangled.version)
-    #expect(paths.count == 68)
+    #expect(paths.count == 69)
     #expect(paths.contains("capabilities"))
     #expect(paths.contains("auth agent serve"))
     #expect(paths.contains("auth agent service install"))
@@ -30,6 +30,7 @@ import Testing
     #expect(paths.contains("auth agent service stop"))
     #expect(paths.contains("auth agent service uninstall"))
     #expect(paths.contains("auth agent tmb enroll"))
+    #expect(paths.contains("auth agent tmb login"))
     #expect(paths.contains("auth agent tmb status"))
     #expect(paths.contains("auth agent tmb revoke"))
     #expect(paths.contains("pr create"))

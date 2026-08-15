@@ -233,6 +233,20 @@ func errorReport(for error: any Error) -> CLIErrorReport {
       diagnostic: "Authentication error: \(error.localizedDescription)\n"
     )
   }
+  if let error = error as? TMBSessionStoreError {
+    return CLIErrorReport(
+      exitCode: .authentication,
+      diagnostic: "Authentication error: \(error.localizedDescription)\n"
+    )
+  }
+  if let error = error as? TMBAuthFlowError {
+    let authenticationFailure = error != .invalidPublicMetadata
+    return CLIErrorReport(
+      exitCode: authenticationFailure ? .authentication : .api,
+      diagnostic:
+        "\(authenticationFailure ? "Authentication error" : "API error"): \(error.localizedDescription)\n"
+    )
+  }
   if let error = error as? TMBClientError {
     let authenticationFailure =
       error == .missingDeviceCredentials || error == .authenticationRequired
@@ -320,6 +334,19 @@ private func jsonErrorCode(for error: any Error) -> String {
   }
   if error is TMBDeviceCredentialStoreError {
     return "tmb_device_state"
+  }
+  if error is TMBSessionStoreError {
+    return "tmb_session_state"
+  }
+  if let error = error as? TMBAuthFlowError {
+    switch error {
+    case .invalidPublicMetadata: return "tmb_invalid_public_metadata"
+    case .identityNotResolved: return "tmb_identity_not_resolved"
+    case .authorizationFailed: return "tmb_authorization_failed"
+    case .authorizationExpired: return "tmb_authorization_expired"
+    case .authorizationTimedOut: return "tmb_authorization_timed_out"
+    case .sessionAlreadyExists: return "tmb_session_exists"
+    }
   }
   if let error = error as? TMBClientError {
     switch error {

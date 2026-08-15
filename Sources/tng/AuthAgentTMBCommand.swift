@@ -8,10 +8,44 @@ struct AuthAgentTMBCommand: AsyncParsableCommand {
     abstract: "Manage a token-mediating backend device",
     subcommands: [
       AuthAgentTMBEnrollCommand.self,
+      AuthAgentTMBLoginCommand.self,
       AuthAgentTMBStatusCommand.self,
       AuthAgentTMBRevokeCommand.self,
     ]
   )
+}
+
+struct AuthAgentTMBLoginCommand: AsyncParsableCommand {
+  static let configuration = CommandConfiguration(
+    commandName: "login",
+    abstract: "Sign in through an enrolled TMB device"
+  )
+
+  @Argument(help: "AT Protocol handle or DID")
+  var identifier: String
+
+  @OptionGroup var options: TMBInstanceOptions
+
+  @Flag(help: "Print the authorization URL instead of opening a browser")
+  var noBrowser = false
+
+  mutating func validate() throws {
+    guard TMBDeviceRegistration.validInstance(options.resolvedInstance) else {
+      throw ValidationError(TMBDeviceCredentialStoreError.invalidInstance.localizedDescription)
+    }
+    guard !identifier.isEmpty else { throw ValidationError("identifier must not be empty") }
+  }
+
+  func run() async throws {
+    try await runCLICommand(jsonErrors: options.json) {
+      try await TMBLoginCommandService().login(
+        identifier: identifier,
+        instance: options.resolvedInstance,
+        browser: CLITMBAuthBrowserLauncher(noBrowser: noBrowser),
+        json: options.json
+      )
+    }
+  }
 }
 
 struct TMBInstanceOptions: ParsableArguments {

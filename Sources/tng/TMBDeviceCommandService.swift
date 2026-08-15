@@ -10,6 +10,7 @@ import SwiftTangled
 
 struct TMBDeviceCommandDependencies: Sendable {
   let store: @Sendable (String) throws -> any TMBDeviceCredentialStoring
+  let sessionStore: @Sendable (String) throws -> any TMBSessionStoring
   let enroll: @Sendable (TMBOrigin, String, String) async throws -> TMBDeviceCredentials
   let revoke: @Sendable (TMBOrigin, TMBDeviceCredentials) async throws -> Bool
   let inputIsTerminal: @Sendable () -> Bool
@@ -19,6 +20,11 @@ struct TMBDeviceCommandDependencies: Sendable {
     store: { instance in
       FileTMBDeviceCredentialStore(
         fileURL: try CLITMBDeviceStore.fileURL(instance: instance)
+      )
+    },
+    sessionStore: { instance in
+      FileTMBSessionStore(
+        fileURL: try CLITMBDeviceStore.sessionFileURL(instance: instance)
       )
     },
     enroll: { origin, name, secret in
@@ -39,13 +45,21 @@ struct TMBDeviceCommandResult: Codable, Equatable, Sendable {
   let configured: Bool
   let origin: String?
   let deviceID: String?
+  let sessionConfigured: Bool?
+  let accountDID: String?
+  let handle: String?
+  let expiresAt: Date?
 
   init(
     action: String,
     instance: String,
     configured: Bool,
     origin: String? = nil,
-    deviceID: String? = nil
+    deviceID: String? = nil,
+    sessionConfigured: Bool? = nil,
+    accountDID: String? = nil,
+    handle: String? = nil,
+    expiresAt: Date? = nil
   ) {
     schemaVersion = 1
     self.action = action
@@ -53,6 +67,10 @@ struct TMBDeviceCommandResult: Codable, Equatable, Sendable {
     self.configured = configured
     self.origin = origin
     self.deviceID = deviceID
+    self.sessionConfigured = sessionConfigured
+    self.accountDID = accountDID
+    self.handle = handle
+    self.expiresAt = expiresAt
   }
 }
 
@@ -114,7 +132,9 @@ struct TMBDeviceCommandService: Sendable {
           : "TMB instance '\(instance)' is not enrolled.\n"
       )
     }
-    return try output(action: "status", registration: registration, json: json)
+    let session = try dependencies.sessionStore(instance).load()
+    return try output(
+      action: "status", registration: registration, session: session, json: json)
   }
 
   func revoke(
@@ -147,6 +167,7 @@ struct TMBDeviceCommandService: Sendable {
     guard try await dependencies.revoke(registration.origin, registration.credentials) else {
       throw TMBClientError.invalidResponse
     }
+    try dependencies.sessionStore(instance).clear()
     try store.clear()
     let result = TMBDeviceCommandResult(
       action: "revoked",
@@ -165,6 +186,7 @@ struct TMBDeviceCommandService: Sendable {
   private func output(
     action: String,
     registration: TMBDeviceRegistration,
+    session: TMBSession? = nil,
     json: Bool
   ) throws -> CLICommandOutput {
     let result = TMBDeviceCommandResult(
@@ -172,7 +194,11 @@ struct TMBDeviceCommandService: Sendable {
       instance: registration.instance,
       configured: true,
       origin: registration.origin.url.absoluteString,
-      deviceID: registration.credentials.deviceID
+      deviceID: registration.credentials.deviceID,
+      sessionConfigured: session != nil,
+      accountDID: session?.accountDID,
+      handle: session?.handle,
+      expiresAt: session?.expiresAt
     )
     if json { return CLICommandOutput(stdout: try formatter.json(result)) }
     switch action {
@@ -182,9 +208,13 @@ struct TMBDeviceCommandService: Sendable {
           "Enrolled TMB device \(registration.credentials.deviceID) for instance '\(registration.instance)' at \(registration.origin.url.absoluteString).\n"
       )
     default:
+      let sessionDescription =
+        session.map {
+          " OAuth session: @\($0.handle) (\($0.accountDID)), expires \($0.expiresAt.formatted())."
+        } ?? " OAuth session: not configured."
       return CLICommandOutput(
         stdout:
-          "TMB instance '\(registration.instance)' is enrolled at \(registration.origin.url.absoluteString) as device \(registration.credentials.deviceID).\n"
+          "TMB instance '\(registration.instance)' is enrolled at \(registration.origin.url.absoluteString) as device \(registration.credentials.deviceID).\(sessionDescription)\n"
       )
     }
   }
@@ -197,7 +227,7 @@ struct TMBDeviceCommandService: Sendable {
 }
 
 enum CLITMBDeviceStore {
-  static func fileURL(
+  static func directoryURL(
     instance: String,
     environment: [String: String] = ProcessInfo.processInfo.environment
   ) throws -> URL {
@@ -227,7 +257,22 @@ enum CLITMBDeviceStore {
       baseURL
       .appendingPathComponent("tng/tmb", isDirectory: true)
       .appendingPathComponent(instance, isDirectory: true)
+  }
+
+  static func fileURL(
+    instance: String,
+    environment: [String: String] = ProcessInfo.processInfo.environment
+  ) throws -> URL {
+    try directoryURL(instance: instance, environment: environment)
       .appendingPathComponent("device.json", isDirectory: false)
+  }
+
+  static func sessionFileURL(
+    instance: String,
+    environment: [String: String] = ProcessInfo.processInfo.environment
+  ) throws -> URL {
+    try directoryURL(instance: instance, environment: environment)
+      .appendingPathComponent("session.json", isDirectory: false)
   }
 }
 
