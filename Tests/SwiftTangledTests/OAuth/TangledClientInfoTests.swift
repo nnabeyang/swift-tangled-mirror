@@ -4,7 +4,7 @@ import Testing
 @testable import SwiftTangled
 
 @Test func tangledClientInfoDefinesCLIRedirect() {
-  let info = OAuth.ClientInfo.tangledCLI
+  let info = OAuth.ClientInfo.tangledCLI(boundPort: 54321, profile: nil)
   #expect(
     info.clientId
       == "https://soyokaze-pds-rc-677008170211.asia-northeast1.run.app/tangled/cli-client-metadata.json"
@@ -63,15 +63,18 @@ import Testing
   #expect(!info.scopes.contains("repo:*"))
   #expect(info.redirectURI.scheme == "http")
   #expect(info.redirectURI.host == "127.0.0.1")
+  #expect(info.redirectURI.port == 54321)
   #expect(info.redirectURI.path == "/callback")
 }
 
-@Test func tangledClientInfoWithBoundPortIncludesPort() {
-  let info = OAuth.ClientInfo.tangledCLI(boundPort: 54321)
-  #expect(info.redirectURI.host == "127.0.0.1")
-  #expect(info.redirectURI.port == 54321)
-  #expect(info.redirectURI.path == "/callback")
-  #expect(info.scopes == OAuth.ClientInfo.tangledCLI.scopes)
+@Test func tangledClientInfoUsesCustomHostedClientID() {
+  let info = OAuth.ClientInfo.tangledCLI(
+    boundPort: 54321,
+    profile: nil,
+    clientID: .hosted("https://client.example/metadata.json")
+  )
+  #expect(info.clientId == "https://client.example/metadata.json")
+  #expect(info.scopes == OAuth.ClientInfo.cliScopes(profile: nil))
 }
 
 @Test func ciReportingProfileUsesOnlyReportingScopes() {

@@ -35,7 +35,7 @@
         },
         {
           "code" : [
-            "tng auth login <handle> [--no-browser] [--callback-port <callback-port>] [--profile <profile>] [--version] [--help]"
+            "tng auth login <handle> [--no-browser] [--callback-port <callback-port>] [--profile <profile>] [--client-id <client-id>] [--version] [--help]"
           ],
           "syntax" : "console",
           "type" : "codeListing"
@@ -107,6 +107,21 @@
           "inlineContent" : [
             {
               "text" : "Use a restricted authentication profile",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "client-id-%3Cclient-id%3E",
+          "level" : 3,
+          "text" : "–client-id <client-id>",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Use an HTTPS OAuth client metadata URL",
               "type" : "text"
             }
           ],

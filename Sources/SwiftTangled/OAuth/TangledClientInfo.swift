@@ -61,29 +61,34 @@ public let tangledCIReportingScopes = [
 public let legacyTangledCLIClientID =
   "https://soyokaze-pds-rc-677008170211.asia-northeast1.run.app/tangled/cli-client-metadata.json"
 
-extension OAuth.ClientInfo {
-  public static let tangledCLI = OAuth.ClientInfo(
-    clientId: legacyTangledCLIClientID,
-    scopes: tangledCLIScopes,
-    redirectURI: URL(string: "http://127.0.0.1/callback")!
-  )
+public enum TangledClientID: Sendable, Equatable {
+  case hosted(String)
 
-  public static func tangledCLI(boundPort: UInt16) -> OAuth.ClientInfo {
-    OAuth.ClientInfo(
-      clientId: legacyTangledCLIClientID,
-      scopes: tangledCLIScopes,
-      redirectURI: URL(string: "http://127.0.0.1:\(boundPort)/callback")!
+  fileprivate func value(redirectURI _: URL, scopes _: [String]) -> String {
+    switch self {
+    case .hosted(let clientID): clientID
+    }
+  }
+}
+
+public let defaultTangledLoginClientID = TangledClientID.hosted(legacyTangledCLIClientID)
+
+extension OAuth.ClientInfo {
+  public static func tangledCLI(
+    boundPort: UInt16,
+    profile: AuthenticationProfile?,
+    clientID: TangledClientID = defaultTangledLoginClientID
+  ) -> OAuth.ClientInfo {
+    let scopes = cliScopes(profile: profile)
+    let redirectURI = URL(string: "http://127.0.0.1:\(boundPort)/callback")!
+    return OAuth.ClientInfo(
+      clientId: clientID.value(redirectURI: redirectURI, scopes: scopes),
+      scopes: scopes,
+      redirectURI: redirectURI
     )
   }
 
-  public static func tangledCLI(
-    boundPort: UInt16,
-    profile: AuthenticationProfile?
-  ) -> OAuth.ClientInfo {
-    OAuth.ClientInfo(
-      clientId: legacyTangledCLIClientID,
-      scopes: profile == .ciReporting ? tangledCIReportingScopes : tangledCLIScopes,
-      redirectURI: URL(string: "http://127.0.0.1:\(boundPort)/callback")!
-    )
+  public static func cliScopes(profile: AuthenticationProfile?) -> [String] {
+    profile == .ciReporting ? tangledCIReportingScopes : tangledCLIScopes
   }
 }

@@ -1,4 +1,5 @@
 import Foundation
+import SwiftTangled
 import Testing
 
 @testable import tng
@@ -47,6 +48,38 @@ import Testing
     let logout = try AuthLogoutCommand.parse(["--all", "--json"])
     #expect(logout.all)
     #expect(logout.json)
+  }
+
+  @Test func resolvesHostedLoginClientIDByPrecedence() throws {
+    #expect(
+      try AuthLoginCommand.resolveClientID(
+        option: "https://option.example/metadata.json",
+        environment: [
+          "TNG_CLIENT_ID": "not a URL"
+        ]) == .hosted("https://option.example/metadata.json")
+    )
+
+    #expect(
+      try AuthLoginCommand.resolveClientID(
+        option: nil,
+        environment: ["TNG_CLIENT_ID": "https://environment.example/metadata.json"]
+      ) == .hosted("https://environment.example/metadata.json")
+    )
+    #expect(
+      try AuthLoginCommand.resolveClientID(option: nil, environment: [:])
+        == defaultTangledLoginClientID
+    )
+  }
+
+  @Test func rejectsInvalidHostedLoginClientIDs() throws {
+    for value in ["", "loopback", "http://client.example/metadata.json", "relative/path"] {
+      #expect(throws: (any Error).self) {
+        _ = try AuthLoginCommand.resolveClientID(
+          option: nil,
+          environment: ["TNG_CLIENT_ID": value]
+        )
+      }
+    }
   }
 
   @Test func createsFilesystemSafeAccountPaths() {
