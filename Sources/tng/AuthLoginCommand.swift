@@ -49,21 +49,31 @@ struct AuthLoginCommand: AsyncParsableCommand {
 
   func run() async throws {
     try await runCLICommand {
-      let sessionStore = try CLISessionStore.make()
+      let configuredStore = try CLISessionStore.make()
+      let loginStore: any SessionStore =
+        configuredStore.registry == nil ? configuredStore.store : InMemorySessionStore()
       let browser = CLIAuthBrowserLauncher(
         noBrowser: noBrowser,
         callbackPort: callbackPort
       )
       let flow = AuthFlow(
         browser: browser,
-        sessionStore: sessionStore.store,
+        sessionStore: loginStore,
         callbackPort: callbackPort,
         profile: profile.flatMap(AuthenticationProfile.init(rawValue:))
       )
       let result = try await flow.login(handle: handle)
+      var storageDescription = configuredStore.storageDescription
+      if let registry = configuredStore.registry {
+        guard let session = try loginStore.load(), session.did == result.did else {
+          throw CLICommandError.authentication("OAuth login did not produce a stored session")
+        }
+        try registry.store(session)
+        storageDescription = try CLISessionStore.make(account: result.did).storageDescription
+      }
       return CLICommandOutput(
         stdout: "Signed in as @\(result.handle) (did: \(result.did))\n",
-        stderr: "Session stored in \(sessionStore.storageDescription)\n"
+        stderr: "Session stored in \(storageDescription)\n"
       )
     }
   }

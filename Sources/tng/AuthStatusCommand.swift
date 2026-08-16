@@ -11,6 +11,9 @@ struct AuthStatusCommand: AsyncParsableCommand {
   func run() async throws {
     try await runCLICommand {
       if let rawEndpoint = ProcessInfo.processInfo.environment["TNG_AUTH_AGENT"] {
+        guard CLIAccountOverride.identifier == nil else {
+          throw ValidationError("--account cannot be combined with TNG_AUTH_AGENT")
+        }
         let status = try await AuthAgentClient(
           endpoint: AuthAgentEndpoint(environmentValue: rawEndpoint)
         ).status()
@@ -29,9 +32,10 @@ struct AuthStatusCommand: AsyncParsableCommand {
         }
         return CLICommandOutput(stdout: lines.joined(separator: "\n") + "\n")
       }
+      let configured = try CLISessionStore.make()
       let stored: StoredSession?
       do {
-        stored = try CLISessionStore.make().store.load()
+        stored = try configured.store.load()
       } catch let error as TangledError {
         throw CLICommandError.authentication(
           "failed to read stored session: \(describeTangledError(error))"
@@ -42,10 +46,8 @@ struct AuthStatusCommand: AsyncParsableCommand {
           "run 'tng auth login <handle>' to sign in"
         )
       }
-      var lines = [
-        "Signed in as @\(session.handle)",
-        "DID: \(session.did)",
-      ]
+      var lines = ["Signed in as @\(session.handle)", "DID: \(session.did)"]
+      lines.append("Source: \(configured.registry == nil ? "session-file" : "account-registry")")
       if let profile = session.profile {
         lines.append("Profile: \(profile.rawValue)")
       }

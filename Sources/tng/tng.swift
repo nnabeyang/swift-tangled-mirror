@@ -38,10 +38,15 @@ struct Tng: AsyncParsableCommand {
     ]
   )
 
+  @Option(name: .long, help: "Use one stored account for this command")
+  var account: String?
+
   static func main() async {
     let arguments = Array(CommandLine.arguments.dropFirst())
     do {
-      var command = try await asyncParseAsRoot(arguments)
+      let extracted = try CLIAccountOverride.extract(from: arguments)
+      CLIAccountOverride.set(extracted.account)
+      var command = try await asyncParseAsRoot(extracted.arguments)
       if var asyncCommand = command as? AsyncParsableCommand {
         try await asyncCommand.run()
       } else {

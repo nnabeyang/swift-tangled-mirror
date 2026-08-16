@@ -6,6 +6,8 @@ struct AuthCommand: AsyncParsableCommand {
     abstract: "Manage tng authentication",
     subcommands: [
       AuthLoginCommand.self,
+      AuthListCommand.self,
+      AuthSwitchCommand.self,
       AuthStatusCommand.self,
       AuthLogoutCommand.self,
       AuthAgentCommand.self,

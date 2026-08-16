@@ -227,6 +227,12 @@ func errorReport(for error: any Error) -> CLIErrorReport {
       diagnostic: "\(category): \(describeTangledError(error))\n"
     )
   }
+  if let error = error as? AccountSessionRegistryError {
+    return CLIErrorReport(
+      exitCode: .authentication,
+      diagnostic: "Authentication error: \(error.localizedDescription)\n"
+    )
+  }
   if let error = error as? TMBDeviceCredentialStoreError {
     return CLIErrorReport(
       exitCode: .authentication,
@@ -339,6 +345,9 @@ private func jsonErrorCode(for error: any Error) -> String {
     case .keychainFailure: return "keychain_failure"
     case .sessionStoreFailure: return "session_store_failure"
     }
+  }
+  if error is AccountSessionRegistryError {
+    return "account_registry"
   }
   if error is TMBDeviceCredentialStoreError {
     return "tmb_device_state"

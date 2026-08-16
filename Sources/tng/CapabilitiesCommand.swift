@@ -75,6 +75,8 @@ enum CapabilityCatalog {
 
   private static let metadata: [String: Metadata] = [
     "auth login": Metadata(access: .write, authenticationRequired: false),
+    "auth list": Metadata(access: .read, authenticationRequired: false),
+    "auth switch": Metadata(access: .write, authenticationRequired: false),
     "auth status": Metadata(access: .read, authenticationRequired: false),
     "auth logout": Metadata(access: .write, authenticationRequired: false),
     "auth agent serve": Metadata(access: .write, authenticationRequired: true),

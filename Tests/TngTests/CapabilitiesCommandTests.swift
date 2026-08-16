@@ -20,7 +20,7 @@ import Testing
 
     #expect(document.schemaVersion == 1)
     #expect(document.cliVersion == SwiftTangled.version)
-    #expect(paths.count == 71)
+    #expect(paths.count == 73)
     #expect(paths.contains("capabilities"))
     #expect(paths.contains("auth agent serve"))
     #expect(paths.contains("auth agent service install"))
