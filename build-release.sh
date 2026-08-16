@@ -60,7 +60,15 @@ swift build \
   --product "${PRODUCT_NAME}" \
   --triple "${TARGET_TRIPLE}"
 
-readonly BUILT_EXECUTABLE="${SCRATCH_DIRECTORY}/arm64-apple-macosx/release/${PRODUCT_NAME}"
+BUILT_EXECUTABLE="$(
+  swift build \
+    --package-path "${SOURCE_DIRECTORY}" \
+    --scratch-path "${SCRATCH_DIRECTORY}" \
+    --configuration release \
+    --triple "${TARGET_TRIPLE}" \
+    --show-bin-path
+)/${PRODUCT_NAME}"
+readonly BUILT_EXECUTABLE
 [[ -x "${BUILT_EXECUTABLE}" ]] \
   || fail "release executable was not produced: ${BUILT_EXECUTABLE}"
 
