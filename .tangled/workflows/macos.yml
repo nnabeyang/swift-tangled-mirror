@@ -13,4 +13,4 @@ steps:
   - name: "Test"
     command: |
       set -euo pipefail
-      swift test --disable-default-traits
+      env -u TNG_AUTH_AGENT swift test --disable-default-traits
