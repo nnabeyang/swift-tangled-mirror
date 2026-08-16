@@ -1,7 +1,7 @@
 {
   "abstract" : [
     {
-      "text" : "Revoke and clear stored tng authentication",
+      "text" : "Configure Git HTTPS authentication for a Tangled repository",
       "type" : "text"
     }
   ],
@@ -16,13 +16,13 @@
   },
   "identifier" : {
     "interfaceLanguage" : "swift",
-    "url" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-logout"
+    "url" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-setup-git"
   },
   "kind" : "article",
   "metadata" : {
     "role" : "article",
     "roleHeading" : "Article",
-    "title" : "tng auth logout"
+    "title" : "tng auth setup-git"
   },
   "primaryContentSections" : [
     {
@@ -35,7 +35,7 @@
         },
         {
           "code" : [
-            "tng auth logout [--all] [--json] [--version] [--help]"
+            "tng auth setup-git [--remote <remote>] [--dry-run] [--replace-existing-helper] [--json] [--version] [--help]"
           ],
           "syntax" : "console",
           "type" : "codeListing"
@@ -47,15 +47,67 @@
           "type" : "heading"
         },
         {
-          "anchor" : "all",
+          "anchor" : "remote-%3Cremote%3E",
           "level" : 3,
-          "text" : "–all",
+          "text" : "–remote <remote>",
           "type" : "heading"
         },
         {
           "inlineContent" : [
             {
-              "text" : "Log out every stored account",
+              "text" : "Git remote to configure",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "items" : [
+            {
+              "content" : [
+                {
+                  "inlineContent" : [
+                    {
+                      "text" : "Default: ",
+                      "type" : "text"
+                    },
+                    {
+                      "code" : "origin",
+                      "type" : "codeVoice"
+                    }
+                  ],
+                  "type" : "paragraph"
+                }
+              ]
+            }
+          ],
+          "type" : "unorderedList"
+        },
+        {
+          "anchor" : "dry-run",
+          "level" : 3,
+          "text" : "–dry-run",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Show the planned configuration without changing it",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "replace-existing-helper",
+          "level" : 3,
+          "text" : "–replace-existing-helper",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Replace a conflicting repository-local credential helper",
               "type" : "text"
             }
           ],
@@ -70,7 +122,7 @@
         {
           "inlineContent" : [
             {
-              "text" : "Output logged-out accounts as JSON",
+              "text" : "Output the result as JSON",
               "type" : "text"
             }
           ],
@@ -134,7 +186,7 @@
         "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-list",
         "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-switch",
         "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-status",
-        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-setup-git",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-logout",
         "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent"
       ],
       "title" : "Subcommands"
@@ -242,19 +294,19 @@
   "type" : "topic",
   "url" : "\/documentation\/tng\/tng-auth-login"
 },
-"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-setup-git": {
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-logout": {
   "abstract" : [
     {
-      "text" : "Configure Git HTTPS authentication for a Tangled repository",
+      "text" : "Revoke and clear stored tng authentication",
       "type" : "text"
     }
   ],
-  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-setup-git",
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-logout",
   "kind" : "article",
   "role" : "article",
-  "title" : "tng auth setup-git",
+  "title" : "tng auth logout",
   "type" : "topic",
-  "url" : "\/documentation\/tng\/tng-auth-setup-git"
+  "url" : "\/documentation\/tng\/tng-auth-logout"
 },
 "doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-status": {
   "abstract" : [

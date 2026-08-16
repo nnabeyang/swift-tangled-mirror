@@ -122,6 +122,7 @@
         "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-switch",
         "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-status",
         "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-logout",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-setup-git",
         "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent"
       ],
       "title" : "Subcommands"
@@ -256,6 +257,20 @@
   "title" : "tng auth logout",
   "type" : "topic",
   "url" : "\/documentation\/tng\/tng-auth-logout"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-setup-git": {
+  "abstract" : [
+    {
+      "text" : "Configure Git HTTPS authentication for a Tangled repository",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-setup-git",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng auth setup-git",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-auth-setup-git"
 },
 "doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-status": {
   "abstract" : [

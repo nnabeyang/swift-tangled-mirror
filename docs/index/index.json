@@ -67,6 +67,11 @@
                     "type" : "article"
                   },
                   {
+                    "path" : "\/documentation\/tng\/tng-auth-setup-git",
+                    "title" : "tng auth setup-git",
+                    "type" : "article"
+                  },
+                  {
                     "children" : [
                       {
                         "title" : "Subcommands",
