@@ -79,6 +79,7 @@ enum CapabilityCatalog {
     "auth switch": Metadata(access: .write, authenticationRequired: false),
     "auth status": Metadata(access: .read, authenticationRequired: false),
     "auth logout": Metadata(access: .write, authenticationRequired: false),
+    "auth setup-git": Metadata(access: .write, authenticationRequired: true),
     "auth agent serve": Metadata(access: .write, authenticationRequired: true),
     "auth agent service install": Metadata(
       access: .write,
@@ -222,7 +223,9 @@ enum CapabilityCatalog {
   }
 
   private static func leafCommands(_ command: ArgumentParserCommand) -> [ArgumentParserCommand] {
-    let children = (command.subcommands ?? []).filter { $0.commandName != "help" }
+    let children = (command.subcommands ?? []).filter {
+      $0.commandName != "help" && $0.shouldDisplay
+    }
     guard !children.isEmpty else { return [command] }
     return children.flatMap(leafCommands)
   }
@@ -239,12 +242,14 @@ private struct ArgumentParserTool: Decodable {
 
 private struct ArgumentParserCommand: Decodable {
   let commandName: String
+  let shouldDisplay: Bool
   let superCommands: [String]
   let subcommands: [ArgumentParserCommand]?
   let arguments: [ArgumentParserArgument]
 
   private enum CodingKeys: String, CodingKey {
     case commandName
+    case shouldDisplay
     case superCommands
     case subcommands
     case arguments
@@ -253,6 +258,7 @@ private struct ArgumentParserCommand: Decodable {
   init(from decoder: any Decoder) throws {
     let values = try decoder.container(keyedBy: CodingKeys.self)
     commandName = try values.decode(String.self, forKey: .commandName)
+    shouldDisplay = try values.decodeIfPresent(Bool.self, forKey: .shouldDisplay) ?? true
     superCommands = try values.decodeIfPresent([String].self, forKey: .superCommands) ?? []
     subcommands = try values.decodeIfPresent([ArgumentParserCommand].self, forKey: .subcommands)
     arguments = try values.decodeIfPresent([ArgumentParserArgument].self, forKey: .arguments) ?? []

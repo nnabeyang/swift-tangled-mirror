@@ -46,6 +46,7 @@ public let tangledCLIScopes = [
   "rpc:sh.tangled.repo.removeCollaborator?aud=*",
   "rpc:sh.tangled.repo.removeSecret?aud=*",
   "rpc:sh.tangled.repo.setDefaultBranch?aud=*",
+  "rpc:sh.tangled.repo.push?aud=*",
   "identity:handle",
 ]
 

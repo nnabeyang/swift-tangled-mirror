@@ -10,6 +10,8 @@ struct AuthCommand: AsyncParsableCommand {
       AuthSwitchCommand.self,
       AuthStatusCommand.self,
       AuthLogoutCommand.self,
+      AuthSetupGitCommand.self,
+      AuthGitCredentialCommand.self,
       AuthAgentCommand.self,
     ]
   )
