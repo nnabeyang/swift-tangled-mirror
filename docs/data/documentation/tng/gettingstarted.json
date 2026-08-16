@@ -134,6 +134,366 @@
         {
           "inlineContent" : [
             {
+              "text" : "New logins use an OAuth loopback client and appear on the authorization page as",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "an application on your device. Use ",
+              "type" : "text"
+            },
+            {
+              "code" : "--client-id",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : " or ",
+              "type" : "text"
+            },
+            {
+              "code" : "TNG_CLIENT_ID",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : " only when an",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "authorization server requires hosted client metadata. See",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "the following section for precedence, compatibility, and self-hosting details.",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "OAuth-client-configuration",
+          "level" : 2,
+          "text" : "OAuth client configuration",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "code" : "tng auth login",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : " binds its callback server to an available local port and then",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "builds a native client ID containing that exact redirect URI and the requested",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "scope set. It does not fetch a hosted ",
+              "type" : "text"
+            },
+            {
+              "code" : "client-metadata.json",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : " document.",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Authorization server support for loopback client IDs is optional. ",
+              "type" : "text"
+            },
+            {
+              "code" : "tng",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : " does",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "not silently change clients if the server rejects one. Select hosted metadata",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "explicitly instead:",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "code" : [
+            "tng auth login YOUR_ATPROTO_HANDLE \\",
+            "  --client-id https:\/\/example.com\/tng-client-metadata.json"
+          ],
+          "syntax" : "sh",
+          "type" : "codeListing"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "You can also set the choice for one or more login commands:",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "code" : [
+            "TNG_CLIENT_ID=https:\/\/example.com\/tng-client-metadata.json \\",
+            "  tng auth login YOUR_ATPROTO_HANDLE"
+          ],
+          "syntax" : "sh",
+          "type" : "codeListing"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "The ",
+              "type" : "text"
+            },
+            {
+              "code" : "--client-id",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : " option takes precedence over ",
+              "type" : "text"
+            },
+            {
+              "code" : "TNG_CLIENT_ID",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : "; otherwise the",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "default is ",
+              "type" : "text"
+            },
+            {
+              "code" : "loopback",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : ". Both settings are read only when signing in. Each session",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "stores its selected client ID, so refresh, authenticated requests, and logout",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "continue to use the same client. Sessions created by older ",
+              "type" : "text"
+            },
+            {
+              "code" : "tng",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : " versions keep",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "using the legacy hosted client ID without migration.",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "Host-client-metadata",
+          "level" : 3,
+          "text" : "Host client metadata",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Publish a JSON document like the following at the exact HTTPS URL used as",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "code" : "client_id",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : ". Replace the example URL with your public URL wherever it appears.",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "The scope value matches the normal ",
+              "type" : "text"
+            },
+            {
+              "code" : "tng",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : " authentication profile.",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "code" : [
+            "{",
+            "  \"client_id\": \"https:\/\/example.com\/tng-client-metadata.json\",",
+            "  \"application_type\": \"native\",",
+            "  \"grant_types\": [\"authorization_code\", \"refresh_token\"],",
+            "  \"response_types\": [\"code\"],",
+            "  \"redirect_uris\": [\"http:\/\/127.0.0.1\/callback\"],",
+            "  \"scope\": \"atproto repo:sh.tangled.actor.profile repo:sh.tangled.feed.comment repo:sh.tangled.feed.reaction repo:sh.tangled.feed.star repo:sh.tangled.graph.follow repo:sh.tangled.graph.vouch repo:sh.tangled.knot repo:sh.tangled.knot.member repo:sh.tangled.label.definition repo:sh.tangled.label.op repo:sh.tangled.publicKey repo:sh.tangled.repo repo:sh.tangled.repo.artifact repo:sh.tangled.repo.collaborator repo:sh.tangled.repo.issue repo:sh.tangled.repo.issue.comment repo:sh.tangled.repo.issue.state repo:sh.tangled.repo.pull repo:sh.tangled.repo.pull.comment repo:sh.tangled.repo.pull.status repo:sh.tangled.spindle repo:sh.tangled.spindle.member repo:sh.tangled.string blob:*\/* rpc:sh.tangled.knot.addMember?aud=* rpc:sh.tangled.knot.removeMember?aud=* rpc:sh.tangled.ci.triggerPipeline?aud=* rpc:sh.tangled.ci.cancelPipeline?aud=* rpc:sh.tangled.repo.addCollaborator?aud=* rpc:sh.tangled.repo.addSecret?aud=* rpc:sh.tangled.repo.create?aud=* rpc:sh.tangled.repo.delete?aud=* rpc:sh.tangled.repo.deleteBranch?aud=* rpc:sh.tangled.repo.forkStatus?aud=* rpc:sh.tangled.repo.forkSync?aud=* rpc:sh.tangled.repo.hiddenRef?aud=* rpc:sh.tangled.repo.listSecrets?aud=* rpc:sh.tangled.repo.merge?aud=* rpc:sh.tangled.repo.mergeCheck?aud=* rpc:sh.tangled.repo.removeCollaborator?aud=* rpc:sh.tangled.repo.removeSecret?aud=* rpc:sh.tangled.repo.setDefaultBranch?aud=* rpc:sh.tangled.repo.push?aud=* identity:handle\",",
+            "  \"dpop_bound_access_tokens\": true,",
+            "  \"token_endpoint_auth_method\": \"none\"",
+            "}"
+          ],
+          "syntax" : "json",
+          "type" : "codeListing"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "The endpoint must return HTTP 200 with ",
+              "type" : "text"
+            },
+            {
+              "code" : "Content-Type: application\/json",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : ". Its",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "code" : "client_id",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : " field must exactly match the HTTPS document URL. Keep the document",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "available for new authorizations; saved sessions retain the selected client ID",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "for later refresh and revocation requests.",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "The metadata lists the loopback callback without a port. ",
+              "type" : "text"
+            },
+            {
+              "code" : "tng",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : " includes the",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "actual bound port in each authorization request, and authorization servers match",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "native loopback redirects by host and path while allowing that dynamic port.",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "inlineContent" : [
+            {
               "code" : "tng",
               "type" : "codeVoice"
             },
