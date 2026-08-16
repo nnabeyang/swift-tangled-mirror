@@ -29,6 +29,20 @@ tng repo view OWNER/REPOSITORY
 Public read commands do not require authentication. Commands that create or
 change Tangled records use your AT Protocol OAuth session.
 
+`tng` keeps OAuth sessions per DID. Inspect the available accounts, select the
+default, or override it for a single command:
+
+```sh
+tng auth list
+tng auth switch HANDLE_OR_DID
+tng --account HANDLE_OR_DID issue list --repo OWNER/REPOSITORY
+```
+
+Use `tng auth logout` to remove the selected account and `tng auth logout
+--all` to remove every stored account. External `TNG_AUTH_AGENT` and
+`TNG_SESSION_FILE` authentication bypasses this registry and cannot be combined
+with `--account`.
+
 ## Finding help
 
 ```sh

@@ -132,6 +132,97 @@
           "type" : "paragraph"
         },
         {
+          "inlineContent" : [
+            {
+              "code" : "tng",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : " keeps OAuth sessions per DID. Inspect the available accounts, select the",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "default, or override it for a single command:",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "code" : [
+            "tng auth list",
+            "tng auth switch HANDLE_OR_DID",
+            "tng --account HANDLE_OR_DID issue list --repo OWNER\/REPOSITORY"
+          ],
+          "syntax" : "sh",
+          "type" : "codeListing"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Use ",
+              "type" : "text"
+            },
+            {
+              "code" : "tng auth logout",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : " to remove the selected account and ",
+              "type" : "text"
+            },
+            {
+              "code" : "tng auth logout --all",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : " to remove every stored account. External ",
+              "type" : "text"
+            },
+            {
+              "code" : "TNG_AUTH_AGENT",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : " and",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "code" : "TNG_SESSION_FILE",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : " authentication bypasses this registry and cannot be combined",
+              "type" : "text"
+            },
+            {
+              "text" : " ",
+              "type" : "text"
+            },
+            {
+              "text" : "with ",
+              "type" : "text"
+            },
+            {
+              "code" : "--account",
+              "type" : "codeVoice"
+            },
+            {
+              "text" : ".",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
           "anchor" : "Finding-help",
           "level" : 2,
           "text" : "Finding help",

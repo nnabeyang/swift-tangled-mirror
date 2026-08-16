@@ -56,10 +56,27 @@ tng repo view OWNER/REPOSITORY
 ```
 
 Public read commands do not require a session. On macOS, authenticated sessions
-are stored in Keychain. On Linux, they are stored as plaintext OAuth tokens and
-DPoP key material in `$XDG_STATE_HOME/tng/session.json`, or
-`$HOME/.local/state/tng/session.json` when `XDG_STATE_HOME` is not usable.
-Protect that file and exclude it from backups and synchronization.
+are stored per DID in Keychain. On Linux, they are stored per DID as plaintext
+OAuth tokens and DPoP key material under `$XDG_STATE_HOME/tng/accounts`, or
+`$HOME/.local/state/tng/accounts` when `XDG_STATE_HOME` is not usable. Protect
+that directory and exclude it from backups and synchronization. An existing
+single-account session is migrated only after the per-account copy is verified.
+
+List accounts, change the default, or select an account for one command:
+
+```sh
+tng auth list
+tng auth switch HANDLE_OR_DID
+tng --account HANDLE_OR_DID repo star OWNER/REPOSITORY
+tng auth logout
+tng auth logout --all
+```
+
+Use the DID when handles are ambiguous. `--account` overrides the active
+account without changing it. It cannot be combined with `TNG_AUTH_AGENT` or
+`TNG_SESSION_FILE`; those external authentication sources intentionally bypass
+the account registry. Git remains independent of `tng`: configure the SSH key
+for each checkout with Git's `core.sshCommand` or an equivalent SSH setup.
 
 For a self-hosted VM worker, an enrolled token-mediating backend (TMB) can keep
 authorization and refresh separate from direct PDS requests. After enrollment

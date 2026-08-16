@@ -119,7 +119,13 @@ decisions; treat `error.message` as a human-readable diagnostic. Fall back to
 the process status and text diagnostic when using an older installed version.
 
 For status `4`, ask the user to run or complete `tng auth login <handle>` when
-interactive authorization is required. For status `5`, report the exact Git
+interactive authorization is required. When more than one stored account may
+apply, inspect metadata with `tng auth list --json`, use `tng auth switch
+<handle-or-DID>` for a persistent default, or put `--account <handle-or-DID>`
+before the subcommand for a one-command selection. Prefer the DID when handles
+are ambiguous. Do not combine `--account` with `TNG_AUTH_AGENT` or
+`TNG_SESSION_FILE`; those external sources bypass the account registry. For
+status `5`, report the exact Git
 precondition and do not silently fetch, push, or rewrite repository state.
 
 ## Report Results

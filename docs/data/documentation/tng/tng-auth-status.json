@@ -101,6 +101,8 @@
       "generated" : true,
       "identifiers" : [
         "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-login",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-list",
+        "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-switch",
         "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-logout",
         "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-agent"
       ],
@@ -181,6 +183,20 @@
   "type" : "topic",
   "url" : "\/documentation\/tng\/tng-auth-agent"
 },
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-list": {
+  "abstract" : [
+    {
+      "text" : "List stored tng accounts",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-list",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng auth list",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-auth-list"
+},
 "doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-login": {
   "abstract" : [
     {
@@ -198,7 +214,7 @@
 "doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-logout": {
   "abstract" : [
     {
-      "text" : "Revoke and clear the current tng authentication",
+      "text" : "Revoke and clear stored tng authentication",
       "type" : "text"
     }
   ],
@@ -208,6 +224,20 @@
   "title" : "tng auth logout",
   "type" : "topic",
   "url" : "\/documentation\/tng\/tng-auth-logout"
+},
+"doc://sh.tngl.nnabeyang.swift-tangled/documentation/tng/tng-auth-switch": {
+  "abstract" : [
+    {
+      "text" : "Select the active tng account",
+      "type" : "text"
+    }
+  ],
+  "identifier" : "doc:\/\/sh.tngl.nnabeyang.swift-tangled\/documentation\/tng\/tng-auth-switch",
+  "kind" : "article",
+  "role" : "article",
+  "title" : "tng auth switch",
+  "type" : "topic",
+  "url" : "\/documentation\/tng\/tng-auth-switch"
 }
 }
 }

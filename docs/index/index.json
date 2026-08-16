@@ -47,6 +47,16 @@
                     "type" : "article"
                   },
                   {
+                    "path" : "\/documentation\/tng\/tng-auth-list",
+                    "title" : "tng auth list",
+                    "type" : "article"
+                  },
+                  {
+                    "path" : "\/documentation\/tng\/tng-auth-switch",
+                    "title" : "tng auth switch",
+                    "type" : "article"
+                  },
+                  {
                     "path" : "\/documentation\/tng\/tng-auth-status",
                     "title" : "tng auth status",
                     "type" : "article"
