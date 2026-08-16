@@ -4,7 +4,11 @@ import Testing
 @testable import SwiftTangled
 
 @Test func tangledClientInfoDefinesCLIRedirect() {
-  let info = OAuth.ClientInfo.tangledCLI(boundPort: 54321, profile: nil)
+  let info = OAuth.ClientInfo.tangledCLI(
+    boundPort: 54321,
+    profile: nil,
+    clientID: .hosted(legacyTangledCLIClientID)
+  )
   #expect(
     info.clientId
       == "https://soyokaze-pds-rc-677008170211.asia-northeast1.run.app/tangled/cli-client-metadata.json"
@@ -65,6 +69,31 @@ import Testing
   #expect(info.redirectURI.host == "127.0.0.1")
   #expect(info.redirectURI.port == 54321)
   #expect(info.redirectURI.path == "/callback")
+}
+
+@Test func loopbackClientIDIncludesEncodedRedirectAndScopes() {
+  let info = OAuth.ClientInfo.tangledCLI(
+    boundPort: 54321,
+    profile: .ciReporting,
+    clientID: .loopback
+  )
+  #expect(
+    info.clientId
+      == "http://localhost?redirect_uri=http%3A%2F%2F127.0.0.1%3A54321%2Fcallback"
+      + "&scope=atproto%20identity%3Ahandle%20repo%3Ash.tangled.repo.artifact"
+      + "%20repo%3Ash.tangled.feed.comment%20blob%3A%2A%2F%2A"
+  )
+  #expect(info.clientId.contains("%3A54321%2Fcallback"))
+  #expect(!info.clientId.contains("?aud="))
+}
+
+@Test func defaultClientIDUsesLoopbackAndEncodesRPCScopes() {
+  let info = OAuth.ClientInfo.tangledCLI(boundPort: 49152, profile: nil)
+  #expect(defaultTangledLoginClientID == .loopback)
+  #expect(info.clientId.hasPrefix("http://localhost?redirect_uri="))
+  #expect(info.clientId.contains("%3F"))
+  #expect(info.clientId.contains("%3D"))
+  #expect(info.clientId.contains("%2A"))
 }
 
 @Test func tangledClientInfoUsesCustomHostedClientID() {

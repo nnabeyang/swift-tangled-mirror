@@ -121,7 +121,7 @@
         {
           "inlineContent" : [
             {
-              "text" : "Use an HTTPS OAuth client metadata URL",
+              "text" : "Use ‘loopback’ or an HTTPS OAuth client metadata URL",
               "type" : "text"
             }
           ],
