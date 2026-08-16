@@ -50,7 +50,7 @@ import Testing
     #expect(logout.json)
   }
 
-  @Test func resolvesHostedLoginClientIDByPrecedence() throws {
+  @Test func resolvesLoginClientIDByPrecedence() throws {
     #expect(
       try AuthLoginCommand.resolveClientID(
         option: "https://option.example/metadata.json",
@@ -69,10 +69,17 @@ import Testing
       try AuthLoginCommand.resolveClientID(option: nil, environment: [:])
         == defaultTangledLoginClientID
     )
+    #expect(try AuthLoginCommand.resolveClientID(option: nil, environment: [:]) == .loopback)
+    #expect(
+      try AuthLoginCommand.resolveClientID(
+        option: nil,
+        environment: ["TNG_CLIENT_ID": "loopback"]
+      ) == .loopback
+    )
   }
 
   @Test func rejectsInvalidHostedLoginClientIDs() throws {
-    for value in ["", "loopback", "http://client.example/metadata.json", "relative/path"] {
+    for value in ["", "LOOPBACK", "http://client.example/metadata.json", "relative/path"] {
       #expect(throws: (any Error).self) {
         _ = try AuthLoginCommand.resolveClientID(
           option: nil,

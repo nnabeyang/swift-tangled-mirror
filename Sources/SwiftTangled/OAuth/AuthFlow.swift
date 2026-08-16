@@ -74,9 +74,19 @@ public struct AuthFlow: Sendable {
       )
     )
 
-    let (archive, did) = try await client.authorize(
-      identity: .handle(handle)
-    )
+    let archive: OAuth.SessionState.Archive
+    let did: DID
+    do {
+      (archive, did) = try await client.authorize(identity: .handle(handle))
+    } catch let error as OAuth.Errors {
+      if clientID == .loopback,
+        case .oauthError(let response, _) = error,
+        let message = loopbackClientRejectionMessage(errorCode: response.error)
+      {
+        throw TangledError.invalidRequest(message)
+      }
+      throw error
+    }
     if let store = sessionStore {
       let stored = StoredSession(
         did: did.rawValue,
@@ -89,4 +99,11 @@ public struct AuthFlow: Sendable {
     }
     return AuthFlowResult(did: did.rawValue, handle: handle.rawValue)
   }
+}
+
+func loopbackClientRejectionMessage(errorCode: String) -> String? {
+  let clientRejectionCodes = ["invalid_client", "unauthorized_client", "invalid_request"]
+  guard clientRejectionCodes.contains(errorCode.lowercased()) else { return nil }
+  return
+    "authorization server rejected the loopback OAuth client; retry with '--client-id <https URL>' to use hosted client metadata"
 }

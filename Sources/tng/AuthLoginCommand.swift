@@ -26,7 +26,7 @@ struct AuthLoginCommand: AsyncParsableCommand {
   @Option(name: .long, help: "Use a restricted authentication profile")
   var profile: String?
 
-  @Option(name: .long, help: "Use an HTTPS OAuth client metadata URL")
+  @Option(name: .long, help: "Use 'loopback' or an HTTPS OAuth client metadata URL")
   var clientId: String?
 
   mutating func validate() throws {
@@ -95,6 +95,9 @@ struct AuthLoginCommand: AsyncParsableCommand {
   ) throws -> TangledClientID {
     guard let rawValue = option ?? environment["TNG_CLIENT_ID"] else {
       return defaultTangledLoginClientID
+    }
+    if rawValue == "loopback" {
+      return .loopback
     }
     guard
       let components = URLComponents(string: rawValue),

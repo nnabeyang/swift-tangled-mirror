@@ -62,16 +62,31 @@ public let legacyTangledCLIClientID =
   "https://soyokaze-pds-rc-677008170211.asia-northeast1.run.app/tangled/cli-client-metadata.json"
 
 public enum TangledClientID: Sendable, Equatable {
+  case loopback
   case hosted(String)
 
-  fileprivate func value(redirectURI _: URL, scopes _: [String]) -> String {
+  fileprivate func value(redirectURI: URL, scopes: [String]) -> String {
     switch self {
+    case .loopback:
+      "http://localhost?redirect_uri=\(percentEncodeLoopbackClientParameter(redirectURI.absoluteString))"
+        + "&scope=\(percentEncodeLoopbackClientParameter(scopes.joined(separator: " ")))"
     case .hosted(let clientID): clientID
     }
   }
 }
 
-public let defaultTangledLoginClientID = TangledClientID.hosted(legacyTangledCLIClientID)
+public let defaultTangledLoginClientID = TangledClientID.loopback
+
+private func percentEncodeLoopbackClientParameter(_ value: String) -> String {
+  value.utf8.map { byte in
+    switch byte {
+    case 0x41 ... 0x5A, 0x61 ... 0x7A, 0x30 ... 0x39, 0x2D, 0x2E, 0x5F, 0x7E:
+      String(UnicodeScalar(byte))
+    default:
+      String(format: "%%%02X", byte)
+    }
+  }.joined()
+}
 
 extension OAuth.ClientInfo {
   public static func tangledCLI(
