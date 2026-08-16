@@ -19,6 +19,7 @@ public struct AuthFlow: Sendable {
   private let callbackTimeout: Duration
   private let callbackPort: UInt16?
   private let profile: AuthenticationProfile?
+  private let clientID: TangledClientID
 
   public init(
     resolver: any ATPResolver = URLSessionATPResolver(),
@@ -26,7 +27,8 @@ public struct AuthFlow: Sendable {
     sessionStore: (any SessionStore)? = nil,
     callbackTimeout: Duration = .seconds(300),
     callbackPort: UInt16? = nil,
-    profile: AuthenticationProfile? = nil
+    profile: AuthenticationProfile? = nil,
+    clientID: TangledClientID = defaultTangledLoginClientID
   ) {
     self.resolver = resolver
     self.browser = browser
@@ -34,6 +36,7 @@ public struct AuthFlow: Sendable {
     self.callbackTimeout = callbackTimeout
     self.callbackPort = callbackPort
     self.profile = profile
+    self.clientID = clientID
   }
 
   public func login(handle rawHandle: String) async throws -> AuthFlowResult {
@@ -55,7 +58,11 @@ public struct AuthFlow: Sendable {
       Task { await server.stop() }
     }
 
-    let clientInfo = OAuth.ClientInfo.tangledCLI(boundPort: bound.port, profile: profile)
+    let clientInfo = OAuth.ClientInfo.tangledCLI(
+      boundPort: bound.port,
+      profile: profile,
+      clientID: clientID
+    )
     let client = AtprotoOAuthClient(
       clientInfo: clientInfo,
       resolver: resolver,

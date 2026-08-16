@@ -26,6 +26,9 @@ struct AuthLoginCommand: AsyncParsableCommand {
   @Option(name: .long, help: "Use a restricted authentication profile")
   var profile: String?
 
+  @Option(name: .long, help: "Use an HTTPS OAuth client metadata URL")
+  var clientId: String?
+
   mutating func validate() throws {
     if ProcessInfo.processInfo.environment["TNG_AUTH_AGENT"] != nil {
       throw ValidationError("auth login is unavailable while TNG_AUTH_AGENT is set")
@@ -45,6 +48,7 @@ struct AuthLoginCommand: AsyncParsableCommand {
         throw ValidationError("--profile requires an absolute TNG_SESSION_FILE")
       }
     }
+    _ = try resolvedClientID()
   }
 
   func run() async throws {
@@ -60,7 +64,8 @@ struct AuthLoginCommand: AsyncParsableCommand {
         browser: browser,
         sessionStore: loginStore,
         callbackPort: callbackPort,
-        profile: profile.flatMap(AuthenticationProfile.init(rawValue:))
+        profile: profile.flatMap(AuthenticationProfile.init(rawValue:)),
+        clientID: try resolvedClientID()
       )
       let result = try await flow.login(handle: handle)
       var storageDescription = configuredStore.storageDescription
@@ -76,5 +81,28 @@ struct AuthLoginCommand: AsyncParsableCommand {
         stderr: "Session stored in \(storageDescription)\n"
       )
     }
+  }
+
+  func resolvedClientID(
+    environment: [String: String] = ProcessInfo.processInfo.environment
+  ) throws -> TangledClientID {
+    try Self.resolveClientID(option: clientId, environment: environment)
+  }
+
+  static func resolveClientID(
+    option: String?,
+    environment: [String: String]
+  ) throws -> TangledClientID {
+    guard let rawValue = option ?? environment["TNG_CLIENT_ID"] else {
+      return defaultTangledLoginClientID
+    }
+    guard
+      let components = URLComponents(string: rawValue),
+      components.scheme?.lowercased() == "https",
+      components.host?.isEmpty == false
+    else {
+      throw ValidationError("--client-id and TNG_CLIENT_ID must be an HTTPS URL")
+    }
+    return .hosted(rawValue)
   }
 }
