@@ -62,6 +62,23 @@ OAuth tokens and DPoP key material under `$XDG_STATE_HOME/tng/accounts`, or
 that directory and exclude it from backups and synchronization. An existing
 single-account session is migrated only after the per-account copy is verified.
 
+New logins use an OAuth loopback client by default, so `tng` does not depend on
+a hosted client metadata document. The authorization page describes it as an
+application on your device. To use hosted client metadata instead, pass its
+HTTPS URL directly or through the environment:
+
+```sh
+tng auth login YOUR_ATPROTO_HANDLE \
+  --client-id https://example.com/tng-client-metadata.json
+TNG_CLIENT_ID=https://example.com/tng-client-metadata.json \
+  tng auth login YOUR_ATPROTO_HANDLE
+```
+
+`--client-id` takes precedence over `TNG_CLIENT_ID`. Existing sessions keep
+using the client ID with which they were created. See the
+[OAuth client configuration](https://nnabeyang.tngl.sh/swift-tangled/documentation/tng/gettingstarted/#oauth-client-configuration)
+guide for loopback compatibility and a complete self-hosted metadata example.
+
 List accounts, change the default, or select an account for one command:
 
 ```sh
