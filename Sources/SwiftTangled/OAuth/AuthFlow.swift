@@ -75,6 +75,7 @@ public struct AuthFlow: Sendable {
         did: did.rawValue,
         handle: handle.rawValue,
         profile: profile,
+        clientID: clientInfo.clientId,
         archive: archive
       )
       try store.write(stored)

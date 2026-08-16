@@ -30,7 +30,7 @@ public struct PDSClient: Sendable {
 
     let agent = try AtprotoOAuthAgent(
       archive: .init(did: storedSession.did, session: storedSession.archive),
-      clientId: OAuth.ClientInfo.tangledCLI.clientId,
+      clientId: storedSession.resolvedClientID,
       authFetcher: URLSession.manualRedirect(),
       atprotoResolver: URLSessionATPResolver(),
       delegate: sessionStore
