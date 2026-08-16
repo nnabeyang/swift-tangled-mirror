@@ -16,13 +16,13 @@ public struct TokenRevoker: Sendable {
 
   public init(
     session: StoredSession,
-    clientId: String = OAuth.ClientInfo.tangledCLI.clientId,
+    clientId: String? = nil,
     resolver: any ATPResolver = URLSessionATPResolver(),
     authFetcher: any HTTPFetcher = URLSession.manualRedirect(),
     urlSession: URLSession = .shared
   ) {
     self.session = session
-    self.clientId = clientId
+    self.clientId = clientId ?? session.resolvedClientID
     self.resolver = resolver
     self.authFetcher = authFetcher
     self.urlSession = urlSession

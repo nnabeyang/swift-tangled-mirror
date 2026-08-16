@@ -9,6 +9,7 @@ enum SessionStoreTestHelpers {
     handle: String = "alice.test",
     profile: AuthenticationProfile? = nil,
     clientID: String = "https://example.com/client-metadata.json",
+    storedClientID: String? = nil,
     scopes: [String] = ["atproto"],
     includeDPoPKey: Bool = false,
     accessToken: String = "test-access",
@@ -43,6 +44,12 @@ enum SessionStoreTestHelpers {
     ]
     let data = try JSONSerialization.data(withJSONObject: archiveJSON)
     let archive = try JSONDecoder().decode(OAuth.SessionState.Archive.self, from: data)
-    return StoredSession(did: did, handle: handle, profile: profile, archive: archive)
+    return StoredSession(
+      did: did,
+      handle: handle,
+      profile: profile,
+      clientID: storedClientID,
+      archive: archive
+    )
   }
 }

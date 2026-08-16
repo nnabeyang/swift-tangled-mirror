@@ -73,6 +73,24 @@ import Testing
     #expect(stores.store(for: "did:plc:two").load()?.handle == "two.test")
   }
 
+  @Test func storesAndVerifiesThePersistedClientID() throws {
+    let stores = AccountStoreBox()
+    let registry = AccountSessionRegistry(
+      metadataStore: InMemoryAccountRegistryStore(),
+      sessionStoreFactory: stores.store(for:)
+    )
+    let original = try SessionStoreTestHelpers.makeStoredSession(
+      storedClientID: "https://client.example/metadata.json"
+    )
+
+    try registry.store(original)
+
+    #expect(
+      try registry.activeSessionStore()?.1.load()?.clientID
+        == "https://client.example/metadata.json"
+    )
+  }
+
   private func session(did: String, handle: String) throws -> StoredSession {
     try SessionStoreTestHelpers.makeStoredSession(did: did, handle: handle)
   }

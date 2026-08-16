@@ -32,6 +32,27 @@ import Testing
     #expect(fields["client_id"] == "https://client.example/metadata.json")
   }
 
+  @Test func defaultsToStoredClientID() async throws {
+    RevocationURLProtocol.reset(statusCode: 200)
+    let resolver = RevocationResolver(document: validDIDDocument())
+    let fetcher = RevocationMetadataFetcher(includeRevocationEndpoint: true)
+    let session = try SessionStoreTestHelpers.makeStoredSession(
+      storedClientID: "https://stored.example/metadata.json",
+      refreshToken: "private-refresh-token"
+    )
+
+    try await makeRevoker(
+      session: session,
+      clientId: nil,
+      resolver: resolver,
+      fetcher: fetcher
+    ).revoke()
+
+    let request = try #require(RevocationURLProtocol.recordedRequests().first)
+    let fields = formFields(try #require(request.httpBody))
+    #expect(fields["client_id"] == "https://stored.example/metadata.json")
+  }
+
   @Test func missingRefreshTokenSkipsResolutionDiscoveryAndRequest() async throws {
     RevocationURLProtocol.reset(statusCode: 200)
     let resolver = RevocationResolver(document: validDIDDocument())
@@ -95,6 +116,7 @@ import Testing
 
   private func makeRevoker(
     session: StoredSession? = nil,
+    clientId: String? = "https://client.example/metadata.json",
     resolver: RevocationResolver,
     fetcher: RevocationMetadataFetcher
   ) throws -> TokenRevoker {
@@ -105,7 +127,7 @@ import Testing
         ?? SessionStoreTestHelpers.makeStoredSession(
           refreshToken: "private-refresh-token"
         ),
-      clientId: "https://client.example/metadata.json",
+      clientId: clientId,
       resolver: resolver,
       authFetcher: fetcher,
       urlSession: URLSession(configuration: configuration)

@@ -82,7 +82,7 @@ public struct AuthAgentServer: Sendable {
     }
     let agent = try AtprotoOAuthAgent(
       archive: .init(did: stored.did, session: stored.archive),
-      clientId: OAuth.ClientInfo.tangledCLI.clientId,
+      clientId: stored.resolvedClientID,
       authFetcher: URLSession.manualRedirect(),
       atprotoResolver: URLSessionATPResolver(),
       delegate: sessionStore
