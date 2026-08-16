@@ -3,6 +3,10 @@ import Foundation
 import SwiftAtproto
 import TangledLexicons
 
+#if canImport(FoundationNetworking)
+  import FoundationNetworking
+#endif
+
 public enum TMBAuthFlowError: Error, Equatable, Sendable {
   case invalidPublicMetadata
   case identityNotResolved
