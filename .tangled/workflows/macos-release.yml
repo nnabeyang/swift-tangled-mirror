@@ -31,11 +31,23 @@ steps:
       test "$(git cat-file -t "$version")" = "tag"
 
       tag_commit="$(git rev-parse "$version^{commit}")"
+      workflow_commit="$(git rev-parse HEAD)"
+      workflow_ref="${TANGLED_REF:-}"
+      workflow_ref_name="${TANGLED_REF_NAME:-}"
+      test "${TANGLED_REF_TYPE:-}" = "branch"
+      case "$workflow_ref" in
+        refs/heads/*) ;;
+        *)
+          echo "TANGLED_REF must be a branch ref" >&2
+          exit 64
+          ;;
+      esac
+      test "$workflow_ref_name" = "${workflow_ref#refs/heads/}"
+      test "${TANGLED_COMMIT_SHA:-}" = "$workflow_commit"
+      git merge-base --is-ancestor "$tag_commit" "$workflow_commit"
       if [[ "$action" == "publish" ]]; then
-        test "${TANGLED_REF_TYPE:-}" = "tag"
-        test "${TANGLED_REF:-}" = "refs/tags/$version"
-        test "${TANGLED_REF_NAME:-}" = "$version"
-        test "${TANGLED_COMMIT_SHA:-}" = "$tag_commit"
+        test "$workflow_ref" = "refs/heads/main"
+        test "$workflow_ref_name" = "main"
       fi
 
       ./build-release.sh "$version"
@@ -45,6 +57,7 @@ steps:
       test -f "$artifact"
       test -f "$checksum"
       printf 'Action: %s\n' "$action"
+      printf 'Workflow commit: %s\n' "$workflow_commit"
       printf 'Tag commit: %s\n' "$tag_commit"
       printf 'Artifact: %s\n' "$artifact"
       printf 'Bytes: %s\n' "$(stat -f '%z' "$artifact")"
