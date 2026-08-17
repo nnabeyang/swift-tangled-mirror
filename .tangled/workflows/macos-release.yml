@@ -106,6 +106,10 @@ steps:
         return 1
       }
 
+      rate_limited() {
+        grep -Eq '"code"[[:space:]]*:[[:space:]]*"rate_limited"' "$1" 2>/dev/null
+      }
+
       upload_succeeded=false
       for attempt in 1 2 3; do
         printf 'Artifact upload attempt %s/3\n' "$attempt"
@@ -123,11 +127,19 @@ steps:
         fi
 
         view_json="$download_directory/view-$attempt.json"
+        view_error="$download_directory/view-$attempt.error"
         if ! "$publisher_directory/tng" artifact view \
           "$version" \
           --repo "$repository" \
-          --json >"$view_json"
+          --json >"$view_json" 2>"$view_error"
         then
+          if rate_limited "$view_json" || rate_limited "$view_error"; then
+            echo "Artifact inspection was rate limited; waiting before retry." >&2
+            if [[ "$attempt" != 3 ]]; then
+              sleep $((attempt * 2))
+              continue
+            fi
+          fi
           echo "Artifact inspection failed; refusing to retry upload." >&2
           exit 1
         fi
