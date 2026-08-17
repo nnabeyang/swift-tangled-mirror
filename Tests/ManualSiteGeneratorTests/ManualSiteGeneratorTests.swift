@@ -73,6 +73,60 @@ import Testing
     #expect(page.contains("<doc:tng-repo>"))
   }
 
+  @Test func inheritsRootOptionsAndAvoidsDuplicateArguments() throws {
+    let rootOptions = [
+      ArgumentInfo(
+        abstract: "Use one stored account for this command",
+        isOptional: true,
+        kind: "option",
+        names: [ArgumentName(kind: "long", name: "account")],
+        valueName: "account"
+      ),
+      ArgumentInfo(
+        abstract: "Show the version.",
+        isOptional: true,
+        kind: "flag",
+        names: [ArgumentName(kind: "long", name: "version")],
+        valueName: "version"
+      ),
+      ArgumentInfo(
+        abstract: "Root positional must not be inherited",
+        isOptional: true,
+        kind: "positional",
+        valueName: "root-value"
+      ),
+    ]
+    let files = try renderer(
+      commands: [
+        CommandInfo(
+          commandName: "auth",
+          subcommands: [
+            CommandInfo(
+              commandName: "status",
+              arguments: [
+                ArgumentInfo(
+                  abstract: "Show the version.",
+                  isOptional: true,
+                  kind: "flag",
+                  names: [ArgumentName(kind: "long", name: "version")],
+                  valueName: "version"
+                )
+              ]
+            )
+          ]
+        )
+      ],
+      rootArguments: rootOptions
+    ).render()
+    let page = try string(files, path: "catalog/tng-auth-status.md")
+
+    #expect(page.contains("tng auth status [--version] [--account <account>]"))
+    #expect(page.contains("### --account <account>"))
+    #expect(page.contains("Use one stored account for this command"))
+    #expect(page.components(separatedBy: "### --version").count == 2)
+    #expect(!page.contains("root-value"))
+  }
+
   @Test func escapesMarkdownTextAndProducesStableOutput() throws {
     let command = CommandInfo(
       commandName: "unsafe",
@@ -109,14 +163,18 @@ import Testing
     #expect(files.keys.allSatisfy { !$0.hasPrefix("redirects/") })
   }
 
-  private func renderer(commands: [CommandInfo]) -> ManualSiteRenderer {
+  private func renderer(
+    commands: [CommandInfo],
+    rootArguments: [ArgumentInfo] = []
+  ) -> ManualSiteRenderer {
     ManualSiteRenderer(
       tool: ToolInfo(
         serializationVersion: 0,
         command: CommandInfo(
           commandName: "tng",
           abstract: "Tangled CLI",
-          subcommands: commands
+          subcommands: commands,
+          arguments: rootArguments
         )
       )
     )

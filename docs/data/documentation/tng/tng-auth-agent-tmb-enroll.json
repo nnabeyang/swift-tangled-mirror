@@ -37,7 +37,7 @@
         },
         {
           "code" : [
-            "tng auth agent tmb enroll --origin <origin> --name <name> [--instance <instance>] [--json] [--version] [--help]"
+            "tng auth agent tmb enroll --origin <origin> --name <name> [--instance <instance>] [--json] [--version] [--help] [--account <account>]"
           ],
           "syntax" : "console",
           "type" : "codeListing"
@@ -133,6 +133,21 @@
           "inlineContent" : [
             {
               "text" : "Show help information.",
+              "type" : "text"
+            }
+          ],
+          "type" : "paragraph"
+        },
+        {
+          "anchor" : "account-%3Caccount%3E",
+          "level" : 3,
+          "text" : "–account <account>",
+          "type" : "heading"
+        },
+        {
+          "inlineContent" : [
+            {
+              "text" : "Use one stored account for this command",
               "type" : "text"
             }
           ],

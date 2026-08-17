@@ -52,13 +52,14 @@ struct ManualSiteRenderer: Sendable {
       result += "\(markdownText(abstract))\n\n"
     }
 
-    result += "## Usage\n\n```console\n\(usage(page: page))\n```\n"
+    let arguments = arguments(for: page, rootPage: rootPage)
+    result += "## Usage\n\n```console\n\(usage(page: page, arguments: arguments))\n```\n"
 
     if let discussion = page.command.discussion, !discussion.isEmpty {
       result += "\n## Overview\n\n\(discussionMarkdown(discussion))\n"
     }
 
-    let visibleArguments = page.command.arguments.filter(\.shouldDisplay)
+    let visibleArguments = arguments.filter(\.shouldDisplay)
     let positionals = visibleArguments.filter { $0.kind == "positional" }
     let options = visibleArguments.filter { $0.kind != "positional" }
     if !positionals.isEmpty {
@@ -81,6 +82,19 @@ struct ManualSiteRenderer: Sendable {
       result += "\n## See Also\n\n- <doc:\(page.path.count == 2 ? rootPage.sourceName : parentPage(for: page, rootPage: rootPage).sourceName)>\n"
     }
     return result + "\n"
+  }
+
+  private func arguments(for page: CommandPage, rootPage: CommandPage) -> [ArgumentInfo] {
+    guard !page.isRoot else { return page.command.arguments }
+
+    let localArguments = page.command.arguments
+    let localNames = Set(localArguments.flatMap { $0.names.map(\.spelling) })
+    let inheritedArguments = rootPage.command.arguments.filter { argument in
+      guard argument.shouldDisplay, argument.kind != "positional" else { return false }
+      let names = Set(argument.names.map(\.spelling))
+      return names.isDisjoint(with: localNames)
+    }
+    return localArguments + inheritedArguments
   }
 
   private func parentPage(for page: CommandPage, rootPage: CommandPage) -> CommandPage {
@@ -114,8 +128,8 @@ struct ManualSiteRenderer: Sendable {
     return result
   }
 
-  private func usage(page: CommandPage) -> String {
-    let suffix = page.command.arguments
+  private func usage(page: CommandPage, arguments: [ArgumentInfo]) -> String {
+    let suffix = arguments
       .filter(\.shouldDisplay)
       .map(usageComponent)
       .filter { !$0.isEmpty }
