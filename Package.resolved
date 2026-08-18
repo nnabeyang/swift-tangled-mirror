@@ -1,5 +1,5 @@
 {
-  "originHash" : "4fd25b9fbaf53c3f58a97d1be9635187ee40dfcf128006a129f455565c59f9c5",
+  "originHash" : "82e6a709ad7c94e284ce3b896af1d3f9486ae51cebc95a3ca48a5364112ecbb1",
   "pins" : [
     {
       "identity" : "compress-nio",
@@ -24,17 +24,17 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/germ-network/GermConvenience.git",
       "state" : {
-        "revision" : "5ec8573dbceb2e03b9a32c3e84a53af471df5b89",
-        "version" : "0.2.4"
+        "revision" : "bfe84a1678c6d7a21af3190c00bc78430befe36c",
+        "version" : "0.3.0"
       }
     },
     {
       "identity" : "oauth4swift",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/nnabeyang/oauth4swift.git",
+      "location" : "https://github.com/germ-network/oauth4swift.git",
       "state" : {
-        "revision" : "0fc07691935f640379c223ce9d8900cf78b7073e",
-        "version" : "0.6.0-soyokaze.1"
+        "revision" : "3f549b08595f03b9cd0e38495653e775e153daea",
+        "version" : "0.6.0"
       }
     },
     {

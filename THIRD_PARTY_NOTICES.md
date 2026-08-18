@@ -21,8 +21,8 @@ notices are included in `LICENSES/`.
 | [swift-crypto](https://github.com/apple/swift-crypto) | 4.5.1 / `47d3869a7291f085c1fb9fb1e6d3b97a793f45c6` | Apache-2.0; BoringSSL notices |
 | [swift-asn1](https://github.com/apple/swift-asn1) | 1.7.1 / `a9a5efd40eaf558a2bcd48d64b1d1646be686008` | Apache-2.0 |
 | [swift-secp256k1](https://github.com/21-DOT-DEV/swift-secp256k1) | 0.19.0 / `e2f4de7caec61e971081d44e73ea6ef20359743b` | MIT |
-| [oauth4swift](https://github.com/nnabeyang/oauth4swift) | 0.6.0-soyokaze.1 / `0fc07691935f640379c223ce9d8900cf78b7073e` | MIT |
-| [GermConvenience](https://github.com/germ-network/GermConvenience) | 0.2.4 / `5ec8573dbceb2e03b9a32c3e84a53af471df5b89` | MIT |
+| [oauth4swift](https://github.com/germ-network/oauth4swift) | 0.6.0 / `3f549b08595f03b9cd0e38495653e775e153daea` | MIT |
+| [GermConvenience](https://github.com/germ-network/GermConvenience) | 0.3.0 / `bfe84a1678c6d7a21af3190c00bc78430befe36c` | MIT |
 | [swift-argument-parser](https://github.com/apple/swift-argument-parser) | 1.8.2 / `6a52f3251125d74daf04fcbd5e6f08a75d074382` | Apache-2.0 |
 | [Swiftdansi](https://github.com/steipete/Swiftdansi) | 0.3.0 / `e5577aacb7c6060861990567c6be01b0d2642fca` | MIT |
 | [swift-markdown](https://github.com/apple/swift-markdown) and [cmark-gfm](https://github.com/swiftlang/swift-cmark) | 0.8.0 / `3c6f9523da3a1ec2fd829673e472d95b8097a3b8` | Apache-2.0 and cmark-gfm component notices |

@@ -7,7 +7,7 @@ import Testing
 @testable import SwiftTangled
 
 @Suite struct AtprotoOAuthUtilsTests {
-  @Test func discoversASeparateAuthorizationServerAndRevocationEndpoint() async throws {
+  @Test func discoversASeparateAuthorizationServer() async throws {
     let fetcher = MetadataFetcher(stubs: [
       protectedResourceURL: .ok(
         protectedResourceMetadata(authorizationServers: ["https://auth.example"])
@@ -22,8 +22,25 @@ import Testing
 
     #expect(server.origin == URL(string: "https://auth.example"))
     #expect(server.metadata.issuer == "https://auth.example")
-    #expect(server.revocationEndpoint == URL(string: "https://auth.example/oauth/revoke"))
     #expect(await fetcher.requestedURLs() == [protectedResourceURL, authorizationServerURL])
+  }
+
+  @Test func prependsTheWellKnownSegmentToAPathBearingPDSEndpoint() async throws {
+    let metadataURL =
+      "https://host.example/.well-known/oauth-protected-resource/pds/alice"
+    let fetcher = MetadataFetcher(stubs: [
+      metadataURL: .ok(
+        protectedResourceMetadata(authorizationServers: ["https://auth.example"])
+      ),
+      authorizationServerURL: .ok(authorizationServerMetadata()),
+    ])
+
+    _ = try await AtprotoOAuthUtils.authorizationServer(
+      pdsServiceEndpoint: URL(string: "https://host.example/pds/alice")!,
+      authFetcher: fetcher
+    )
+
+    #expect(await fetcher.requestedURLs() == [metadataURL, authorizationServerURL])
   }
 
   @Test func requiresExactlyOneAuthorizationServer() async throws {

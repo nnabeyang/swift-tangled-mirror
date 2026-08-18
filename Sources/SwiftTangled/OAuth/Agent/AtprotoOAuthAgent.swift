@@ -232,7 +232,32 @@ extension AtprotoOAuthAgent: OAuthClientProtocol {
 
     let request = try requestComponents.constructUrl(serviceUrl: pdsUrl)
 
-    return try await authResponse(for: request).data
+    do {
+      return try Self.checked(try await authResponse(for: request)).data
+    } catch OAuth.Errors.httpResponse(let response) {
+      throw Self.failure(response)
+    }
+  }
+
+  // authResponse throws httpResponse without decoding the body, and returns a
+  // 401 that survived the refresh unchecked.
+  private static func checked(_ response: HTTPDataResponse) throws -> HTTPDataResponse {
+    guard response.response.status.kind != .successful else {
+      return response
+    }
+    throw failure(response)
+  }
+
+  private static func failure(_ response: HTTPDataResponse) -> OAuth.Errors {
+    guard
+      let errorResponse = try? JSONDecoder().decode(
+        OAuth.ErrorResponse.self,
+        from: response.data
+      )
+    else {
+      return .httpResponse(response: response)
+    }
+    return .oauthError(errorResponse, response.response.status)
   }
 
   public var authServerMetadata: AuthServerMetadata {
