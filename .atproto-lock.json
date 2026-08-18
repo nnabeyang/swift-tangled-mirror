@@ -163,7 +163,7 @@
       }
     }
   ],
-  "generator" : "0.43.1",
+  "generator" : "0.43.2",
   "module" : "Sources/TangledLexicons",
   "originHash" : "9614521ff009eadceea3c90f652a53fc6b45f963505bc3923e0a65cfe98486c6"
 }

@@ -9,13 +9,13 @@ notices are included in `LICENSES/`.
 | --- | --- | --- |
 | [Bluesky atproto lexicons](https://github.com/bluesky-social/atproto) | `8064ca7f9eb3cdd215febbc3ac318c652713d4c8` (`@atproto/api@0.20.12`) | MIT or Apache-2.0 |
 | [Tangled core lexicons](https://tangled.org/nnabeyang.tngl.sh/core) | `46622987c3bc6f16f1e1234c18c66c7dc432f0ee` | MIT |
-| [swift-atproto](https://github.com/nnabeyang/swift-atproto) | 0.43.1 / `9c3c9ee512e689fb915841cfcf1cdc89b86b0e61` | MIT |
+| [swift-atproto](https://github.com/nnabeyang/swift-atproto) | 0.43.2 / `f8161867f58d0d4ca602dbaed26d564bdfa86ae0` | MIT |
 | [swift-cbor](https://github.com/nnabeyang/swift-cbor) | 0.1.0 / `068a3f900e0078aef0be8542ef017e5347217b32` | MIT |
-| [swift-cid](https://github.com/swift-libp2p/swift-cid) | 0.0.1 / `f2eb18409e87c0da057624b550a6c4a3e08de5c4` | MIT |
-| [swift-multibase](https://github.com/swift-libp2p/swift-multibase) | 0.0.2 / `45f3cf2844477b9d211e1d3e793d0853134fd942` | MIT |
-| [swift-bases](https://github.com/swift-libp2p/swift-bases) | 0.2.1 / `162f6ef3ed3ebd5954c445443d93e41d30a473da` | MIT |
+| [swift-cid](https://github.com/swift-libp2p/swift-cid) | 0.2.2 / `4c38c05f6e6c3e67a518d00f9bd9188d5ab2baf2` | MIT |
+| [swift-multibase](https://github.com/swift-libp2p/swift-multibase) | 0.2.3 / `931b5a64bb773c585a947d9f25cc158d433bd555` | MIT |
+| [swift-bases](https://github.com/swift-libp2p/swift-bases) | 0.3.0 / `f6f3ddc88aef6fd39494a35a7e95cd93c1a63e79` | MIT |
 | [swift-multicodec](https://github.com/swift-libp2p/swift-multicodec) | 0.2.1 / `8b22b5941f934a51945d50793b104114a92a493c` | MIT |
-| [swift-multihash](https://github.com/swift-libp2p/swift-multihash) | 0.0.4 / `7ea5a9866bd341601fa61647d521880944139353` | MIT |
+| [swift-multihash](https://github.com/swift-libp2p/swift-multihash) | 0.2.2 / `6a42903314c1433c832f91ab02a285d3a0a061b6` | MIT |
 | [swift-varint](https://github.com/swift-libp2p/swift-varint) | 0.2.1 / `10254c96e8b979fe39775e28524c5da698278055` | MIT |
 | [CryptoSwift](https://github.com/krzyzanowskim/CryptoSwift) | 1.10.0 / `f2a627b84c1ff96f21ac2fcb623ab36142dd5512` | CryptoSwift license |
 | [swift-crypto](https://github.com/apple/swift-crypto) | 4.5.1 / `47d3869a7291f085c1fb9fb1e6d3b97a793f45c6` | Apache-2.0; BoringSSL notices |

@@ -1,5 +1,5 @@
 {
-  "originHash" : "b4123a34f824eaa15d50c52b0d39406c5cf5126e4b08defa75391351b77f204c",
+  "originHash" : "4fd25b9fbaf53c3f58a97d1be9635187ee40dfcf128006a129f455565c59f9c5",
   "pins" : [
     {
       "identity" : "compress-nio",
@@ -87,8 +87,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/nnabeyang/swift-atproto.git",
       "state" : {
-        "revision" : "9c3c9ee512e689fb915841cfcf1cdc89b86b0e61",
-        "version" : "0.43.1"
+        "revision" : "f8161867f58d0d4ca602dbaed26d564bdfa86ae0",
+        "version" : "0.43.2"
       }
     },
     {
@@ -96,8 +96,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/swift-libp2p/swift-bases.git",
       "state" : {
-        "revision" : "162f6ef3ed3ebd5954c445443d93e41d30a473da",
-        "version" : "0.2.1"
+        "revision" : "f6f3ddc88aef6fd39494a35a7e95cd93c1a63e79",
+        "version" : "0.3.0"
       }
     },
     {
@@ -123,8 +123,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/swift-libp2p/swift-cid",
       "state" : {
-        "revision" : "f2eb18409e87c0da057624b550a6c4a3e08de5c4",
-        "version" : "0.0.1"
+        "revision" : "4c38c05f6e6c3e67a518d00f9bd9188d5ab2baf2",
+        "version" : "0.2.2"
       }
     },
     {
@@ -204,8 +204,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/swift-libp2p/swift-multibase.git",
       "state" : {
-        "revision" : "45f3cf2844477b9d211e1d3e793d0853134fd942",
-        "version" : "0.0.2"
+        "revision" : "931b5a64bb773c585a947d9f25cc158d433bd555",
+        "version" : "0.2.3"
       }
     },
     {
@@ -222,8 +222,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/swift-libp2p/swift-multihash.git",
       "state" : {
-        "revision" : "7ea5a9866bd341601fa61647d521880944139353",
-        "version" : "0.0.4"
+        "revision" : "6a42903314c1433c832f91ab02a285d3a0a061b6",
+        "version" : "0.2.2"
       }
     },
     {

@@ -650,9 +650,9 @@ enum ArtifactDownloadWriter {
 
   static func expectedDigest(cid: String) throws -> [UInt8] {
     guard let link = try? LexLink(cid),
-      link.multihash.code == 0x12,
-      link.multihash.length == 32,
-      let digest = link.multihash.digest,
+      link.cid.multihash.code == 0x12,
+      link.cid.multihash.length == 32,
+      let digest = link.cid.multihash.digest,
       digest.count == 32
     else {
       throw ArtifactError.invalidBlobCID(cid)
