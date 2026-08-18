@@ -19,10 +19,12 @@ let package = Package(
     .package(
       url: "https://github.com/nnabeyang/swift-atproto.git",
       exact: "0.43.2"),
-    .package(url: "https://github.com/nnabeyang/oauth4swift.git", exact: "0.6.0-soyokaze.1"),
+    .package(url: "https://github.com/germ-network/oauth4swift.git", exact: "0.6.0"),
     .package(url: "https://github.com/apple/swift-argument-parser.git", "1.8.2" ..< "2.0.0"),
     .package(url: "https://github.com/apple/swift-crypto.git", from: "4.0.0"),
-    .package(url: "https://github.com/germ-network/GermConvenience.git", from: "0.2.4"),
+    .package(
+      url: "https://github.com/germ-network/GermConvenience.git",
+      .upToNextMinor(from: "0.3.0")),
     .package(url: "https://github.com/apple/swift-log.git", from: "1.6.0"),
     .package(url: "https://github.com/apple/swift-http-types.git", from: "1.5.1"),
     .package(url: "https://github.com/steipete/Swiftdansi.git", exact: "0.3.0"),

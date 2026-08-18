@@ -12,23 +12,18 @@ import OAuth4Swift
 package struct AtprotoAuthorizationServer: Sendable {
   package let metadata: AuthServerMetadata
   package let origin: URL
-  package let revocationEndpoint: URL?
 }
 
 package enum AtprotoOAuthDiscoveryError: Error, Equatable {
-  case missingDIDDocument
   case missingProtectedResourceMetadata
   case invalidAuthorizationServerCount(Int)
   case invalidAuthorizationServerOrigin
   case missingAuthorizationServerMetadata
-  case invalidAuthorizationServerMetadata
 }
 
 extension AtprotoOAuthDiscoveryError: LocalizedError {
   package var errorDescription: String? {
     switch self {
-    case .missingDIDDocument:
-      "OAuth discovery could not resolve the account DID document."
     case .missingProtectedResourceMetadata:
       "The PDS did not publish OAuth protected resource metadata."
     case .invalidAuthorizationServerCount(let count):
@@ -37,8 +32,6 @@ extension AtprotoOAuthDiscoveryError: LocalizedError {
       "The OAuth authorization server must be a simple HTTPS origin."
     case .missingAuthorizationServerMetadata:
       "The OAuth authorization server did not publish metadata."
-    case .invalidAuthorizationServerMetadata:
-      "The OAuth authorization server metadata could not be inspected."
     }
   }
 }
@@ -60,8 +53,9 @@ public struct AtprotoOAuthUtils {
     authFetcher: HTTPFetcher
   ) async throws -> AtprotoAuthorizationServer {
     guard
-      let pdsResourceMetadata = try await authFetcher.resourceDiscoveryRequest(
-        url: pdsServiceEndpoint
+      let pdsResourceMetadata = try await protectedResourceMetadata(
+        pdsServiceEndpoint: pdsServiceEndpoint,
+        authFetcher: authFetcher
       )
     else {
       throw AtprotoOAuthDiscoveryError.missingProtectedResourceMetadata
@@ -97,8 +91,7 @@ public struct AtprotoOAuthUtils {
 
     return AtprotoAuthorizationServer(
       metadata: authMetadata,
-      origin: authorizationServerURL,
-      revocationEndpoint: try revocationEndpoint(from: authMetadata)
+      origin: authorizationServerURL
     )
   }
 
@@ -119,17 +112,43 @@ public struct AtprotoOAuthUtils {
     return url
   }
 
-  // OAuth4Swift 0.6.0-soyokaze.1 decodes this field as URL but does not expose it.
-  // Keep the compatibility access at the shared discovery boundary until it becomes public.
-  private static func revocationEndpoint(from metadata: AuthServerMetadata) throws -> URL? {
-    let data = try JSONEncoder().encode(metadata)
-    guard let object = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-      throw AtprotoOAuthDiscoveryError.invalidAuthorizationServerMetadata
+  // RFC 9728 3.1 prepends the well-known segment to the resource path;
+  // OAuth4Swift's resourceDiscoveryRequest appends it.
+  private static func protectedResourceMetadata(
+    pdsServiceEndpoint: URL,
+    authFetcher: HTTPFetcher
+  ) async throws -> ProtectedResourceMetadata? {
+    let url = try protectedResourceMetadataURL(for: pdsServiceEndpoint)
+    guard url.scheme == "https" else {
+      throw OAuth.Errors.insecureScheme
     }
-    guard let rawValue = object["revocation_endpoint"] else { return nil }
-    guard let string = rawValue as? String, let url = URL(string: string) else {
-      throw AtprotoOAuthDiscoveryError.invalidAuthorizationServerMetadata
+    let response = try await authFetcher.data(for: try BundledHTTPRequest(url: url))
+    guard response.response.status != .notFound else {
+      return nil
     }
-    return url
+    return try response.expectSuccess().decode()
+  }
+
+  private static func protectedResourceMetadataURL(for resource: URL) throws -> URL {
+    var components = try URLComponents(
+      url: resource,
+      resolvingAgainstBaseURL: false
+    ).tryUnwrap(OAuth.Errors.invalidRequest)
+
+    let resourcePath = components.percentEncodedPath
+    let pathSuffix: String
+    switch resourcePath {
+    case "", "/":
+      pathSuffix = ""
+    case let path where path.hasPrefix("/"):
+      pathSuffix = path
+    default:
+      pathSuffix = "/\(resourcePath)"
+    }
+
+    components.percentEncodedPath =
+      "/.well-known/oauth-protected-resource" + pathSuffix
+
+    return try components.url.tryUnwrap(OAuth.Errors.invalidRequest)
   }
 }

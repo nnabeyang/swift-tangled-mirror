@@ -5,39 +5,34 @@ import OAuth4Swift
 import SwiftAtproto
 import Testing
 
-#if canImport(FoundationNetworking)
-  import FoundationNetworking
-#endif
-
 @testable import SwiftTangled
 
-@Suite(.serialized) struct TokenRevokerTests {
+@Suite struct TokenRevokerTests {
   @Test func revokesRefreshTokenAtDiscoveredAuthorizationServer() async throws {
-    RevocationURLProtocol.reset(statusCode: 200)
     let resolver = RevocationResolver(document: validDIDDocument())
-    let fetcher = RevocationMetadataFetcher(includeRevocationEndpoint: true)
+    let fetcher = RevocationFetcher(includeRevocationEndpoint: true)
 
     try await makeRevoker(resolver: resolver, fetcher: fetcher).revoke()
 
-    let request = try #require(RevocationURLProtocol.recordedRequests().first)
-    #expect(request.url?.absoluteString == "https://auth.example/oauth/revoke")
-    #expect(request.httpMethod == "POST")
+    let request = try #require(await fetcher.revocationRequest())
+    #expect(request.request.url?.absoluteString == "https://auth.example/oauth/revoke")
+    #expect(request.request.method == .post)
     #expect(
-      request.value(forHTTPHeaderField: "Content-Type")
-        == "application/x-www-form-urlencoded"
+      request.request.headerFields[.contentType] == HTTPContentType.formUrlEncoded.rawValue
     )
-    let fields = formFields(try #require(request.httpBody))
+    #expect(request.request.headerFields[.init("DPoP")!] != nil)
+    let fields = formFields(try #require(request.body))
     #expect(fields["token"] == "private-refresh-token")
     #expect(fields["token_type_hint"] == "refresh_token")
     #expect(fields["client_id"] == "https://client.example/metadata.json")
   }
 
   @Test func defaultsToStoredClientID() async throws {
-    RevocationURLProtocol.reset(statusCode: 200)
     let resolver = RevocationResolver(document: validDIDDocument())
-    let fetcher = RevocationMetadataFetcher(includeRevocationEndpoint: true)
+    let fetcher = RevocationFetcher(includeRevocationEndpoint: true)
     let session = try SessionStoreTestHelpers.makeStoredSession(
       storedClientID: "https://stored.example/metadata.json",
+      includeDPoPKey: true,
       refreshToken: "private-refresh-token"
     )
 
@@ -48,57 +43,57 @@ import Testing
       fetcher: fetcher
     ).revoke()
 
-    let request = try #require(RevocationURLProtocol.recordedRequests().first)
-    let fields = formFields(try #require(request.httpBody))
+    let request = try #require(await fetcher.revocationRequest())
+    let fields = formFields(try #require(request.body))
     #expect(fields["client_id"] == "https://stored.example/metadata.json")
   }
 
   @Test func missingRefreshTokenSkipsResolutionDiscoveryAndRequest() async throws {
-    RevocationURLProtocol.reset(statusCode: 200)
     let resolver = RevocationResolver(document: validDIDDocument())
-    let fetcher = RevocationMetadataFetcher(includeRevocationEndpoint: true)
-    let session = try SessionStoreTestHelpers.makeStoredSession(refreshToken: nil)
+    let fetcher = RevocationFetcher(includeRevocationEndpoint: true)
+    let session = try SessionStoreTestHelpers.makeStoredSession(
+      includeDPoPKey: true,
+      refreshToken: nil
+    )
 
     try await makeRevoker(session: session, resolver: resolver, fetcher: fetcher).revoke()
 
     #expect(await resolver.resolveCount() == 0)
     #expect(await fetcher.requestedURLs().isEmpty)
-    #expect(RevocationURLProtocol.recordedRequests().isEmpty)
   }
 
   @Test func missingRevocationEndpointIsANoOp() async throws {
-    RevocationURLProtocol.reset(statusCode: 200)
     let resolver = RevocationResolver(document: validDIDDocument())
-    let fetcher = RevocationMetadataFetcher(includeRevocationEndpoint: false)
+    let fetcher = RevocationFetcher(includeRevocationEndpoint: false)
 
     try await makeRevoker(resolver: resolver, fetcher: fetcher).revoke()
 
-    #expect(await fetcher.requestedURLs().count == 2)
-    #expect(RevocationURLProtocol.recordedRequests().isEmpty)
+    #expect(await fetcher.requestedURLs() == [protectedResourceURL, authorizationServerURL])
+    #expect(await fetcher.revocationRequest() == nil)
   }
 
-  @Test func missingDIDDocumentAndInvalidPDSServicesFailBeforeDiscovery() async throws {
+  @Test func unresolvableDIDsAndInvalidPDSServicesFailBeforeDiscovery() async throws {
     for document in [
       nil,
       validDIDDocument(type: "NotAPersonalDataServer"),
       validDIDDocument(endpoint: "not a URL"),
     ] {
-      RevocationURLProtocol.reset(statusCode: 200)
       let resolver = RevocationResolver(document: document)
-      let fetcher = RevocationMetadataFetcher(includeRevocationEndpoint: true)
+      let fetcher = RevocationFetcher(includeRevocationEndpoint: true)
 
       await #expect(throws: (any Error).self) {
         try await makeRevoker(resolver: resolver, fetcher: fetcher).revoke()
       }
       #expect(await fetcher.requestedURLs().isEmpty)
-      #expect(RevocationURLProtocol.recordedRequests().isEmpty)
     }
   }
 
   @Test func revocationFailureDoesNotExposeTheRefreshToken() async throws {
-    RevocationURLProtocol.reset(statusCode: 503)
     let resolver = RevocationResolver(document: validDIDDocument())
-    let fetcher = RevocationMetadataFetcher(includeRevocationEndpoint: true)
+    let fetcher = RevocationFetcher(
+      includeRevocationEndpoint: true,
+      revocationStatus: .serviceUnavailable
+    )
 
     do {
       try await makeRevoker(resolver: resolver, fetcher: fetcher).revoke()
@@ -106,11 +101,11 @@ import Testing
     } catch {
       #expect(!String(describing: error).contains("private-refresh-token"))
       #expect(!error.localizedDescription.contains("private-refresh-token"))
-      guard case TangledError.serverStatus(let status, _) = error else {
+      guard let responseError = error as? HTTPResponseError else {
         Issue.record("unexpected error: \(error)")
         return
       }
-      #expect(status == 503)
+      #expect(responseError.code == 503)
     }
   }
 
@@ -118,22 +113,26 @@ import Testing
     session: StoredSession? = nil,
     clientId: String? = "https://client.example/metadata.json",
     resolver: RevocationResolver,
-    fetcher: RevocationMetadataFetcher
+    fetcher: RevocationFetcher
   ) throws -> TokenRevoker {
-    let configuration = URLSessionConfiguration.ephemeral
-    configuration.protocolClasses = [RevocationURLProtocol.self]
-    return TokenRevoker(
+    TokenRevoker(
       session: try session
         ?? SessionStoreTestHelpers.makeStoredSession(
+          includeDPoPKey: true,
           refreshToken: "private-refresh-token"
         ),
       clientId: clientId,
       resolver: resolver,
-      authFetcher: fetcher,
-      urlSession: URLSession(configuration: configuration)
+      authFetcher: fetcher
     )
   }
 }
+
+private let protectedResourceURL =
+  "https://pds.example/.well-known/oauth-protected-resource"
+private let authorizationServerURL =
+  "https://auth.example/.well-known/oauth-authorization-server"
+private let revocationURL = "https://auth.example/oauth/revoke"
 
 private func validDIDDocument(
   type: String = "AtprotoPersonalDataServer",
@@ -171,12 +170,18 @@ private actor RevocationResolver: ATPResolver {
   func resolveCount() -> Int { count }
 }
 
-private actor RevocationMetadataFetcher: HTTPFetcher {
+private actor RevocationFetcher: HTTPFetcher {
   private let includeRevocationEndpoint: Bool
+  private let revocationStatus: HTTPResponse.Status
   private var requests: [String] = []
+  private var revocation: BundledHTTPRequest?
 
-  init(includeRevocationEndpoint: Bool) {
+  init(
+    includeRevocationEndpoint: Bool,
+    revocationStatus: HTTPResponse.Status = .ok
+  ) {
     self.includeRevocationEndpoint = includeRevocationEndpoint
+    self.revocationStatus = revocationStatus
   }
 
   func data(for request: BundledHTTPRequest) async throws -> HTTPDataResponse {
@@ -184,12 +189,15 @@ private actor RevocationMetadataFetcher: HTTPFetcher {
     requests.append(url)
     let data: Data
     switch url {
-    case "https://pds.example/.well-known/oauth-protected-resource":
+    case protectedResourceURL:
       data = protectedResourceMetadata(authorizationServers: ["https://auth.example"])
-    case "https://auth.example/.well-known/oauth-authorization-server":
+    case authorizationServerURL:
       data = authorizationServerMetadata(
         revocationEndpoint: includeRevocationEndpoint
       )
+    case revocationURL:
+      revocation = request
+      return HTTPDataResponse(data: Data(), response: HTTPResponse(status: revocationStatus))
     default:
       return HTTPDataResponse(data: Data(), response: HTTPResponse(status: .notFound))
     }
@@ -197,6 +205,8 @@ private actor RevocationMetadataFetcher: HTTPFetcher {
   }
 
   func requestedURLs() -> [String] { requests }
+
+  func revocationRequest() -> BundledHTTPRequest? { revocation }
 }
 
 private func formFields(_ data: Data) -> [String: String] {
@@ -208,60 +218,4 @@ private func formFields(_ data: Data) -> [String: String] {
       item.value.map { (item.name, $0) }
     }
   )
-}
-
-private final class RevocationURLProtocol: URLProtocol {
-  private static let lock = NSLock()
-  nonisolated(unsafe) private static var requests: [URLRequest] = []
-  nonisolated(unsafe) private static var statusCode = 200
-
-  override class func canInit(with request: URLRequest) -> Bool { true }
-
-  override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
-
-  override func startLoading() {
-    var recordedRequest = request
-    if recordedRequest.httpBody == nil, let stream = recordedRequest.httpBodyStream {
-      stream.open()
-      defer { stream.close() }
-      var body = Data()
-      let bufferSize = 1_024
-      let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: bufferSize)
-      defer { buffer.deallocate() }
-      while stream.hasBytesAvailable {
-        let count = stream.read(buffer, maxLength: bufferSize)
-        guard count > 0 else { break }
-        body.append(buffer, count: count)
-      }
-      recordedRequest.httpBody = body
-    }
-    Self.lock.lock()
-    Self.requests.append(recordedRequest)
-    let statusCode = Self.statusCode
-    Self.lock.unlock()
-    let response = HTTPURLResponse(
-      url: request.url!,
-      statusCode: statusCode,
-      httpVersion: "HTTP/1.1",
-      headerFields: nil
-    )!
-    client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-    client?.urlProtocol(self, didLoad: Data())
-    client?.urlProtocolDidFinishLoading(self)
-  }
-
-  override func stopLoading() {}
-
-  static func reset(statusCode: Int) {
-    lock.lock()
-    requests = []
-    self.statusCode = statusCode
-    lock.unlock()
-  }
-
-  static func recordedRequests() -> [URLRequest] {
-    lock.lock()
-    defer { lock.unlock() }
-    return requests
-  }
 }
