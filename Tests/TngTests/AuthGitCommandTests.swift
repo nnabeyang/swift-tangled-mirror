@@ -175,6 +175,23 @@ import Testing
       ]).status == 1)
   }
 
+  @Test func liveRunnerReadsGitOutputLargerThanThePipeBuffer() async throws {
+    let directory = FileManager.default.temporaryDirectory
+      .appendingPathComponent(UUID().uuidString, isDirectory: true)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let git = DirectoryGit(directory: directory)
+    #expect(git.run(["init"]).status == 0)
+    let blob = directory.appendingPathComponent("blob")
+    try String(repeating: "a", count: 1024 * 1024).write(to: blob, atomically: true, encoding: .utf8)
+    let revision = git.value(["hash-object", "-w", blob.path])
+
+    let result = try await GitCommandRunner.live.run(["-C", directory.path, "cat-file", "-p", revision])
+
+    #expect(result.status == 0)
+    #expect(result.stdout.utf8.count == 1024 * 1024)
+  }
+
   private func makeService(git: RecordingGit) -> AuthGitCommandService {
     AuthGitCommandService(
       dependencies: AuthGitCommandDependencies(
