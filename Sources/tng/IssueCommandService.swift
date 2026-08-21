@@ -16,7 +16,7 @@ struct IssueCommandDependencies: Sendable {
   let createComment: @Sendable (RecordReference, String) async throws -> TangledRecord<Comment>
   let updateIssue: @Sendable (TangledRecord<Issue>, String, String?) async throws -> TangledRecord<Issue>
   let setIssueState: @Sendable (String, IssueStatus) async throws -> TangledRecord<IssueState>
-  let originURL: @Sendable () throws -> String
+  let originURL: @Sendable () async throws -> String
 
   static let live: IssueCommandDependencies = {
     let client = BobbinClient()
@@ -71,7 +71,7 @@ struct IssueCommandDependencies: Sendable {
           state: state
         )
       },
-      originURL: { try GitOriginReader().read() }
+      originURL: { try await GitOriginReader().read() }
     )
   }()
 }
@@ -97,7 +97,7 @@ struct IssueCommandService: Sendable {
     sort: BobbinSortOrder = .descending,
     json: Bool
   ) async throws -> CLICommandOutput {
-    let reference = try repository ?? dependencies.originURL()
+    let reference = if let repository { repository } else { try await dependencies.originURL() }
     let repositoryRecord = try await dependencies.resolveRepository(reference)
     guard let repositoryDID = repositoryRecord.value.repoDID, !repositoryDID.isEmpty else {
       throw TangledError.invalidRequest(
@@ -166,7 +166,7 @@ struct IssueCommandService: Sendable {
     bodyFile: String?,
     json: Bool
   ) async throws -> CLICommandOutput {
-    let reference = try repository ?? dependencies.originURL()
+    let reference = if let repository { repository } else { try await dependencies.originURL() }
     let repositoryRecord = try await dependencies.resolveRepository(reference)
     guard let repositoryDID = repositoryRecord.value.repoDID, !repositoryDID.isEmpty else {
       throw TangledError.invalidRequest(

@@ -73,7 +73,7 @@ struct RepoCommandDependencies: Sendable {
       TangledRecord<Repository>
     >
   let sessionDID: @Sendable () throws -> String?
-  let originURL: @Sendable () throws -> String
+  let originURL: @Sendable () async throws -> String
   let defaultBranch: @Sendable (String) async throws -> GitDefaultBranch
   let tree: @Sendable (String, String, String?) async throws -> GitTree
   let log: @Sendable (String, String, String?, String?, Int) async throws -> GitLogPage
@@ -104,7 +104,7 @@ struct RepoCommandDependencies: Sendable {
         )
       },
       sessionDID: { try CLISessionStore.make().store.load()?.did },
-      originURL: { try GitOriginReader().read() },
+      originURL: { try await GitOriginReader().read() },
       defaultBranch: { try await client.defaultBranch(repositoryURI: $0) },
       tree: { repositoryURI, ref, path in
         try await client.tree(repositoryURI: repositoryURI, ref: ref, path: path)
@@ -262,7 +262,7 @@ struct RepoCommandService: Sendable {
   }
 
   func view(repository: String?, json: Bool) async throws -> CLICommandOutput {
-    let reference = try repository ?? dependencies.originURL()
+    let reference = if let repository { repository } else { try await dependencies.originURL() }
     let view = try await dependencies.repositoryView(reference)
     return CLICommandOutput(
       stdout: try json ? formatter.json(view) : format(view),
@@ -275,7 +275,7 @@ struct RepoCommandService: Sendable {
     repository: String?,
     json: Bool
   ) async throws -> CLICommandOutput {
-    let reference = try repository ?? dependencies.originURL()
+    let reference = if let repository { repository } else { try await dependencies.originURL() }
     let plan = try await defaultBranchDependencies.prepareChange(reference, branch)
     let result: RepositoryDefaultBranchChangeResult
     if plan.requiresChange {
@@ -534,7 +534,7 @@ extension RepoCommandService {
   }
 
   private func writableRepository(_ repository: String?) async throws -> WritableRepository {
-    let reference = try repository ?? dependencies.originURL()
+    let reference = if let repository { repository } else { try await dependencies.originURL() }
     let parsedReference: RepositoryReference
     do throws(TangledError) {
       parsedReference = try RepositoryReference(reference)
@@ -567,7 +567,7 @@ extension RepoCommandService {
   }
 
   private func gitRepositoryURI(_ repository: String?) async throws -> String {
-    let reference = try repository ?? dependencies.originURL()
+    let reference = if let repository { repository } else { try await dependencies.originURL() }
     return try await dependencies.resolveRepository(reference).uri
   }
 

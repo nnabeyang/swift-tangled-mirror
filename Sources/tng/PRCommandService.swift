@@ -15,7 +15,7 @@ struct PRCommandDependencies: Sendable {
   let comments: @Sendable (String, String?, Int) async throws -> Page<TangledRecord<Comment>>
   let coverage: @Sendable () async throws -> BobbinCoverage
   let pullRequestPatch: @Sendable (String, Int?) async throws -> PullRequestPatch
-  let originURL: @Sendable () throws -> String
+  let originURL: @Sendable () async throws -> String
   let defaultBranch: @Sendable (String) async throws -> GitDefaultBranch
   let prepare: @Sendable (String, String?, String) throws -> PreparedPullRequest
   let prepareStack: @Sendable (String, String?, String) throws -> PreparedPullRequestStack
@@ -89,7 +89,7 @@ struct PRCommandDependencies: Sendable {
           roundNumber: roundNumber
         )
       },
-      originURL: { try GitOriginReader().read() },
+      originURL: { try await GitOriginReader().read() },
       defaultBranch: { try await client.defaultBranch(repositoryURI: $0) },
       prepare: {
         try GitPullRequestPreparer().prepare(base: $0, head: $1, baseRemote: $2)
@@ -229,7 +229,7 @@ struct PRCommandService: Sendable {
     sort: BobbinSortOrder = .descending,
     json: Bool
   ) async throws -> CLICommandOutput {
-    let reference = try repository ?? dependencies.originURL()
+    let reference = if let repository { repository } else { try await dependencies.originURL() }
     let repositoryRecord = try await dependencies.resolveRepository(reference)
     guard let repositoryDID = repositoryRecord.value.repoDID, !repositoryDID.isEmpty else {
       throw TangledError.invalidRequest(
@@ -412,7 +412,7 @@ struct PRCommandService: Sendable {
     stack: Bool = false,
     json: Bool
   ) async throws -> CLICommandOutput {
-    let origin = try dependencies.originURL()
+    let origin = try await dependencies.originURL()
     let originRecord = try await dependencies.resolveRepository(origin)
     let targetRecord =
       if let repository {
@@ -539,7 +539,7 @@ struct PRCommandService: Sendable {
           "--patch-file is not valid for fork-based pull requests"
         )
       }
-      let origin = try dependencies.originURL()
+      let origin = try await dependencies.originURL()
       let originRecord = try await dependencies.resolveRepository(origin)
       guard originRecord.value.repoDID == sourceRepositoryDID else {
         throw TangledError.invalidRequest(
@@ -556,7 +556,7 @@ struct PRCommandService: Sendable {
       guard let source = pull.source else {
         throw TangledError.invalidRequest("pull request source is missing")
       }
-      let origin = try dependencies.originURL()
+      let origin = try await dependencies.originURL()
       let originRecord = try await dependencies.resolveRepository(origin)
       guard originRecord.value.repoDID == pull.target.repositoryDID else {
         throw TangledError.invalidRequest(
@@ -608,7 +608,7 @@ struct PRCommandService: Sendable {
           "--patch-file is not valid for fork-based stack resubmission"
         )
       }
-      let origin = try dependencies.originURL()
+      let origin = try await dependencies.originURL()
       let originRecord = try await dependencies.resolveRepository(origin)
       guard originRecord.value.repoDID == sourceRepositoryDID else {
         throw TangledError.invalidRequest(
@@ -622,7 +622,7 @@ struct PRCommandService: Sendable {
           "--patch-file is only valid for patch-based stack resubmission"
         )
       }
-      let origin = try dependencies.originURL()
+      let origin = try await dependencies.originURL()
       let originRecord = try await dependencies.resolveRepository(origin)
       guard originRecord.value.repoDID == pull.target.repositoryDID else {
         throw TangledError.invalidRequest(

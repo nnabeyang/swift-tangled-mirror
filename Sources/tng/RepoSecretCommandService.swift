@@ -17,7 +17,7 @@ struct RepoSecretCommandDependencies: Sendable {
       -> RepositorySecretMutationResult
   let prepareRemoval: @Sendable (String, String?, String) async throws -> RepositorySecretRemovalPlan
   let remove: @Sendable (RepositorySecretRemovalPlan) async throws -> RepositorySecretMutationResult
-  let originURL: @Sendable () throws -> String
+  let originURL: @Sendable () async throws -> String
   let inputIsTerminal: @Sendable () -> Bool
   let confirmRemoval: @Sendable (RepositorySecretTarget) -> Bool
 
@@ -61,7 +61,7 @@ struct RepoSecretCommandDependencies: Sendable {
           pdsClient: try await CLIAuthenticatedClient.make()
         )
       },
-      originURL: { try GitOriginReader().read() },
+      originURL: { try await GitOriginReader().read() },
       inputIsTerminal: { secretCommandStandardInputIsTerminal() },
       confirmRemoval: { promptForSecretRemoval($0) }
     )
@@ -85,10 +85,8 @@ struct RepoSecretCommandService: Sendable {
     spindle: String?,
     json: Bool
   ) async throws -> CLICommandOutput {
-    let result = try await dependencies.list(
-      try repository ?? dependencies.originURL(),
-      spindle
-    )
+    let reference = if let repository { repository } else { try await dependencies.originURL() }
+    let result = try await dependencies.list(reference, spindle)
     return CLICommandOutput(stdout: try json ? formatter.json(result) : format(result.secrets))
   }
 
