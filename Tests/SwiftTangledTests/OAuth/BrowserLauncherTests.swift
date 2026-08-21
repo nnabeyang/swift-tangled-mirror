@@ -80,3 +80,15 @@ private final class RecordingBrowserCommandRunner: BrowserCommandRunning, @unche
     return status
   }
 }
+
+@Suite struct SubprocessBrowserCommandRunnerTests {
+  @Test(arguments: [("/usr/bin/true", Int32(0)), ("/usr/bin/false", Int32(1))])
+  func reportsTheExitStatusOfTheLaunchedCommand(executable: String, status: Int32) async throws {
+    let reported = try await SubprocessBrowserCommandRunner().run(
+      executableURL: URL(fileURLWithPath: executable),
+      arguments: []
+    )
+
+    #expect(reported == status)
+  }
+}
