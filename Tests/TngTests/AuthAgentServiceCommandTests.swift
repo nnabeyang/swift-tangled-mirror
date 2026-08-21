@@ -203,3 +203,27 @@ private struct StubAuthAgentCommandRunner: AuthAgentSystemCommandRunning {
     AuthAgentSystemCommandOutput(status: status, stdout: stdout, stderr: "")
   }
 }
+
+@Suite struct SubprocessAuthAgentSystemCommandRunnerTests {
+  @Test func capturesStandardStreamsAndExitStatus() async throws {
+    let runner = SubprocessAuthAgentSystemCommandRunner()
+
+    let succeeded = try await runner.run(
+      executable: "/bin/sh",
+      arguments: ["-c", "printf out; printf err >&2"]
+    )
+    #expect(succeeded == AuthAgentSystemCommandOutput(status: 0, stdout: "out", stderr: "err"))
+
+    let failed = try await runner.run(executable: "/bin/sh", arguments: ["-c", "exit 3"])
+    #expect(failed.status == 3)
+  }
+
+  @Test func reportsAMissingExecutableAsAnOperationFailure() async {
+    await #expect(throws: AuthAgentLaunchAgentServiceError.operationFailed("command")) {
+      try await SubprocessAuthAgentSystemCommandRunner().run(
+        executable: "/nonexistent/launchctl",
+        arguments: []
+      )
+    }
+  }
+}
