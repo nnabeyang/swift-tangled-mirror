@@ -1,4 +1,5 @@
 import Foundation
+import Subprocess
 
 #if canImport(Darwin)
   import Darwin
@@ -50,7 +51,7 @@ struct CLIPager: Sendable {
       _ command: String,
       _ data: Data,
       _ environment: [String: String]
-    ) throws -> Void
+    ) async throws -> Void
 
   let run: Runner
 
@@ -79,49 +80,46 @@ struct CLIPager: Sendable {
     command: String,
     data: Data,
     environment: [String: String]
-  ) throws {
-    let process = Process()
-    let standardInput = Pipe()
-    process.executableURL = URL(fileURLWithPath: "/bin/sh")
-    process.arguments = ["-c", command]
-    process.environment = environment
-    process.standardInput = standardInput
-    process.standardOutput = FileHandle.standardOutput
-    process.standardError = FileHandle.standardError
-
-    do {
-      try process.run()
-    } catch {
-      throw CLIPagerError.launch(command: command, message: error.localizedDescription)
-    }
-
-    let terminalForeground = PagerTerminalForeground(
-      pagerProcessID: process.processIdentifier
-    )
+  ) async throws {
     ignoreBrokenPipeSignal()
-    var writeError: (any Error)?
-    do {
-      try standardInput.fileHandleForWriting.write(contentsOf: data)
-    } catch {
-      if !isBrokenPipe(error) {
-        writeError = error
-      }
-    }
-    try? standardInput.fileHandleForWriting.close()
-    process.waitUntilExit()
-    terminalForeground.restore()
 
-    if let writeError {
-      throw CLIPagerError.write(
-        command: command,
-        message: writeError.localizedDescription
-      )
+    let result: ExecutionResult<PagerRun, FileDescriptorOutput, FileDescriptorOutput>
+    do {
+      result = try await Subprocess.run(
+        CLISubprocess.executable("/bin/sh"),
+        arguments: ["-c", command],
+        environment: .custom(pagerEnvironmentKeys(environment)),
+        platformOptions: CLISubprocess.platformOptions,
+        input: .inputWriter,
+        output: .currentStandardOutput,
+        error: .currentStandardError
+      ) { execution in
+        let foreground = PagerTerminalForeground(
+          pagerProcessID: execution.processIdentifier.value
+        )
+        do {
+          _ = try await execution.standardInputWriter.write(data)
+        } catch {
+          guard isBrokenPipe(error) else {
+            return PagerRun(foreground: foreground, writeFailure: "\(error)")
+          }
+        }
+        return PagerRun(foreground: foreground, writeFailure: nil)
+      }
+    } catch {
+      throw CLIPagerError.launch(command: command, message: "\(error)")
     }
-    switch process.terminationReason {
-    case .exit where process.terminationStatus != 0:
-      throw CLIPagerError.exit(command: command, status: process.terminationStatus)
-    case .uncaughtSignal:
-      throw CLIPagerError.signal(command: command, signal: process.terminationStatus)
+
+    result.closureResult.foreground.restore()
+
+    if let writeFailure = result.closureResult.writeFailure {
+      throw CLIPagerError.write(command: command, message: writeFailure)
+    }
+    switch result.terminationStatus {
+    case .exited(let status) where status != 0:
+      throw CLIPagerError.exit(command: command, status: status)
+    case .signaled(let signal):
+      throw CLIPagerError.signal(command: command, signal: signal)
     default:
       return
     }
@@ -163,7 +161,7 @@ struct CLIOutputWriter {
     )
   }
 
-  func write(_ output: CLICommandOutput) {
+  func write(_ output: CLICommandOutput) async {
     var pagerWarning: String?
     if output.isPageable,
       terminal.isTerminal,
@@ -171,7 +169,7 @@ struct CLIOutputWriter {
       command != "cat"
     {
       do {
-        try pager.run(
+        try await pager.run(
           command,
           output.stdoutData,
           CLIPager.pagerEnvironment(environment)
@@ -210,17 +208,23 @@ private func ignoreBrokenPipeSignal() {
 }
 
 private func isBrokenPipe(_ error: any Error) -> Bool {
-  let error = error as NSError
-  if error.domain == NSPOSIXErrorDomain, error.code == Int(EPIPE) {
-    return true
-  }
-  if let underlying = error.userInfo[NSUnderlyingErrorKey] as? any Error {
-    return isBrokenPipe(underlying)
-  }
-  return false
+  (error as? SubprocessError)?.underlyingError == .brokenPipe
 }
 
-private struct PagerTerminalForeground {
+private func pagerEnvironmentKeys(_ environment: [String: String]) -> [Environment.Key: String] {
+  Dictionary(
+    uniqueKeysWithValues: environment.compactMap { key, value in
+      Environment.Key(rawValue: key).map { ($0, value) }
+    }
+  )
+}
+
+private struct PagerRun: Sendable {
+  let foreground: PagerTerminalForeground
+  let writeFailure: String?
+}
+
+private struct PagerTerminalForeground: Sendable {
   private let terminal: Int32?
   private let originalProcessGroup: pid_t
 
