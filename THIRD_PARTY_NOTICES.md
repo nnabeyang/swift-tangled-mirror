@@ -35,6 +35,7 @@ notices are included in `LICENSES/`.
 | [swift-nio-transport-services](https://github.com/apple/swift-nio-transport-services) | 1.28.0 / `67787bb645a5e67d2edcdfbe48a216cc549222d5` | Apache-2.0 |
 | [swift-log](https://github.com/apple/swift-log) | 1.14.0 / `a878e7f8f46cfc0e1125e565b5c08e7d5272dc9a` | Apache-2.0 |
 | [swift-system](https://github.com/apple/swift-system) | 1.7.5 / `50688cacbd41d547e9eb9f7a213542340b7c442b` | Apache-2.0 |
+| [swift-subprocess](https://github.com/swiftlang/swift-subprocess) | 1.0.0 / `b3937ab85dd32f6e9435914599c1519074769c1a` | Apache-2.0 |
 | [swift-collections](https://github.com/apple/swift-collections) | 1.6.0 / `a0cb0954ecb21e4e31b0070e6ed5674e8556685a` | Apache-2.0 |
 | [swift-atomics](https://github.com/apple/swift-atomics) | 1.3.1 / `0442cb5a3f98ab802acb777929fdb446bda11a34` | Apache-2.0 |
 | [swift-nio-extras](https://github.com/apple/swift-nio-extras), [swift-nio-http2](https://github.com/apple/swift-nio-http2), [swift-nio-ssl](https://github.com/apple/swift-nio-ssl), [swift-nio-transport-services](https://github.com/apple/swift-nio-transport-services) | locked in `Package.resolved` | Apache-2.0 and package notices |
