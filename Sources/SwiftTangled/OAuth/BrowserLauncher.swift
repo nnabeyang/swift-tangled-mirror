@@ -1,4 +1,11 @@
 import Foundation
+import Subprocess
+
+#if canImport(System)
+  import System
+#else
+  import SystemPackage
+#endif
 
 public protocol BrowserLauncher: Sendable {
   func open(_ url: URL) async throws
@@ -8,14 +15,21 @@ protocol BrowserCommandRunning: Sendable {
   func run(executableURL: URL, arguments: [String]) async throws -> Int32
 }
 
-private struct ProcessBrowserCommandRunner: BrowserCommandRunning {
+struct SubprocessBrowserCommandRunner: BrowserCommandRunning {
   func run(executableURL: URL, arguments: [String]) async throws -> Int32 {
-    let process = Process()
-    process.executableURL = executableURL
-    process.arguments = arguments
-    try process.run()
-    process.waitUntilExit()
-    return process.terminationStatus
+    var platformOptions = PlatformOptions()
+    platformOptions.processGroupID = 0
+    let result = try await Subprocess.run(
+      .path(FilePath(executableURL.path)),
+      arguments: Arguments(arguments),
+      platformOptions: platformOptions,
+      output: .currentStandardOutput,
+      error: .currentStandardError
+    )
+    switch result.terminationStatus {
+    case .exited(let code): return code
+    case .signaled(let signal): return signal
+    }
   }
 }
 
@@ -25,7 +39,7 @@ public struct SystemBrowserLauncher: BrowserLauncher {
 
   public init() {
     executableURL = Self.systemExecutableURL()
-    runner = ProcessBrowserCommandRunner()
+    runner = SubprocessBrowserCommandRunner()
   }
 
   init(executableURL: URL?, runner: any BrowserCommandRunning) {
