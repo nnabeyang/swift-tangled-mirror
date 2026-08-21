@@ -1,5 +1,6 @@
 import ArgumentParser
 import Foundation
+import Subprocess
 import SwiftTangled
 
 struct GitProcessResult: Sendable {
@@ -9,24 +10,25 @@ struct GitProcessResult: Sendable {
 }
 
 struct GitCommandRunner: Sendable {
-  let run: @Sendable ([String]) throws -> GitProcessResult
+  let run: @Sendable ([String]) async throws -> GitProcessResult
 
   static let live = GitCommandRunner { arguments in
-    let process = Process()
-    let stdout = Pipe()
-    let stderr = Pipe()
-    process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-    process.arguments = ["git"] + arguments
-    process.standardOutput = stdout
-    process.standardError = stderr
-    do { try process.run() } catch {
-      throw CLICommandError.git("failed to run git: \(error.localizedDescription)")
+    let result: ExecutionResult<Void, StringOutput<UTF8>, StringOutput<UTF8>>
+    do {
+      result = try await Subprocess.run(
+        CLISubprocess.executable("/usr/bin/env"),
+        arguments: Arguments(["git"] + arguments),
+        platformOptions: CLISubprocess.platformOptions,
+        output: .string(limit: CLISubprocess.textOutputLimit),
+        error: .string(limit: CLISubprocess.textOutputLimit)
+      )
+    } catch {
+      throw CLICommandError.git("failed to run git: \(error)")
     }
-    process.waitUntilExit()
     return GitProcessResult(
-      status: process.terminationStatus,
-      stdout: String(decoding: stdout.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self),
-      stderr: String(decoding: stderr.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
+      status: CLISubprocess.status(result.terminationStatus),
+      stdout: result.standardOutput,
+      stderr: result.standardError
     )
   }
 }
@@ -92,8 +94,8 @@ struct AuthGitCommandService: Sendable {
     explicitAccount: String?
   ) async throws -> GitSetupResult {
     guard !remote.isEmpty else { throw ValidationError("remote must not be empty") }
-    let fetchURLs = try gitLines(["remote", "get-url", "--all", remote])
-    let pushURLs = try gitLines(["remote", "get-url", "--push", "--all", remote])
+    let fetchURLs = try await gitLines(["remote", "get-url", "--all", remote])
+    let pushURLs = try await gitLines(["remote", "get-url", "--push", "--all", remote])
     guard fetchURLs.count == 1, pushURLs.count == 1 else {
       throw CLICommandError.git("remote '\(remote)' must have exactly one fetch URL and one push URL")
     }
@@ -102,23 +104,23 @@ struct AuthGitCommandService: Sendable {
     }
 
     let target = try await dependencies.target(fetchURLs[0])
-    let configuredDID = try optionalGitValue(["config", "--local", "--get", "tng.gitAccount"])
+    let configuredDID = try await optionalGitValue(["config", "--local", "--get", "tng.gitAccount"])
     let (account, store) = try dependencies.account(explicitAccount ?? configuredDID)
     try await dependencies.verifyPushScope(store, target.knot)
 
     let credentialKey = try credentialHelperKey(target)
     let usePathKey = try credentialUseHttpPathKey(target.url)
     let helper = "!tng --account \(account.did) auth git-credential"
-    let existingHelpers = try optionalGitLines(["config", "--local", "--get-all", credentialKey])
+    let existingHelpers = try await optionalGitLines(["config", "--local", "--get-all", credentialKey])
     let expectedHelpers = ["", helper]
     if !existingHelpers.isEmpty, existingHelpers != expectedHelpers, !replaceExistingHelper {
       throw CLICommandError.git(
         "a different local credential helper is configured for \(target.url); pass --replace-existing-helper to replace it"
       )
     }
-    let currentUsePath = try optionalGitValue(["config", "--local", "--get", usePathKey])
-    let currentRemote = try optionalGitValue(["config", "--local", "--get", "tng.gitRemote"])
-    let currentURL = try optionalGitValue(["config", "--local", "--get", "tng.gitURL"])
+    let currentUsePath = try await optionalGitValue(["config", "--local", "--get", usePathKey])
+    let currentRemote = try await optionalGitValue(["config", "--local", "--get", "tng.gitRemote"])
+    let currentURL = try await optionalGitValue(["config", "--local", "--get", "tng.gitURL"])
     let changed =
       fetchURLs[0] != target.url || existingHelpers != expectedHelpers
       || currentUsePath != "true" || configuredDID != account.did || currentRemote != remote
@@ -138,60 +140,60 @@ struct AuthGitCommandService: Sendable {
     guard !dryRun, changed else { return result }
 
     do {
-      try git(["remote", "set-url", remote, target.url])
-      try gitAllowMissing(["config", "--local", "--unset-all", credentialKey])
-      try git(["config", "--local", "--add", credentialKey, ""])
-      try git(["config", "--local", "--add", credentialKey, helper])
-      try git(["config", "--local", usePathKey, "true"])
-      try git(["config", "--local", "tng.gitAccount", account.did])
-      try git(["config", "--local", "tng.gitRemote", remote])
-      try git(["config", "--local", "tng.gitURL", target.url])
+      try await git(["remote", "set-url", remote, target.url])
+      try await gitAllowMissing(["config", "--local", "--unset-all", credentialKey])
+      try await git(["config", "--local", "--add", credentialKey, ""])
+      try await git(["config", "--local", "--add", credentialKey, helper])
+      try await git(["config", "--local", usePathKey, "true"])
+      try await git(["config", "--local", "tng.gitAccount", account.did])
+      try await git(["config", "--local", "tng.gitRemote", remote])
+      try await git(["config", "--local", "tng.gitURL", target.url])
     } catch {
-      try? restore(remote: remote, url: fetchURLs[0], key: credentialKey, values: existingHelpers)
-      try? restoreConfig(key: usePathKey, values: currentUsePath.map { [$0] } ?? [])
-      try? restoreConfig(key: "tng.gitAccount", values: configuredDID.map { [$0] } ?? [])
-      try? restoreConfig(key: "tng.gitRemote", values: currentRemote.map { [$0] } ?? [])
-      try? restoreConfig(key: "tng.gitURL", values: currentURL.map { [$0] } ?? [])
+      try? await restore(remote: remote, url: fetchURLs[0], key: credentialKey, values: existingHelpers)
+      try? await restoreConfig(key: usePathKey, values: currentUsePath.map { [$0] } ?? [])
+      try? await restoreConfig(key: "tng.gitAccount", values: configuredDID.map { [$0] } ?? [])
+      try? await restoreConfig(key: "tng.gitRemote", values: currentRemote.map { [$0] } ?? [])
+      try? await restoreConfig(key: "tng.gitURL", values: currentURL.map { [$0] } ?? [])
       throw error
     }
     return result
   }
 
-  private func restore(remote: String, url: String, key: String, values: [String]) throws {
-    try git(["remote", "set-url", remote, url])
-    try restoreConfig(key: key, values: values)
+  private func restore(remote: String, url: String, key: String, values: [String]) async throws {
+    try await git(["remote", "set-url", remote, url])
+    try await restoreConfig(key: key, values: values)
   }
 
-  private func restoreConfig(key: String, values: [String]) throws {
-    try gitAllowMissing(["config", "--local", "--unset-all", key])
-    for value in values { try git(["config", "--local", "--add", key, value]) }
+  private func restoreConfig(key: String, values: [String]) async throws {
+    try await gitAllowMissing(["config", "--local", "--unset-all", key])
+    for value in values { try await git(["config", "--local", "--add", key, value]) }
   }
 
-  private func gitLines(_ arguments: [String]) throws -> [String] {
-    let result = try dependencies.git.run(arguments)
+  private func gitLines(_ arguments: [String]) async throws -> [String] {
+    let result = try await dependencies.git.run(arguments)
     guard result.status == 0 else { throw gitError(result) }
     return result.stdout.split(whereSeparator: \.isNewline).map(String.init)
   }
 
-  private func optionalGitLines(_ arguments: [String]) throws -> [String] {
-    let result = try dependencies.git.run(arguments)
+  private func optionalGitLines(_ arguments: [String]) async throws -> [String] {
+    let result = try await dependencies.git.run(arguments)
     if result.status == 1 { return [] }
     guard result.status == 0 else { throw gitError(result) }
     return result.stdout.split(separator: "\n", omittingEmptySubsequences: false)
       .dropLast(result.stdout.hasSuffix("\n") ? 1 : 0).map(String.init)
   }
 
-  private func optionalGitValue(_ arguments: [String]) throws -> String? {
-    try optionalGitLines(arguments).first
+  private func optionalGitValue(_ arguments: [String]) async throws -> String? {
+    try await optionalGitLines(arguments).first
   }
 
-  private func git(_ arguments: [String]) throws {
-    let result = try dependencies.git.run(arguments)
+  private func git(_ arguments: [String]) async throws {
+    let result = try await dependencies.git.run(arguments)
     guard result.status == 0 else { throw gitError(result) }
   }
 
-  private func gitAllowMissing(_ arguments: [String]) throws {
-    let result = try dependencies.git.run(arguments)
+  private func gitAllowMissing(_ arguments: [String]) async throws {
+    let result = try await dependencies.git.run(arguments)
     guard result.status == 0 || result.status == 5 else { throw gitError(result) }
   }
 

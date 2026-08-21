@@ -28,7 +28,7 @@ struct AuthGitCredentialCommand: AsyncParsableCommand {
       guard let account = configured.account, configured.registry != nil else {
         throw CLICommandError.authentication("Git credential account is unavailable")
       }
-      let url = try localGitValue("tng.gitURL")
+      let url = try await localGitValue("tng.gitURL")
       let target = try await GitAuthenticationService().target(for: url)
       guard target.url == url else {
         throw CLICommandError.git("configured Git authentication target no longer matches Tangled")
@@ -57,8 +57,8 @@ func parseGitCredentialRequest(_ input: String) -> GitCredentialRequest {
     protocolName: values["protocol"], host: values["host"], path: values["path"])
 }
 
-private func localGitValue(_ key: String) throws -> String {
-  let result = try GitCommandRunner.live.run(["config", "--local", "--get", key])
+private func localGitValue(_ key: String) async throws -> String {
+  let result = try await GitCommandRunner.live.run(["config", "--local", "--get", key])
   let value = result.stdout.trimmingCharacters(in: .whitespacesAndNewlines)
   guard result.status == 0, !value.isEmpty else {
     throw CLICommandError.git("Git authentication is not configured for this repository")
