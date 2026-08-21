@@ -864,7 +864,7 @@ import Testing
     #expect(await recorder.createCalls().isEmpty)
   }
 
-  @Test func gitPreparerRequiresPushedHeadAndBuildsFormatPatch() throws {
+  @Test func gitPreparerRequiresPushedHeadAndBuildsFormatPatch() async throws {
     let localHead = "1111111111111111111111111111111111111111"
     let baseHead = "2222222222222222222222222222222222222222"
     let preparer = GitPullRequestPreparer { arguments in
@@ -888,7 +888,7 @@ import Testing
       }
     }
 
-    let result = try preparer.prepare(base: "main", head: nil)
+    let result = try await preparer.prepare(base: "main", head: nil)
 
     #expect(result.head == "feature/pr")
     #expect(result.title == "First subject")
@@ -896,7 +896,7 @@ import Testing
     #expect(result.patch == Data("From \(localHead)\n".utf8))
   }
 
-  @Test func gitPreparerBuildsOrderedStackFromChangeIDHeaders() throws {
+  @Test func gitPreparerBuildsOrderedStackFromChangeIDHeaders() async throws {
     let first = "1111111111111111111111111111111111111111"
     let second = "2222222222222222222222222222222222222222"
     let base = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -955,7 +955,7 @@ import Testing
       }
     }
 
-    let result = try preparer.prepareStack(base: "main", head: "feature/stack")
+    let result = try await preparer.prepareStack(base: "main", head: "feature/stack")
 
     #expect(result.commits.map(\.title) == ["First title", "Second title"])
     #expect(result.commits.map(\.changeID) == ["change-one", "change-two"])
@@ -965,7 +965,7 @@ import Testing
     #expect(String(decoding: result.commits[1].patch, as: UTF8.self).hasPrefix("From \(second)"))
   }
 
-  @Test func gitPreparerUsesTargetRemoteForForkBase() throws {
+  @Test func gitPreparerUsesTargetRemoteForForkBase() async throws {
     let localHead = "1111111111111111111111111111111111111111"
     let baseHead = "2222222222222222222222222222222222222222"
     let target = "https://knot1.tangled.sh/did:plc:repository/"
@@ -988,7 +988,7 @@ import Testing
       }
     }
 
-    let result = try preparer.prepare(base: "main", head: "main", baseRemote: target)
+    let result = try await preparer.prepare(base: "main", head: "main", baseRemote: target)
 
     #expect(result.base == "main")
     #expect(result.head == "main")

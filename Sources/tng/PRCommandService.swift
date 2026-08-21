@@ -17,8 +17,8 @@ struct PRCommandDependencies: Sendable {
   let pullRequestPatch: @Sendable (String, Int?) async throws -> PullRequestPatch
   let originURL: @Sendable () async throws -> String
   let defaultBranch: @Sendable (String) async throws -> GitDefaultBranch
-  let prepare: @Sendable (String, String?, String) throws -> PreparedPullRequest
-  let prepareStack: @Sendable (String, String?, String) throws -> PreparedPullRequestStack
+  let prepare: @Sendable (String, String?, String) async throws -> PreparedPullRequest
+  let prepareStack: @Sendable (String, String?, String) async throws -> PreparedPullRequestStack
   let create:
     @Sendable (String, String?, String, String, String, String?, Data) async throws ->
       TangledRecord<PullRequest>
@@ -92,10 +92,10 @@ struct PRCommandDependencies: Sendable {
       originURL: { try await GitOriginReader().read() },
       defaultBranch: { try await client.defaultBranch(repositoryURI: $0) },
       prepare: {
-        try GitPullRequestPreparer().prepare(base: $0, head: $1, baseRemote: $2)
+        try await GitPullRequestPreparer().prepare(base: $0, head: $1, baseRemote: $2)
       },
       prepareStack: {
-        try GitPullRequestPreparer().prepareStack(base: $0, head: $1, baseRemote: $2)
+        try await GitPullRequestPreparer().prepareStack(base: $0, head: $1, baseRemote: $2)
       },
       create: { repositoryDID, sourceRepositoryDID, base, head, title, body, patch in
         try await CLIAuthenticatedClient.make().createPullRequest(
@@ -456,7 +456,7 @@ struct PRCommandService: Sendable {
           "--stack cannot be used with --title, --body, or --body-file"
         )
       }
-      let prepared = try dependencies.prepareStack(resolvedBase, head, baseRemote)
+      let prepared = try await dependencies.prepareStack(resolvedBase, head, baseRemote)
       let created = try await dependencies.createStack(
         targetDID,
         isFork ? originDID : nil,
@@ -472,7 +472,7 @@ struct PRCommandService: Sendable {
         stdout: try json ? formatter.json(result) : format(result)
       )
     }
-    let prepared = try dependencies.prepare(resolvedBase, head, baseRemote)
+    let prepared = try await dependencies.prepare(resolvedBase, head, baseRemote)
     let resolvedBody: String?
     if let bodyFile {
       resolvedBody = try String(contentsOfFile: bodyFile, encoding: .utf8)
@@ -563,7 +563,7 @@ struct PRCommandService: Sendable {
           "Git origin does not match the pull request target repository"
         )
       }
-      let prepared = try dependencies.prepare(
+      let prepared = try await dependencies.prepare(
         pull.target.branch,
         source.branch,
         "origin"
@@ -629,7 +629,7 @@ struct PRCommandService: Sendable {
           "Git origin does not match the pull request target repository"
         )
       }
-      commits = try dependencies.prepareStack(
+      commits = try await dependencies.prepareStack(
         pull.target.branch,
         source.branch,
         "origin"
