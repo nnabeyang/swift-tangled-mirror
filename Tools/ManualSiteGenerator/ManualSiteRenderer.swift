@@ -129,7 +129,8 @@ struct ManualSiteRenderer: Sendable {
   }
 
   private func usage(page: CommandPage, arguments: [ArgumentInfo]) -> String {
-    let suffix = arguments
+    let suffix =
+      arguments
       .filter(\.shouldDisplay)
       .map(usageComponent)
       .filter { !$0.isEmpty }
