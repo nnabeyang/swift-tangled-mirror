@@ -21,6 +21,7 @@ let package = Package(
       exact: "0.43.2"),
     .package(url: "https://github.com/germ-network/oauth4swift.git", exact: "0.6.0"),
     .package(url: "https://github.com/apple/swift-argument-parser.git", "1.8.2" ..< "2.0.0"),
+    .package(url: "https://github.com/swiftlang/swift-subprocess.git", exact: "1.0.0"),
     .package(url: "https://github.com/apple/swift-crypto.git", from: "4.0.0"),
     .package(
       url: "https://github.com/germ-network/GermConvenience.git",
@@ -62,6 +63,7 @@ let package = Package(
         .product(name: "Logging", package: "swift-log"),
         .product(name: "HTTPTypes", package: "swift-http-types"),
         .product(name: "WSClient", package: "swift-websocket"),
+        .product(name: "Subprocess", package: "swift-subprocess"),
       ],
       swiftSettings: [
         .enableUpcomingFeature("ApproachableConcurrency")
@@ -73,6 +75,7 @@ let package = Package(
         "SwiftTangled",
         .product(name: "ArgumentParser", package: "swift-argument-parser"),
         .product(name: "Swiftdansi", package: "Swiftdansi"),
+        .product(name: "Subprocess", package: "swift-subprocess"),
       ],
       swiftSettings: [
         .enableUpcomingFeature("ApproachableConcurrency")
