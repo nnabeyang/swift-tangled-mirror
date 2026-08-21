@@ -18,7 +18,7 @@ struct RepoCollaboratorCommandDependencies: Sendable {
   let remove:
     @Sendable (RepositoryCollaboratorRemovalPlan) async throws
       -> RepositoryCollaboratorMutationResult
-  let originURL: @Sendable () throws -> String
+  let originURL: @Sendable () async throws -> String
   let inputIsTerminal: @Sendable () -> Bool
   let confirmRemoval: @Sendable (RepositoryCollaboratorTarget) -> Bool
 
@@ -53,7 +53,7 @@ struct RepoCollaboratorCommandDependencies: Sendable {
         let pdsClient = try await CLIAuthenticatedClient.make()
         return try await service.remove(plan, pdsClient: pdsClient)
       },
-      originURL: { try GitOriginReader().read() },
+      originURL: { try await GitOriginReader().read() },
       inputIsTerminal: { collaboratorStandardInputIsTerminal() },
       confirmRemoval: { promptForCollaboratorRemoval($0) }
     )
@@ -79,8 +79,8 @@ struct RepoCollaboratorCommandService: Sendable {
     sort: BobbinSortOrder,
     json: Bool
   ) async throws -> CLICommandOutput {
-    let repository = try repository ?? dependencies.originURL()
-    let page = try await dependencies.list(repository, cursor, limit, sort)
+    let reference = if let repository { repository } else { try await dependencies.originURL() }
+    let page = try await dependencies.list(reference, cursor, limit, sort)
     return CLICommandOutput(
       stdout: try json ? formatter.json(page) : format(page.items),
       stderr: formatter.cursorDiagnostic(page.cursor, json: json)

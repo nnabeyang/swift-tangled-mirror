@@ -23,7 +23,7 @@ struct ArtifactCommandDependencies: Sendable {
     @Sendable (String, String, String) async throws
       -> TangledRecord<Artifact>
   let coverage: @Sendable () async throws -> BobbinCoverage
-  let originURL: @Sendable () throws -> String
+  let originURL: @Sendable () async throws -> String
   let inputIsTerminal: @Sendable () -> Bool
   let confirm: @Sendable (String) -> Bool
 
@@ -79,7 +79,7 @@ struct ArtifactCommandDependencies: Sendable {
         )
       },
       coverage: { try await client.coverage() },
-      originURL: { try GitOriginReader().read() },
+      originURL: { try await GitOriginReader().read() },
       inputIsTerminal: { standardInputIsTerminal() },
       confirm: { promptForArtifactDeletion($0) }
     )
@@ -115,7 +115,7 @@ struct ArtifactCommandService: Sendable {
     sort: ArtifactSortOrder,
     json: Bool
   ) async throws -> CLICommandOutput {
-    let reference = try repository ?? dependencies.originURL()
+    let reference = if let repository { repository } else { try await dependencies.originURL() }
     async let coverage = readBobbinCoverage(using: dependencies.coverage)
     let read = try await dependencies.list(reference, cursor, limit, sort)
     let page = read.page
@@ -138,7 +138,7 @@ struct ArtifactCommandService: Sendable {
     tag: String,
     json: Bool
   ) async throws -> CLICommandOutput {
-    let reference = try repository ?? dependencies.originURL()
+    let reference = if let repository { repository } else { try await dependencies.originURL() }
     async let coverage = readBobbinCoverage(using: dependencies.coverage)
     let result = try await dependencies.view(reference, tag)
     return CLICommandOutput(
@@ -161,7 +161,7 @@ struct ArtifactCommandService: Sendable {
     force: Bool,
     json: Bool
   ) async throws -> CLICommandOutput {
-    let reference = try repository ?? dependencies.originURL()
+    let reference = if let repository { repository } else { try await dependencies.originURL() }
     let fileURL = URL(fileURLWithPath: file).standardizedFileURL
     let record = try await dependencies.upload(
       reference,
@@ -186,7 +186,7 @@ struct ArtifactCommandService: Sendable {
     force: Bool,
     json: Bool
   ) async throws -> CLICommandOutput {
-    let reference = try repository ?? dependencies.originURL()
+    let reference = if let repository { repository } else { try await dependencies.originURL() }
     let destination = URL(fileURLWithPath: output ?? name).standardizedFileURL
     let result = try await dependencies.download(
       reference,
@@ -215,7 +215,7 @@ struct ArtifactCommandService: Sendable {
     confirmed: Bool,
     json: Bool
   ) async throws -> CLICommandOutput {
-    let reference = try repository ?? dependencies.originURL()
+    let reference = if let repository { repository } else { try await dependencies.originURL() }
     if !confirmed {
       guard dependencies.inputIsTerminal() else {
         throw ValidationError("--yes is required when standard input is not a terminal")

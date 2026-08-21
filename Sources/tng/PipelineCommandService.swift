@@ -15,7 +15,7 @@ struct PipelineCommandDependencies: Sendable {
       String, String, String, String?, [String], [PipelineManualInput]
     ) async throws -> String
   let cancel: @Sendable (String, String, String, [String]) async throws -> PipelineCancellation
-  let originURL: @Sendable () throws -> String
+  let originURL: @Sendable () async throws -> String
   let sleep: @Sendable (TimeInterval) async throws -> Void
 
   init(
@@ -43,7 +43,7 @@ struct PipelineCommandDependencies: Sendable {
       PipelineCancellation = { _, _, _, _ in
         throw TangledError.invalidRequest("pipeline cancel is unavailable")
       },
-    originURL: @escaping @Sendable () throws -> String,
+    originURL: @escaping @Sendable () async throws -> String,
     sleep: @escaping @Sendable (TimeInterval) async throws -> Void
   ) {
     self.resolveRepository = resolveRepository
@@ -113,7 +113,7 @@ struct PipelineCommandDependencies: Sendable {
           workflows: workflows
         )
       },
-      originURL: { try GitOriginReader().read() },
+      originURL: { try await GitOriginReader().read() },
       sleep: { interval in
         try await Task.sleep(for: .seconds(interval))
       }
@@ -333,7 +333,7 @@ extension PipelineCommandService {
   fileprivate func resolveRepositoryRecord(
     _ repository: String?
   ) async throws -> TangledRecord<Repository> {
-    let reference = try repository ?? dependencies.originURL()
+    let reference = if let repository { repository } else { try await dependencies.originURL() }
     return try await dependencies.resolveRepository(reference)
   }
 

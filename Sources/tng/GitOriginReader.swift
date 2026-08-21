@@ -1,31 +1,24 @@
 import Foundation
+import Subprocess
 
 struct GitOriginReader: Sendable {
-  func read() throws -> String {
-    let process = Process()
-    let standardOutput = Pipe()
-    let standardError = Pipe()
-    process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
-    process.arguments = ["remote", "get-url", "origin"]
-    process.standardOutput = standardOutput
-    process.standardError = standardError
-
+  func read() async throws -> String {
+    let result: ExecutionResult<Void, StringOutput<UTF8>, StringOutput<UTF8>>
     do {
-      try process.run()
+      result = try await Subprocess.run(
+        CLISubprocess.executable("/usr/bin/git"),
+        arguments: ["remote", "get-url", "origin"],
+        platformOptions: CLISubprocess.platformOptions,
+        output: .string(limit: CLISubprocess.textOutputLimit),
+        error: .string(limit: CLISubprocess.textOutputLimit)
+      )
     } catch {
-      throw CLICommandError.git("failed to run git: \(error.localizedDescription)")
+      throw CLICommandError.git("failed to run git: \(error)")
     }
-    process.waitUntilExit()
 
-    let output = String(
-      decoding: standardOutput.fileHandleForReading.readDataToEndOfFile(),
-      as: UTF8.self
-    ).trimmingCharacters(in: .whitespacesAndNewlines)
-    guard process.terminationStatus == 0, !output.isEmpty else {
-      let diagnostic = String(
-        decoding: standardError.fileHandleForReading.readDataToEndOfFile(),
-        as: UTF8.self
-      ).trimmingCharacters(in: .whitespacesAndNewlines)
+    let output = result.standardOutput.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard result.terminationStatus.isSuccess, !output.isEmpty else {
+      let diagnostic = result.standardError.trimmingCharacters(in: .whitespacesAndNewlines)
       let detail = diagnostic.isEmpty ? "origin remote is not available" : diagnostic
       throw CLICommandError.git(
         "\(detail). Pass a repository explicitly as AT URI, repo DID, or handle/name."
