@@ -1,4 +1,5 @@
 import Foundation
+import Subprocess
 import SwiftTangled
 
 #if canImport(Darwin)
@@ -78,24 +79,25 @@ struct AuthAgentSystemCommandOutput: Equatable, Sendable {
 }
 
 protocol AuthAgentSystemCommandRunning: Sendable {
-  func run(executable: String, arguments: [String]) throws -> AuthAgentSystemCommandOutput
+  func run(executable: String, arguments: [String]) async throws -> AuthAgentSystemCommandOutput
 }
 
-struct ProcessAuthAgentSystemCommandRunner: AuthAgentSystemCommandRunning {
-  func run(executable: String, arguments: [String]) throws -> AuthAgentSystemCommandOutput {
-    let process = Process()
-    let stdout = Pipe()
-    let stderr = Pipe()
-    process.executableURL = URL(fileURLWithPath: executable)
-    process.arguments = arguments
-    process.standardOutput = stdout
-    process.standardError = stderr
-    do { try process.run() } catch { throw AuthAgentLaunchAgentServiceError.operationFailed("command") }
-    process.waitUntilExit()
+struct SubprocessAuthAgentSystemCommandRunner: AuthAgentSystemCommandRunning {
+  func run(executable: String, arguments: [String]) async throws -> AuthAgentSystemCommandOutput {
+    let result: ExecutionResult<Void, StringOutput<UTF8>, StringOutput<UTF8>>
+    do {
+      result = try await Subprocess.run(
+        CLISubprocess.executable(executable),
+        arguments: Arguments(arguments),
+        platformOptions: CLISubprocess.platformOptions,
+        output: .string(limit: CLISubprocess.textOutputLimit),
+        error: .string(limit: CLISubprocess.textOutputLimit)
+      )
+    } catch { throw AuthAgentLaunchAgentServiceError.operationFailed("command") }
     return AuthAgentSystemCommandOutput(
-      status: process.terminationStatus,
-      stdout: String(decoding: stdout.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self),
-      stderr: String(decoding: stderr.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
+      status: CLISubprocess.status(result.terminationStatus),
+      stdout: result.standardOutput,
+      stderr: result.standardError
     )
   }
 }
@@ -105,7 +107,7 @@ struct AuthAgentLaunchAgentService: Sendable {
 
   var homeDirectory = FileManager.default.homeDirectoryForCurrentUser.path
   var userID: UInt32 = geteuid()
-  var commandRunner: any AuthAgentSystemCommandRunning = ProcessAuthAgentSystemCommandRunner()
+  var commandRunner: any AuthAgentSystemCommandRunning = SubprocessAuthAgentSystemCommandRunner()
   var probe: @Sendable (String) async throws -> AuthAgentServiceProbe = { path in
     let status = try await AuthAgentClient(endpoint: .unix(path: path)).probe()
     return AuthAgentServiceProbe(
@@ -139,8 +141,8 @@ struct AuthAgentLaunchAgentService: Sendable {
       ),
       to: identity.plistPath
     )
-    _ = try? launchctl(["bootout", domain + "/" + identity.label])
-    try requireLaunchctl(["bootstrap", domain, identity.plistPath], operation: "install")
+    _ = try? await launchctl(["bootout", domain + "/" + identity.label])
+    try await requireLaunchctl(["bootstrap", domain, identity.plistPath], operation: "install")
     return try await waitForHealthyStatus(instance: instance)
   }
 
@@ -150,8 +152,8 @@ struct AuthAgentLaunchAgentService: Sendable {
     guard FileManager.default.fileExists(atPath: identity.plistPath) else {
       throw AuthAgentLaunchAgentServiceError.notInstalled
     }
-    if try launchctl(["print", domain + "/" + identity.label]).status != 0 {
-      try requireLaunchctl(["bootstrap", domain, identity.plistPath], operation: "start")
+    if try await launchctl(["print", domain + "/" + identity.label]).status != 0 {
+      try await requireLaunchctl(["bootstrap", domain, identity.plistPath], operation: "start")
     }
     return try await waitForHealthyStatus(instance: instance)
   }
@@ -162,8 +164,8 @@ struct AuthAgentLaunchAgentService: Sendable {
     guard FileManager.default.fileExists(atPath: identity.plistPath) else {
       throw AuthAgentLaunchAgentServiceError.notInstalled
     }
-    if try launchctl(["print", domain + "/" + identity.label]).status == 0 {
-      try requireLaunchctl(["bootout", domain + "/" + identity.label], operation: "stop")
+    if try await launchctl(["print", domain + "/" + identity.label]).status == 0 {
+      try await requireLaunchctl(["bootout", domain + "/" + identity.label], operation: "stop")
     }
     try await waitForDeadSocketAndRemove(configuration(at: identity.plistPath).socketPath)
     return try await waitForHealthyStatus(instance: instance)
@@ -176,10 +178,10 @@ struct AuthAgentLaunchAgentService: Sendable {
       throw AuthAgentLaunchAgentServiceError.notInstalled
     }
     let target = domain + "/" + identity.label
-    if try launchctl(["print", target]).status == 0 {
-      try requireLaunchctl(["kickstart", "-k", target], operation: "restart")
+    if try await launchctl(["print", target]).status == 0 {
+      try await requireLaunchctl(["kickstart", "-k", target], operation: "restart")
     } else {
-      try requireLaunchctl(["bootstrap", domain, identity.plistPath], operation: "restart")
+      try await requireLaunchctl(["bootstrap", domain, identity.plistPath], operation: "restart")
     }
     return try await waitForHealthyStatus(instance: instance)
   }
@@ -191,7 +193,7 @@ struct AuthAgentLaunchAgentService: Sendable {
       return Self.emptyStatus(identity: identity, instance: instance)
     }
     let configuration = try configuration(at: identity.plistPath)
-    _ = try? launchctl(["bootout", domain + "/" + identity.label])
+    _ = try? await launchctl(["bootout", domain + "/" + identity.label])
     do { try FileManager.default.removeItem(atPath: identity.plistPath) } catch {
       throw AuthAgentLaunchAgentServiceError.operationFailed("uninstall")
     }
@@ -222,7 +224,7 @@ struct AuthAgentLaunchAgentService: Sendable {
     }
     let sessionState = Self.sessionState(configuration: parsedConfiguration, homeDirectory: homeDirectory)
     let authenticationSource = parsedConfiguration.tmbInstance == nil ? "native" : "tmb"
-    let launchState = try? launchctl(["print", domain + "/" + identity.label])
+    let launchState = try? await launchctl(["print", domain + "/" + identity.label])
     guard let launchState, launchState.status == 0 else {
       return AuthAgentServiceStatus(
         label: identity.label, instance: instance, state: .stopped, pid: nil,
@@ -441,12 +443,12 @@ struct AuthAgentLaunchAgentService: Sendable {
     } catch let error as AuthAgentLaunchAgentServiceError { throw error } catch { throw AuthAgentLaunchAgentServiceError.operationFailed("write") }
   }
 
-  private func launchctl(_ arguments: [String]) throws -> AuthAgentSystemCommandOutput {
-    try commandRunner.run(executable: "/bin/launchctl", arguments: arguments)
+  private func launchctl(_ arguments: [String]) async throws -> AuthAgentSystemCommandOutput {
+    try await commandRunner.run(executable: "/bin/launchctl", arguments: arguments)
   }
 
-  private func requireLaunchctl(_ arguments: [String], operation: String) throws {
-    guard try launchctl(arguments).status == 0 else {
+  private func requireLaunchctl(_ arguments: [String], operation: String) async throws {
+    guard try await launchctl(arguments).status == 0 else {
       throw AuthAgentLaunchAgentServiceError.operationFailed(operation)
     }
   }
