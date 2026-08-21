@@ -40,12 +40,12 @@ import Testing
     #expect(configured["LV"] == "-Ou8")
   }
 
-  @Test func writerPagesOnlyEligibleTerminalOutput() throws {
+  @Test func writerPagesOnlyEligibleTerminalOutput() async throws {
     let recorder = PagerRecorder()
     let writer = outputWriter(recorder: recorder, terminal: true, pager: "pager --flag")
 
-    writer.write(CLICommandOutput(stdout: "paged\n", stderr: "warning\n", isPageable: true))
-    writer.write(CLICommandOutput(stdout: "direct\n"))
+    await writer.write(CLICommandOutput(stdout: "paged\n", stderr: "warning\n", isPageable: true))
+    await writer.write(CLICommandOutput(stdout: "direct\n"))
 
     #expect(recorder.pagerCommands == ["pager --flag"])
     #expect(recorder.pagerInputs == [Data("paged\n".utf8)])
@@ -55,9 +55,9 @@ import Testing
     #expect(recorder.stderr == Data("warning\n".utf8))
   }
 
-  @Test func writerUsesDefaultPagerForEligibleTerminalOutput() {
+  @Test func writerUsesDefaultPagerForEligibleTerminalOutput() async {
     let recorder = PagerRecorder()
-    outputWriter(recorder: recorder, terminal: true, pager: nil)
+    await outputWriter(recorder: recorder, terminal: true, pager: nil)
       .write(CLICommandOutput(stdout: "default\n", isPageable: true))
 
     #expect(recorder.pagerCommands == ["less"])
@@ -65,27 +65,27 @@ import Testing
     #expect(recorder.stdout.isEmpty)
   }
 
-  @Test func writerBypassesPagerForNonTerminalDisabledAndCatConfigurations() {
+  @Test func writerBypassesPagerForNonTerminalDisabledAndCatConfigurations() async {
     let nonTerminal = PagerRecorder()
-    outputWriter(recorder: nonTerminal, terminal: false, pager: "less")
+    await outputWriter(recorder: nonTerminal, terminal: false, pager: "less")
       .write(CLICommandOutput(stdout: "plain\n", isPageable: true))
     #expect(nonTerminal.pagerCommands.isEmpty)
     #expect(nonTerminal.stdout == Data("plain\n".utf8))
 
     let disabled = PagerRecorder()
-    outputWriter(recorder: disabled, terminal: true, pager: "")
+    await outputWriter(recorder: disabled, terminal: true, pager: "")
       .write(CLICommandOutput(stdout: "disabled\n", isPageable: true))
     #expect(disabled.pagerCommands.isEmpty)
     #expect(disabled.stdout == Data("disabled\n".utf8))
 
     let cat = PagerRecorder()
-    outputWriter(recorder: cat, terminal: true, pager: "cat")
+    await outputWriter(recorder: cat, terminal: true, pager: "cat")
       .write(CLICommandOutput(stdout: "cat\n", isPageable: true))
     #expect(cat.pagerCommands.isEmpty)
     #expect(cat.stdout == Data("cat\n".utf8))
   }
 
-  @Test func writerPagesWhenTerminalOutputIsForced() {
+  @Test func writerPagesWhenTerminalOutputIsForced() async {
     let recorder = PagerRecorder()
     let terminal = CLITerminalContext.resolve(
       environment: ["TNG_FORCE_TTY": "80"],
@@ -104,7 +104,7 @@ import Testing
       stderr: { recorder.stderr.append($0) }
     )
 
-    writer.write(CLICommandOutput(stdout: "forced\n", isPageable: true))
+    await writer.write(CLICommandOutput(stdout: "forced\n", isPageable: true))
 
     #expect(recorder.pagerCommands == ["less"])
     #expect(recorder.pagerInputs == [Data("forced\n".utf8)])
@@ -117,11 +117,11 @@ import Testing
       CLIPagerError.exit(command: "missing-pager", status: 127),
     ]
   )
-  func writerFallsBackToDirectOutputWhenPagerIsUnavailable(error: CLIPagerError) {
+  func writerFallsBackToDirectOutputWhenPagerIsUnavailable(error: CLIPagerError) async {
     let recorder = PagerRecorder()
     let writer = failingOutputWriter(recorder: recorder, error: error)
 
-    writer.write(
+    await writer.write(
       CLICommandOutput(
         stdout: "result\n",
         stderr: "command warning\n",
@@ -140,11 +140,11 @@ import Testing
       CLIPagerError.signal(command: "pager", signal: 15),
     ]
   )
-  func writerWarnsWithoutRepeatingOutputAfterPagerStarts(error: CLIPagerError) {
+  func writerWarnsWithoutRepeatingOutputAfterPagerStarts(error: CLIPagerError) async {
     let recorder = PagerRecorder()
     let writer = failingOutputWriter(recorder: recorder, error: error)
 
-    writer.write(CLICommandOutput(stdout: "result\n", isPageable: true))
+    await writer.write(CLICommandOutput(stdout: "result\n", isPageable: true))
 
     #expect(recorder.stdout.isEmpty)
     #expect(
@@ -153,7 +153,7 @@ import Testing
     )
   }
 
-  @Test func writerUsesStderrDiagnosticContextIndependentlyFromStdout() {
+  @Test func writerUsesStderrDiagnosticContextIndependentlyFromStdout() async {
     let recorder = PagerRecorder()
     let stderrTerminal = CLITerminalContext(
       isTerminal: true,
@@ -170,7 +170,7 @@ import Testing
       stderr: { recorder.stderr.append($0) }
     )
 
-    writer.write(
+    await writer.write(
       CLICommandOutput(
         stdout: "plain stdout\n",
         stderr: "warning: styled stderr\n"
@@ -184,7 +184,7 @@ import Testing
     )
   }
 
-  @Test func liveProcessWritesDataAndConfiguredEnvironment() throws {
+  @Test func liveProcessWritesDataAndConfiguredEnvironment() async throws {
     let directory = try PagerTemporaryDirectory()
     let output = directory.url.appendingPathComponent("output")
     let environment = directory.url.appendingPathComponent("environment")
@@ -192,7 +192,7 @@ import Testing
       "printf '%s|%s' \"$LESS\" \"$LV\" > \(shellQuote(environment.path)); "
       + "cat > \(shellQuote(output.path))"
 
-    try CLIPager.runProcess(
+    try await CLIPager.runProcess(
       command: command,
       data: Data("pager input\n".utf8),
       environment: CLIPager.pagerEnvironment([:])
@@ -208,8 +208,8 @@ import Testing
       "head -c 1 >/dev/null",
     ]
   )
-  func liveProcessAcceptsEarlyExitAndBrokenPipe(command: String) throws {
-    try CLIPager.runProcess(
+  func liveProcessAcceptsEarlyExitAndBrokenPipe(command: String) async throws {
+    try await CLIPager.runProcess(
       command: command,
       data: Data(repeating: 0x61, count: 2 * 1024 * 1024),
       environment: [:]
@@ -222,11 +222,11 @@ import Testing
       ("command-that-does-not-exist", Int32(127)),
     ]
   )
-  func liveProcessRejectsUnsuccessfulCommands(command: String, status: Int32) {
-    #expect(
+  func liveProcessRejectsUnsuccessfulCommands(command: String, status: Int32) async {
+    await #expect(
       throws: CLIPagerError.exit(command: command, status: status)
     ) {
-      try CLIPager.runProcess(
+      try await CLIPager.runProcess(
         command: command,
         data: Data(),
         environment: [:]

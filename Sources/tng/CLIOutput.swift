@@ -86,7 +86,7 @@ func runCLICommand(
     }
     throw report.exitCode.argumentParserValue
   }
-  CLIOutputWriter.live.write(output)
+  await CLIOutputWriter.live.write(output)
   if let exitCode = output.exitCode {
     throw exitCode.argumentParserValue
   }
