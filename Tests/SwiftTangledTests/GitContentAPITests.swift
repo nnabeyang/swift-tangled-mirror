@@ -352,6 +352,20 @@ import Testing
     #expect(query("path", request) == "Sources")
   }
 
+  @Test func logRejectsMalformedParentHashes() async throws {
+    let validHash = "[" + Array(repeating: "204", count: 20).joined(separator: ",") + "]"
+    let fixture = String(decoding: try fixture("git-log"), as: UTF8.self)
+
+    for replacement in [#""not-an-array""#, "[256]", "[204]"] {
+      let body = Data(fixture.replacingOccurrences(of: validHash, with: replacement).utf8)
+      let client = makeClient(GitContentTransport([.init(statusCode: 200, body: body)]))
+
+      await #expect(throws: TangledError.self) {
+        try await client.log(repositoryURI: repositoryURI, ref: "main")
+      }
+    }
+  }
+
   @Test func blobNormalizesTextBinaryAndSubmoduleResponses() async throws {
     let transport = GitContentTransport([
       .init(statusCode: 200, body: try fixture("git-blob-text")),

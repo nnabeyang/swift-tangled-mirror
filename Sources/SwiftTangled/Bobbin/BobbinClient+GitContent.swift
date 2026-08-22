@@ -257,7 +257,7 @@ extension BobbinClient {
     guard let page = response.page else {
       throw TangledError.decoding(GitContentError.missingLogField("page"))
     }
-    let commits = rawCommits.map(\.gitCommit)
+    let commits = try rawCommits.map(gitCommit)
     // Knot currently interprets the cursor as a numeric offset, although the Lexicon
     // describes it as a commit SHA. Keep the public cursor opaque while matching reality.
     let nextOffset = offset + commits.count
@@ -518,18 +518,24 @@ private func gitLastCommit(_ value: Sh.Tangled.RepoBlob_LastCommit) -> GitLastCo
   )
 }
 
-private extension Sh.Tangled.RepoLog_Commit {
-  var gitCommit: GitCommit {
-    GitCommit(
-      hash: self.this,
-      author: author.gitSignature,
-      committer: committer.gitSignature,
-      message: message,
-      tree: tree,
-      parentHashes: parent_hashes?.map {
-        $0.map { String(format: "%02x", $0) }.joined()
-      } ?? [],
-      changeID: change_id
+private extension BobbinClient {
+  func gitCommit(_ value: Sh.Tangled.RepoLog_Commit) throws -> GitCommit {
+    let parentHashes: [String] =
+      try value.parent_hashes?.map { value in
+        let bytes: [UInt8] = try decodeGenerated(value)
+        guard bytes.count == 20 else {
+          throw TangledError.decoding(GitContentError.invalidGitHashLength(bytes.count))
+        }
+        return gitHash(bytes)
+      } ?? []
+    return GitCommit(
+      hash: value.this,
+      author: value.author.gitSignature,
+      committer: value.committer.gitSignature,
+      message: value.message,
+      tree: value.tree,
+      parentHashes: parentHashes,
+      changeID: value.change_id
     )
   }
 }
@@ -560,5 +566,6 @@ private func gitHash(_ bytes: [UInt8]) -> String {
 
 private enum GitContentError: Error {
   case invalidBase64
+  case invalidGitHashLength(Int)
   case missingLogField(String)
 }

@@ -14106,14 +14106,14 @@ extension Sh.Tangled {
     public var message: Swift.String
     /// Deprecated first parent hash
     public var parent: Swift.String?
-    public var parent_hashes: [[Swift.Int]]?
+    public var parent_hashes: [UnknownATPValue]?
     public var pgp_signature: Swift.String?
     /// Hex-encoded commit hash
     public var this: Swift.String
     public var tree: Swift.String
     public let _unknownValues: [Swift.String: AnyCodable]
 
-    public init(author: RepoLog_Signature, change_id: Swift.String? = nil, committer: RepoLog_Signature, hash: [Swift.Int]? = nil, merge_tag: Swift.String? = nil, message: Swift.String, parent: Swift.String? = nil, parent_hashes: [[Swift.Int]]? = nil, pgp_signature: Swift.String? = nil, this: Swift.String, tree: Swift.String) {
+    public init(author: RepoLog_Signature, change_id: Swift.String? = nil, committer: RepoLog_Signature, hash: [Swift.Int]? = nil, merge_tag: Swift.String? = nil, message: Swift.String, parent: Swift.String? = nil, parent_hashes: [UnknownATPValue]? = nil, pgp_signature: Swift.String? = nil, this: Swift.String, tree: Swift.String) {
       self.author = author
       self.change_id = change_id
       self.committer = committer
@@ -14128,7 +14128,7 @@ extension Sh.Tangled {
       self._unknownValues = [:]
     }
 
-    public static func make(author: RepoLog_Signature, change_id: Swift.String? = nil, committer: RepoLog_Signature, hash: [Swift.Int]? = nil, merge_tag: Swift.String? = nil, message: Swift.String, parent: Swift.String? = nil, parent_hashes: [[Swift.Int]]? = nil, pgp_signature: Swift.String? = nil, this: Swift.String, tree: Swift.String) throws -> Self {
+    public static func make(author: RepoLog_Signature, change_id: Swift.String? = nil, committer: RepoLog_Signature, hash: [Swift.Int]? = nil, merge_tag: Swift.String? = nil, message: Swift.String, parent: Swift.String? = nil, parent_hashes: [UnknownATPValue]? = nil, pgp_signature: Swift.String? = nil, this: Swift.String, tree: Swift.String) throws -> Self {
       if let hash {
         guard hash.count <= 20 else {
           throw LexiconConstraintError.arrayTooLong("hash", limit: 20)
@@ -14163,7 +14163,7 @@ extension Sh.Tangled {
       let merge_tag = try keyedContainer.decodeIfPresent(Swift.String.self, forKey: .merge_tag)
       let message = try keyedContainer.decode(Swift.String.self, forKey: .message)
       let parent = try keyedContainer.decodeIfPresent(Swift.String.self, forKey: .parent)
-      let parent_hashes = try keyedContainer.decodeIfPresent([[Swift.Int]].self, forKey: .parent_hashes)
+      let parent_hashes = try keyedContainer.decodeIfPresent([UnknownATPValue].self, forKey: .parent_hashes)
       let pgp_signature = try keyedContainer.decodeIfPresent(Swift.String.self, forKey: .pgp_signature)
       let this = try keyedContainer.decode(Swift.String.self, forKey: .this)
       let tree = try keyedContainer.decode(Swift.String.self, forKey: .tree)
